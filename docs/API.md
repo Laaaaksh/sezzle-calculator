@@ -9,7 +9,7 @@ Error codes are also listed with examples in [ERROR_CODES.md](ERROR_CODES.md). A
 | Method | Path | Purpose |
 | --- | --- | --- |
 | POST | `/api/v1/calculate` | Run one operation on its operands |
-| GET | `/api/v1/operations` | List the operations the server supports |
+| GET | `/api/v1/operations` | List the operations the server supports and the limits it enforces |
 | GET | `/health/live` | Liveness probe |
 | GET | `/health/ready` | Readiness probe |
 
