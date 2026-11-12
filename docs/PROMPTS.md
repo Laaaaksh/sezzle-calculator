@@ -138,7 +138,7 @@ Test the status mapping, the field handling and that unwrap works with errors.Is
 
 Produced: `internal/logger` (zap, JSON in prod and test, console in dev, request-scoped `Ctx`), `internal/contextkeys` for a typed request ID key, and `pkg/apperror` with typed codes, one status map, copy-on-write fields and errors.Is/As support. Coverage 97.6 to 100% per package.
 
-> Note: from entry 6 on, I queued the remaining prompts in advance (written before the build started) and let the assistant run them back to back while I was away, committing each step and shipping each phase through the no-mistakes pipeline. The prompts below are exactly what was queued.
+> Note: from entry 6 on, I queued the remaining prompts in advance (written before the build started) and let the assistant run them back to back while I was away, committing each step and shipping each phase through an automated review pipeline. The prompts below are exactly what was queued.
 
 ---
 
@@ -170,7 +170,7 @@ Produced: `internal/boot` with ordered startup and graceful shutdown, chi router
 Add backend/Makefile with these targets: help, deps, fmt, lint, mock, test (with the race detector), test-coverage (writes coverage.out and coverage.html and prints the total percentage), build, run and clean. Make mock run before lint and test, because test files import the generated mocks. Add backend/.golangci.yml with errcheck, govet, staticcheck, revive, gosec, gocyclo, dupl, goconst, gofumpt, goimports, misspell and unparam, and justify any setting that isn't a default. The root Makefile should call these. Run make lint and make test and show me that both are clean.
 ```
 
-Produced: `backend/Makefile` with pinned tool versions, `backend/.golangci.yml` (12 linters, every non-default setting justified), root Makefile delegation and `.no-mistakes.yaml`. Lint 0 issues, total coverage 92.9%.
+Produced: `backend/Makefile` with pinned tool versions, `backend/.golangci.yml` (12 linters, every non-default setting justified), root Makefile delegation and the review pipeline config. Lint 0 issues, total coverage 92.9%.
 
 ---
 
@@ -469,7 +469,7 @@ Could you keep feeding the prompt to yourself commiting it and then running the 
 Can you keep merging the relevant prs as well please via chrome! I am away.
 ```
 
-Produced: each phase shipped as its own pull request through the no-mistakes pipeline (review, tests, docs, lint, push, CI), PRs #1 to #8. The pipeline's review found and fixed issues in every phase, listed in each PR description. Green PRs were merged in order.
+Produced: each phase shipped as its own pull request through an automated review pipeline (review, tests, docs, lint, push, CI), PRs #1 to #8. The pipeline's review found and fixed issues in every phase, listed in each PR description. Green PRs were merged in order.
 
 ---
 
@@ -489,4 +489,4 @@ Produced: a fresh, read-only review of every file against the Go and frontend co
 Guess fix all please through no mistakes right and render the app for me as well locally want to see and use myself.
 ```
 
-Produced: PR #9 through the no-mistakes pipeline. Docs now match the code, duplicate or wrong-case JSON keys are rejected, `/operations` publishes limits that the UI uses, calculator error codes live in the calculator module, entry points are tested, dead code and magic values are gone, and CI pins Node and images and runs format, `npm audit` and `govulncheck` checks. Backend coverage 98.2%, frontend 547 tests at 100%.
+Produced: PR #9 through the same review pipeline. Docs now match the code, duplicate or wrong-case JSON keys are rejected, `/operations` publishes limits that the UI uses, calculator error codes live in the calculator module, entry points are tested, dead code and magic values are gone, and CI pins Node and images and runs format, `npm audit` and `govulncheck` checks. Backend coverage 98.2%, frontend 547 tests at 100%.
