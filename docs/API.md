@@ -276,6 +276,138 @@ An operand over the length limit says which one and what the limit is:
 | `RESULT_TOO_LARGE` | 422 | A result would have more digits than the result digit budget allows. Any operation can return it, `power` is the one that reaches it in practice. |
 | `NEGATIVE_SQUARE_ROOT` | 422 | `sqrt` of a negative number. |
 
+### Error examples (real curl output)
+
+Bodies go to `POST /api/v1/calculate` with `Content-Type: application/json` unless noted. The full commands are in [API_SMOKE.md](API_SMOKE.md). The `requestId` values change on every call.
+
+Common errors:
+
+Division by zero (HTTP 422):
+
+```bash
+curl -X POST localhost:8080/api/v1/calculate -H "Content-Type: application/json" \
+  -d '{"operation":"divide","operands":["10","0"]}'
+```
+
+```json
+{"error":{"code":"DIVISION_BY_ZERO","message":"Cannot divide by zero.","requestId":"139e5ba9-8f0e-4707-b316-ed9c0db14ad4"}}
+```
+
+A bad operand, with the field and reason (HTTP 422):
+
+```bash
+curl -X POST localhost:8080/api/v1/calculate -H "Content-Type: application/json" \
+  -d '{"operation":"add","operands":["1e5","2"]}'
+```
+
+```json
+{"error":{"code":"INVALID_OPERAND","message":"An operand is not a valid number.","requestId":"cce3b486-af9e-4fd9-b0c8-7ca385ab8e90","fields":{"operand_index":0,"reason":"exponent"}}}
+```
+
+A missing field (HTTP 422):
+
+```bash
+curl -X POST localhost:8080/api/v1/calculate -H "Content-Type: application/json" \
+  -d '{"operands":["1","2"]}'
+```
+
+```json
+{"error":{"code":"VALIDATION_FAILED","message":"The request failed validation.","requestId":"17584436-4624-495a-815e-5c1cb2df9b5d","fields":{"operation":"is required"}}}
+```
+
+A wrong media type (HTTP 415):
+
+```bash
+curl -X POST localhost:8080/api/v1/calculate -H "Content-Type: text/plain" \
+  -d '{"operation":"add","operands":["1","2"]}'
+```
+
+```json
+{"error":{"code":"UNSUPPORTED_MEDIA_TYPE","message":"The content type is not supported.","requestId":"d4f1a0b4-d681-4e5b-8037-6fe33e2d3658"}}
+```
+
+Remaining cases:
+
+`INTERNAL`, `SERVICE_UNAVAILABLE` and `REQUEST_TIMEOUT` have no curl example here because a normal request does not trigger them. Tests cover all three.
+
+`NEGATIVE_SQUARE_ROOT`, body `{"operation":"sqrt","operands":["-4"]}`, HTTP 422:
+
+```json
+{"error":{"code":"NEGATIVE_SQUARE_ROOT","message":"Cannot take the square root of a negative number.","requestId":"77f8bdf6-c58a-4ba0-aad1-0e13b2cd2658"}}
+```
+
+`INVALID_EXPONENT`, body `{"operation":"power","operands":["2","0.5"]}`, HTTP 422:
+
+```json
+{"error":{"code":"INVALID_EXPONENT","message":"The exponent must be a whole number.","requestId":"9db8b836-e6db-4946-943f-02b118c352f9","fields":{"operand_index":1}}}
+```
+
+`EXPONENT_TOO_LARGE`, body `{"operation":"power","operands":["2","1001"]}`, HTTP 422:
+
+```json
+{"error":{"code":"EXPONENT_TOO_LARGE","message":"The exponent is outside the allowed range.","requestId":"b40da9a3-4a9e-4017-b017-3ad05f57a651","fields":{"limit":1000,"operand_index":1}}}
+```
+
+`RESULT_TOO_LARGE`, body `{"operation":"power","operands":["9","1000"]}`, HTTP 422:
+
+```json
+{"error":{"code":"RESULT_TOO_LARGE","message":"The result would be too large to calculate.","requestId":"59e22c67-ebac-45c2-aca3-280f742d2b77","fields":{"limit":640}}}
+```
+
+`UNKNOWN_OPERATION`, body `{"operation":"modulo","operands":["1","2"]}`, HTTP 422:
+
+```json
+{"error":{"code":"UNKNOWN_OPERATION","message":"The requested operation is not supported.","requestId":"cf975be3-331f-4534-adc7-34709c3be8ce","fields":{"operation":"modulo"}}}
+```
+
+`INVALID_OPERAND_COUNT`, body `{"operation":"add","operands":["1"]}`, HTTP 422:
+
+```json
+{"error":{"code":"INVALID_OPERAND_COUNT","message":"The operation received the wrong number of operands.","requestId":"b117774b-72de-476b-921e-819aa2b8a6e8","fields":{"actual":1,"expected":2,"operation":"add"}}}
+```
+
+`OPERAND_TOO_LARGE`, with a first operand over 64 characters, HTTP 422:
+
+```json
+{"error":{"code":"OPERAND_TOO_LARGE","message":"An operand is larger than the allowed limit.","requestId":"f5084070-7c0e-40a4-9185-d3a73b56ae96","fields":{"limit":64,"operand_index":0}}}
+```
+
+`BAD_REQUEST`, body `{"operation":` (cut-off JSON), HTTP 400. An empty body, an unknown field (`"extra":true`) and data after the object return the same code and message:
+
+```json
+{"error":{"code":"BAD_REQUEST","message":"The request could not be understood.","requestId":"3ce3b06b-9bac-40e1-bd32-8e2b416e716e"}}
+```
+
+`BAD_REQUEST` for a key in the wrong case, body `{"operation":"add","operands":["1","2"],"OPERANDS":["9","9"]}`, HTTP 400. A repeated key returns the same code with `"reason":"duplicate"`. Only exact lowercase `operation` and `operands` are accepted, so two readers of one body never see different values:
+
+```json
+{"error":{"code":"BAD_REQUEST","message":"The request could not be understood.","requestId":"f2920dad-6fb6-457f-a23c-3f6df63887b4","fields":{"key":"OPERANDS","reason":"wrong_case"}}}
+```
+
+`VALIDATION_FAILED` for 17 operands to `add`, HTTP 422. The count is checked before any operand is parsed. Three operands to `add` still return `INVALID_OPERAND_COUNT`:
+
+```json
+{"error":{"code":"VALIDATION_FAILED","message":"The request failed validation.","requestId":"7882a092-c476-40f8-8f66-6e03ac726183","fields":{"operands":"too many"}}}
+```
+
+`PAYLOAD_TOO_LARGE`, a 1.1 MB body, HTTP 413:
+
+```json
+{"error":{"code":"PAYLOAD_TOO_LARGE","message":"The request body is too large.","requestId":"838bf0e4-2942-47a1-a7eb-eaab52de325f","fields":{"limit":1048576}}}
+```
+
+`METHOD_NOT_ALLOWED`, `curl -X GET localhost:8080/api/v1/calculate`, HTTP 405:
+
+```json
+{"error":{"code":"METHOD_NOT_ALLOWED","message":"The method is not allowed for this resource.","requestId":"98173eaa-117a-4cb4-ab2a-f53c9947081a","fields":{"method":"GET","path":"/api/v1/calculate"}}}
+```
+
+`NOT_FOUND`, `curl localhost:8080/api/v1/nope`, HTTP 404:
+
+```json
+{"error":{"code":"NOT_FOUND","message":"The requested resource was not found.","requestId":"1c82b3b7-3071-48f1-8ae9-6f18931b9149","fields":{"method":"GET","path":"/api/v1/nope"}}}
+```
+
 ### Why 400 for malformed and 422 for domain errors
 
 The split is about what the client should do next.
