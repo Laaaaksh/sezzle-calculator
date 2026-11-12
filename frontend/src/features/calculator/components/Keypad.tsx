@@ -1,4 +1,3 @@
-import type { OperationType } from '../../../api';
 import type { BinaryOperation } from '../../../constants/calculator';
 import { isActionAvailable, KEYS } from '../keys';
 import type { CalculatorAction } from '../state';
@@ -11,7 +10,7 @@ interface KeypadProps {
   /** The operator waiting for its second operand, if any. */
   activeOperator?: BinaryOperation | null | undefined;
   /** Operations the server reports. Keys for any other operation are unavailable. Null = unknown. */
-  supportedOperations?: ReadonlySet<OperationType> | null | undefined;
+  supportedOperations?: ReadonlySet<string> | null | undefined;
   onPress: (action: CalculatorAction) => void;
 }
 

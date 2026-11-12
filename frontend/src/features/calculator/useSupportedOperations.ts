@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getOperations, type ApiClient, type OperationType } from '../../api';
+import { getOperations, type ApiClient } from '../../api';
 
 /** The part of the API client this hook needs. Tests pass their own. */
 export type OperationsClient = Pick<ApiClient, 'getOperations'>;
@@ -15,8 +15,8 @@ const DEFAULT_CLIENT: OperationsClient = { getOperations };
  */
 export function useSupportedOperations(
   client: OperationsClient = DEFAULT_CLIENT,
-): ReadonlySet<OperationType> | null {
-  const [supported, setSupported] = useState<ReadonlySet<OperationType> | null>(null);
+): ReadonlySet<string> | null {
+  const [supported, setSupported] = useState<ReadonlySet<string> | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();

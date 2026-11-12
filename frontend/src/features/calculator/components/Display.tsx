@@ -31,7 +31,14 @@ export function Display({ state, isPending, ref }: DisplayProps) {
       <p className={styles.expression}>{expression}</p>
       {/* The live region stays mounted. Only the paragraph inside is replaced, so the change is read. */}
       <div role="status" aria-live="polite" aria-busy={isPending}>
-        <p key={animationKey} className={valueClass} style={valueStyle}>
+        {/* In the error state the alert already says what went wrong, so "Error" is hidden from
+            assistive tech and the failure is announced once. */}
+        <p
+          key={animationKey}
+          className={valueClass}
+          style={valueStyle}
+          aria-hidden={state.status === 'error' ? true : undefined}
+        >
           {value}
         </p>
       </div>

@@ -42,8 +42,8 @@ Legend: `[ ]` not done, `[x]` done and proven. Optional items are marked (option
 |---|---|---|---|
 | NF1 | Clean, readable, idiomatic frontend code | [x] | strict TS, ESLint strict type-checked + jsx-a11y, 0 warnings in CI |
 | NF2 | Clean, readable, idiomatic backend code | [x] | feature-module layout, golangci-lint (12 linters) 0 issues in CI |
-| NF3 | Unit tests covering key frontend functionality | [x] | Vitest + RTL + MSW, 485 tests, 100% coverage (`npm run test:coverage`) |
-| NF4 | Unit tests covering key backend functionality | [x] | testify suites per package, 95.7% backend coverage (`make test-coverage`) |
+| NF3 | Unit tests covering key frontend functionality | [x] | Vitest + RTL + MSW, 520 tests, 100% coverage (`npm run test:coverage`) |
+| NF4 | Unit tests covering key backend functionality | [x] | testify suites per package, 94.9% backend coverage (`make test-coverage`) |
 | NF5 | Documentation: setup instructions | [x] | [README: run separately](../README.md#run-the-backend-and-frontend-separately) |
 | NF6 | Documentation: API usage | [x] | [API.md](API.md), [README: API](../README.md#api) |
 | NF7 | Documentation: design rationale | [x] | [DECISIONS.md](DECISIONS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |

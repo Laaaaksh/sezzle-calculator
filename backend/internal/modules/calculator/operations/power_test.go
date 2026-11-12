@@ -341,7 +341,7 @@ func (s *PowerTestSuite) TestPowerWhenFractionHasManyPlacesButFitsTheBudgetRetur
 	s.LessOrEqual(len(s.power("0.5", testHalfToTheFiveHundred)), testResultBudget)
 }
 
-func (s *PowerTestSuite) TestPowerWhenOnlyTheMinusSignPushesPastTheBudgetReturnsResultTooLarge() {
+func (s *PowerTestSuite) TestPowerWhenNegativeBaseTenToTheBudgetReturnsResultTooLarge() {
 	err := s.failure(testSignedBoundaryBase, testSignedBoundaryExponent)
 
 	s.Equal(apperror.CodeResultTooLarge, err.Code())

@@ -118,5 +118,6 @@ describe('Display', () => {
     expect(screen.getByRole('group', { name: 'Display' })).toHaveTextContent('9 ÷ 0');
     expect(screen.getByRole('group', { name: 'Display' })).not.toHaveTextContent('=');
     expect(screen.getByText('Error')).toBeInTheDocument();
+    expect(screen.getByText('Error')).toHaveAttribute('aria-hidden', 'true');
   });
 });

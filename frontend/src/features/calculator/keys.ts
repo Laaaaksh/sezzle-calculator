@@ -79,7 +79,7 @@ export function operationForAction(action: CalculatorAction): OperationType | nu
  */
 export function isActionAvailable(
   action: CalculatorAction,
-  supported: ReadonlySet<OperationType> | null,
+  supported: ReadonlySet<string> | null,
 ): boolean {
   const operation = operationForAction(action);
   return supported === null || operation === null || supported.has(operation);
