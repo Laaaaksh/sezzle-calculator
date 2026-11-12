@@ -30,7 +30,7 @@ export function HistoryTape({ entries, onReuse }: HistoryTapeProps) {
                   onReuse(entry);
                 }}
               >
-                <span className={styles.hidden}>Reuse </span>
+                <span className="visually-hidden">Reuse </span>
                 <span className={styles.expression}>{formatExpression(entry.request)}</span>
                 {' = '}
                 <span className={styles.result}>{entry.result}</span>

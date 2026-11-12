@@ -338,4 +338,19 @@ describe('Calculator', () => {
       await expectNoAxeViolations(container);
     });
   });
+
+  it('reads Error, not a number, after dividing by zero, and a digit starts fresh', async () => {
+    recordCalculate(divideByZero);
+    const user = renderCalculator();
+
+    await pressKeys(user, '9', 'Divide', '0', 'Equals');
+    await screen.findByRole('alert');
+
+    expect(display()).toHaveTextContent('Error');
+    expect(display()).not.toHaveTextContent('=');
+    await pressKeys(user, '4');
+    expect(display()).toHaveTextContent('4');
+    expect(display()).not.toHaveTextContent('Error');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
 });

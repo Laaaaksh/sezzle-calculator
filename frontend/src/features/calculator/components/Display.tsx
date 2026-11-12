@@ -10,7 +10,11 @@ interface DisplayProps {
 
 export function Display({ state, isPending }: DisplayProps) {
   const { expression, value } = describeDisplay(state);
-  const valueClass = [styles.value, isPending ? styles.pending : undefined]
+  const valueClass = [
+    styles.value,
+    isPending ? styles.pending : undefined,
+    state.status === 'error' ? styles.error : undefined,
+  ]
     .filter(Boolean)
     .join(' ');
   // A new key restarts the entrance animation when a result arrives, but not on every keystroke.

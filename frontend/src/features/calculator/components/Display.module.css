@@ -39,6 +39,10 @@
   word-break: break-all;
 }
 
+.error {
+  color: var(--color-error-text);
+}
+
 .pending {
   opacity: 0.7;
 }

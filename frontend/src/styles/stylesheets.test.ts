@@ -117,3 +117,13 @@ describe('active operator', () => {
     expect(keyCss).toMatch(/@media \(forced-colors: active\)\s*\{\s*\.active\s*\{[^}]*outline:/);
   });
 });
+
+describe('history heading', () => {
+  const drawerCss = entries.find(([path]) => path.endsWith('HistoryDrawer.module.css'))?.[1] ?? '';
+
+  it('is visually hidden in the drawer, where the toggle already says History', () => {
+    expect(drawerCss).toMatch(
+      /@media \(max-width: [\d.]+px\)\s*\{\s*\.panel h2\s*\{[^}]*clip-path/,
+    );
+  });
+});

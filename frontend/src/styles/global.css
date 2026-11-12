@@ -26,3 +26,13 @@ body {
 button {
   font-family: inherit;
 }
+
+/* Hidden on screen, still read by assistive tech. Use as a plain class, not a CSS module. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

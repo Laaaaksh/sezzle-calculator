@@ -54,10 +54,10 @@ describe('describeDisplay', () => {
     expect(describeState(state).value).toBe('0');
   });
 
-  it('keeps the request and the last operand on screen after an error', () => {
+  it('shows the request without "=" and the word Error after an error', () => {
     expect(describeState({ status: 'error', error: ERROR, pending: PENDING })).toEqual({
-      expression: '12.5 + 7.25 =',
-      value: '7.25',
+      expression: '12.5 + 7.25',
+      value: 'Error',
     });
   });
 

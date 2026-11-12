@@ -107,4 +107,10 @@ describe('HistoryDrawer', () => {
 
     expect(entry).toHaveFocus();
   });
+
+  it('keeps the History heading for screen readers inside the panel', () => {
+    render(<HistoryDrawer entries={ENTRIES} onReuse={vi.fn()} />);
+
+    expect(screen.getByRole('heading', { name: 'History' })).toBeInTheDocument();
+  });
 });

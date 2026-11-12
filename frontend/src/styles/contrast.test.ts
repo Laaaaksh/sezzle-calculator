@@ -22,6 +22,7 @@ const TEXT_PAIRS: readonly [string, string, string][] = [
   ['--color-on-accent', '--color-accent', 'equals and active operator label'],
   ['--color-on-accent', '--color-accent-hover', 'equals label on hover'],
   ['--color-error-text', '--color-error-bg', 'error message'],
+  ['--color-error-text', '--color-well', 'Error on the display'],
   ['--color-error-text', '--color-card', 'Retry button label'],
   ['--color-bg', '--color-text', 'selected theme option'],
   ['--color-text-muted', '--color-card', 'unselected theme option'],

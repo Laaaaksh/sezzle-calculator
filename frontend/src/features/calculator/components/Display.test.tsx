@@ -79,4 +79,22 @@ describe('Display', () => {
     expect(typed).toBeInTheDocument();
     expect(typed).toHaveTextContent('23');
   });
+
+  it('shows Error without an equals sign in the error state', () => {
+    render(
+      <Display
+        state={{
+          status: 'error',
+          lastRequestId: 1,
+          error: { code: 'NETWORK_ERROR', message: 'x', requestId: undefined, retryable: true },
+          pending: { id: 1, operation: 'divide', operands: ['9', '0'], then: null },
+        }}
+        isPending={false}
+      />,
+    );
+
+    expect(screen.getByRole('status')).toHaveTextContent('9 ÷ 0');
+    expect(screen.getByRole('status')).not.toHaveTextContent('=');
+    expect(screen.getByText('Error')).toBeInTheDocument();
+  });
 });
