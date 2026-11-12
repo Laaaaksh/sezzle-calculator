@@ -22,7 +22,7 @@ Open http://localhost:8080. Stop with `Ctrl+C`, then `docker compose down`.
 
 | Tool | Version |
 | --- | --- |
-| Go | 1.26 (`backend/go.mod`, toolchain go1.26.6) |
+| Go | 1.26 (`backend/go.mod`, toolchain go1.26.11) |
 | Node | 24 or newer (`frontend/.nvmrc` pins 24, which the Docker build and CI use) |
 | npm | the one bundled with Node |
 

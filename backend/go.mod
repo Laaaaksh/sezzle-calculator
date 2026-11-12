@@ -2,7 +2,7 @@ module github.com/Laaaaksh/sezzle-calculator/backend
 
 go 1.26
 
-toolchain go1.26.6
+toolchain go1.26.11
 
 require (
 	github.com/go-chi/chi/v5 v5.5.0

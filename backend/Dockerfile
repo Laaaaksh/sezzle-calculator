@@ -3,7 +3,7 @@
 # into a distroless image with no shell, no package manager and a non-root user.
 
 # Base images are pinned by digest (tag kept for readability) so a moved tag cannot change the build.
-FROM golang:1.26-alpine@sha256:30b1e546a9c7fa3b747c2bdba3a0c7bdf3a02ebb4c5b8405d2f948d7e8aac4ec AS build
+FROM golang:1.26.11-alpine@sha256:ae52b5bc6ed045a9ed26ab03dc19327a802a9cc9aa8b27ed57f5c6b60579b0bb AS build
 WORKDIR /src
 
 # Module files first: this layer is rebuilt only when dependencies change, not on every code edit.
