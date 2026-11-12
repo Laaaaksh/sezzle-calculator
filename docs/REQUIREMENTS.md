@@ -72,7 +72,7 @@ Legend: `[ ]` not done, `[x]` done and proven. Optional items are marked (option
 |---|---|---|---|
 | I1 | AI tooling allowed (used, and disclosed in the README) | [x] | [README: AI usage](../README.md#ai-usage) |
 | I2 | Roughly 2 to 4 hours; correctness, clarity and maintainability over extra features | [x] | scope held to the brief, extras listed under next steps in the README |
-| I3 | Solution pushed to a Git host | [x] | [github.com/Laaaaksh/sezzle-calculator](https://github.com/Laaaaksh/sezzle-calculator), PRs #1 to #7 each passed the no-mistakes pipeline and CI |
+| I3 | Solution pushed to a Git host | [x] | [github.com/Laaaaksh/sezzle-calculator](https://github.com/Laaaaksh/sezzle-calculator), PRs #1 to #8 (and later PRs) each passed the no-mistakes pipeline and CI |
 | I4 | Repository link shared with the reviewers | [ ] | |
 | I5 | Prompts used are shared (docs/PROMPTS.md) | [x] | [PROMPTS.md](PROMPTS.md) |
 | I6 | README includes setup instructions | [x] | [README: quick start](../README.md#quick-start) |

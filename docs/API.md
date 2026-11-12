@@ -78,11 +78,15 @@ Runs one operation.
 | Field | Type | Rule |
 | --- | --- | --- |
 | `operation` | string | Required, not empty and at most 32 bytes. One of the names returned by `GET /api/v1/operations`. Names are lower case and exact: `"Add"` is `UNKNOWN_OPERATION`. |
-| `operands` | array of strings | Required. The count must match the operation's arity. Order matters. |
+| `operands` | array of strings | Required. At most 16 items. The count must match the operation's arity. Order matters. |
 
 No other fields are allowed. An unknown field is a `400 BAD_REQUEST`, so a misspelled field (`"operand"`) fails loudly and is never ignored.
 
-Field names follow Go's JSON decoder, which matches them without regard to case, so `"Operation"` is read as `operation`. Send them in lower case as shown.
+Field names are exact lower case. The handler rejects a top-level key that repeats, or that matches a field name in another case (`"Operation"`, `"OPERANDS"`), with `400 BAD_REQUEST`. `fields` holds `key`, the offending key, and `reason`, either `duplicate` or `wrong_case`. Two readers of one body then never see different values.
+
+```json
+{"error": {"code": "BAD_REQUEST", "message": "The request could not be understood.", "requestId": "f2920dad-6fb6-457f-a23c-3f6df63887b4", "fields": {"key": "OPERANDS", "reason": "wrong_case"}}}
+```
 
 ### Response 200
 
@@ -116,7 +120,7 @@ The server checks in this order and returns the first failure:
 
 1. `Content-Type` (`415`)
 2. Body size, then empty body, JSON syntax, unknown fields, field types and data after the JSON object (`413`, `400`)
-3. `operation` and `operands` are present (`422 VALIDATION_FAILED`)
+3. Top-level keys are exact, lower case and not repeated (`400 BAD_REQUEST`), then `operation` and `operands` are present, `operation` is at most 32 bytes and `operands` has at most 16 items (`422 VALIDATION_FAILED`)
 4. Each operand's length, then its syntax, in operand order (`422 OPERAND_TOO_LARGE`, `422 INVALID_OPERAND`)
 5. The operation exists, the operand count matches its arity, then the operation runs (`422`)
 
@@ -135,12 +139,14 @@ One consequence: an unknown operation sent with a malformed operand reports the 
 | A body over `max_body_bytes` | `413 PAYLOAD_TOO_LARGE` |
 | `{}`, or `operation` missing, empty or `null` | `422 VALIDATION_FAILED`, with `fields.operation` |
 | `operation` longer than 32 bytes | `422 VALIDATION_FAILED`, with `fields.operation` (`is too long`) |
-| `operands` missing or `null` | `422 VALIDATION_FAILED`, with `fields.operands` |
+| `operands` missing or `null` | `422 VALIDATION_FAILED`, with `fields.operands` (`is required`) |
+| `operands` with more than 16 items | `422 VALIDATION_FAILED`, with `fields.operands` (`too many`), before any operand is parsed |
+| A top-level key that repeats or is not exact lower case | `400 BAD_REQUEST`, with `fields.key` and `fields.reason` (`duplicate` or `wrong_case`) |
 | `"operands": []` | `422 INVALID_OPERAND_COUNT` (the field is present, the count is wrong) |
 
 ## GET /api/v1/operations
 
-Lists every operation, so the frontend can build its keypad and its operand inputs from the server and does not hard-code them. Adding an operation on the server shows up in the UI without a frontend change.
+Lets a client discover which operations the server supports and the limits it enforces. The web UI keeps a static key list. It disables any key whose operation the server does not report, and it reads `limits.maxOperandLength` to cap the operand length. A new operation on the server still needs a key in the UI.
 
 ### Response 200
 
@@ -154,7 +160,8 @@ Lists every operation, so the frontend can build its keypad and its operand inpu
     {"name": "power", "arity": 2, "symbol": "^", "description": "Raises the first operand to the whole-number power given by the second."},
     {"name": "sqrt", "arity": 1, "symbol": "√", "description": "Returns the square root of the operand."},
     {"name": "percentage", "arity": 2, "symbol": "%", "description": "Returns the first operand percent of the second."}
-  ]
+  ],
+  "limits": {"maxOperandLength": 64, "maxExponent": 1000, "decimalPrecision": 20}
 }
 ```
 
@@ -164,6 +171,14 @@ Lists every operation, so the frontend can build its keypad and its operand inpu
 | `arity` | number | How many operands the operation takes. |
 | `symbol` | string | A short symbol for buttons and for showing an expression. |
 | `description` | string | One line of plain text for a tooltip or help text. |
+
+The `limits` object reports the configured limits, so a client does not hard-code them.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `limits.maxOperandLength` | number | `max_operand_length`. The longest operand string the server accepts. |
+| `limits.maxExponent` | number | `max_exponent`. The largest absolute exponent `power` accepts. |
+| `limits.decimalPrecision` | number | `decimal_precision`. The decimal places kept when a result is rounded. |
 
 The list is in a fixed order (the order above), and the response does not change while the server runs. The array sits inside an object so a field can be added later without breaking clients.
 
@@ -233,14 +248,14 @@ An operand over the length limit says which one and what the limit is:
 }
 ```
 
-`fields` values are strings or numbers. The set of keys is fixed per code. The internal cause of an error (driver text, stack details) is never sent; it stays in the server log with the request ID. `NOT_FOUND` and `METHOD_NOT_ALLOWED` echo the request `method` and `path` in `fields`, since the client sent both.
+`fields` values are strings or numbers. The set of keys is fixed per code. The internal cause of an error (driver text, stack details) is never sent; it stays in the server log with the request ID. `NOT_FOUND` and `METHOD_NOT_ALLOWED` echo the request `method` and `path` in `fields`, since the client sent both. The echoed `path` is cut to 256 bytes.
 
 ### Error codes and HTTP statuses
 
 | Code | HTTP status | When |
 | --- | --- | --- |
-| `BAD_REQUEST` | 400 | The body cannot be read as the request in this contract: empty, invalid JSON, an unknown field, a wrong field type or data after the JSON object. |
-| `VALIDATION_FAILED` | 422 | The JSON is fine, but `operation` or `operands` is missing or empty, or `operation` is over 32 bytes. |
+| `BAD_REQUEST` | 400 | The body cannot be read as the request in this contract: empty, invalid JSON, an unknown field, a wrong field type, data after the JSON object, or a top-level key that repeats or is not exact lower case (`fields.key`, `fields.reason`). |
+| `VALIDATION_FAILED` | 422 | The JSON is fine, but `operation` or `operands` is missing (or `operation` is empty), `operation` is over 32 bytes, or `operands` has more than 16 items. |
 | `UNSUPPORTED_MEDIA_TYPE` | 415 | `Content-Type` is missing, is not `application/json` or has a charset other than UTF-8. |
 | `PAYLOAD_TOO_LARGE` | 413 | The body is larger than `max_body_bytes`. `fields.limit` is that limit in bytes. |
 | `NOT_FOUND` | 404 | No route matches the path. |
@@ -249,7 +264,7 @@ An operand over the length limit says which one and what the limit is:
 | `SERVICE_UNAVAILABLE` | 503 | The readiness probe while the service is not ready. |
 | `REQUEST_TIMEOUT` | 503 | The calculation was still running when `request_timeout` expired, or the client went away. |
 | `UNKNOWN_OPERATION` | 422 | `operation` is not a name from `GET /api/v1/operations`. The name is echoed in `fields.operation` only when it fits the 32 byte limit. |
-| `INVALID_OPERAND_COUNT` | 422 | The number of operands does not match the operation's arity. |
+| `INVALID_OPERAND_COUNT` | 422 | The number of operands does not match the operation's arity, for example 3 operands to `add`. More than 16 operands is `VALIDATION_FAILED` instead. |
 | `OPERAND_TOO_LARGE` | 422 | An operand is longer than `max_operand_length`. |
 | `INVALID_OPERAND` | 422 | An operand is not a plain decimal number. |
 | `DIVISION_BY_ZERO` | 422 | `divide` by zero, or zero to a negative power. |
