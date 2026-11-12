@@ -2,6 +2,7 @@ package operations
 
 import (
 	"math"
+	"math/big"
 	"strconv"
 	"strings"
 
@@ -42,11 +43,13 @@ var one = decimal.NewFromInt(1)
 // power is a division by zero. A negative exponent is 1 / base^|exponent| using
 // the same half-even division as Divide, at the configured precision.
 //
-// Cost guard: base^e has at most floor(e*log10(base))+1 digits, so that bound
-// is checked against a digit budget before any multiply happens (2^1000 has 302
-// digits and fits the default budget of 640). A request like 9^1000 or
-// 99999999999999999999^1000 fails fast with
-// RESULT_TOO_LARGE instead of allocating a number with thousands of digits.
+// Size guard: the result may hold at most a digit budget of digits, counting
+// integer and fraction digits (10^1000 has 1001, 0.1^1000 has 1000). Before any
+// multiply, an upper bound on those digits is checked against the budget, so a
+// request like 9^1000, 10^1000 or 0.1^-1000 fails fast with RESULT_TOO_LARGE
+// instead of allocating a number with thousands of digits. 2^1000 (302 digits)
+// fits the default budget of 640. The computed result is then counted exactly
+// and refused if the estimate let it slip past the budget.
 type Power struct {
 	precision       int32
 	maxExponent     decimal.Decimal
@@ -87,14 +90,18 @@ func (p *Power) Apply(operands []decimal.Decimal) (decimal.Decimal, apperror.IEr
 	if base.Abs().Equal(one) {
 		return unitToPower(base, exponent), nil
 	}
-	if aerr = p.checkResultSize(base, abs64(exponent)); aerr != nil {
+	base = stripTrailingZeros(base)
+	if aerr = p.checkResultSize(base, exponent); aerr != nil {
 		return decimal.Zero, aerr
 	}
-	magnitude := integerPower(base, abs64(exponent))
+	result := integerPower(base, abs64(exponent))
 	if exponent < 0 {
-		return divideHalfEven(one, magnitude, p.precision), nil
+		result = divideHalfEven(one, result, p.precision)
 	}
-	return magnitude, nil
+	if digitsOf(result) > p.maxResultDigits {
+		return decimal.Zero, p.tooLarge()
+	}
+	return result, nil
 }
 
 // wholeExponent returns the exponent as an int64 after rejecting fractions and
@@ -112,35 +119,87 @@ func (p *Power) wholeExponent(exponent decimal.Decimal) (int64, apperror.IError)
 	return exponent.IntPart(), nil
 }
 
-// checkResultSize rejects a power whose coefficient could exceed the digit
-// budget. base^e has at most floor(e * log10(c)) + 1 digits, where c is the
-// base coefficient without trailing zeros (decimal keeps those, and the scale,
-// in the exponent, so they add no coefficient digits). One extra digit of
-// margin covers float rounding, so the bound can only over-estimate.
+// checkResultSize rejects a power whose result could exceed the digit budget.
+// base must have no trailing zeros in its coefficient, so |base| = c * 10^x
+// with c not divisible by 10 and c^n has no trailing zeros either.
 //
-// The log10 is a float64 on purpose: it only sizes this guard and never
-// produces part of a result, so a float error cannot change any answer, and
-// the margin keeps it from letting an oversized result through.
+// c^n has at most floor(n * log10(c)) + 1 digits. That coefficient is built for
+// both signs of the exponent (as the divisor when it is negative), so it is
+// bounded first. Then the result itself:
+//   - base^n is c^n * 10^(n*x): with n*x >= 0 the zeros extend the integer
+//     part, with n*x < 0 the result has -n*x fraction digits.
+//   - base^-n is 1 / base^n rounded to the precision: its integer part has
+//     floor(-n * log10|base|) + 1 digits when |base| < 1. Its fraction digits
+//     are bounded by the precision and counted exactly after the division.
+//
+// One extra digit of margin covers float rounding, so each bound can only
+// over-estimate. The log10 is a float64 on purpose: it only sizes this guard
+// and never produces part of a result.
 func (p *Power) checkResultSize(base decimal.Decimal, exponent int64) apperror.IError {
-	bound := int64(math.Floor(float64(exponent)*log10Coefficient(base))) + 1 + digitMargin
-	if bound <= p.maxResultDigits {
-		return nil
+	n := abs64(exponent)
+	nLogC := float64(n) * log10Coefficient(base)
+	coefficientDigits := int64(math.Floor(nLogC)) + 1 + digitMargin
+	if coefficientDigits > p.maxResultDigits {
+		return p.tooLarge()
 	}
+	shift := n * int64(base.Exponent())
+	var estimate int64
+	switch {
+	case exponent < 0:
+		estimate = max(int64(math.Floor(-nLogC-float64(shift)))+1+digitMargin, 0)
+	case shift >= 0:
+		estimate = coefficientDigits + shift
+	default:
+		estimate = max(coefficientDigits, -shift)
+	}
+	if estimate > p.maxResultDigits {
+		return p.tooLarge()
+	}
+	return nil
+}
+
+func (p *Power) tooLarge() apperror.IError {
 	return apperror.New(apperror.CodeResultTooLarge, ErrResultBeyondBudget).
 		WithField(entities.FieldLimit, p.maxResultDigits)
 }
 
-// log10Coefficient is log10 of |base| with trailing zeros of the coefficient
-// removed. Only the leading leadingDigits digits go through float64, so a
-// coefficient far beyond float64's range cannot overflow.
+// log10Coefficient is log10 of the coefficient of |d|. Only the leading
+// leadingDigits digits go through float64, so a coefficient far beyond
+// float64's range cannot overflow.
 func log10Coefficient(d decimal.Decimal) float64 {
-	digits := strings.TrimRight(d.Abs().Coefficient().String(), "0")
+	digits := d.Abs().Coefficient().String()
 	head := digits
 	if len(head) > leadingDigits {
 		head = head[:leadingDigits]
 	}
 	leading, _ := strconv.ParseFloat(head, 64)
 	return math.Log10(leading) + float64(len(digits)-len(head))
+}
+
+// stripTrailingZeros moves the trailing zeros of the coefficient into the
+// exponent. decimal keeps "10" as coefficient 10, exponent 0; this returns
+// coefficient 1, exponent 1, the same value. d must not be zero.
+func stripTrailingZeros(d decimal.Decimal) decimal.Decimal {
+	digits := d.Coefficient().String()
+	trimmed := strings.TrimRight(digits, "0")
+	coefficient, _ := new(big.Int).SetString(trimmed, 10)
+	return decimal.NewFromBigInt(coefficient, d.Exponent()+int32(len(digits)-len(trimmed)))
+}
+
+// digitsOf counts the digits of d as written without trailing fraction zeros
+// or a lone leading zero: integer digits plus fraction digits, so 1000 has 4,
+// 0.001 has 3 and 12.5 has 3. Zero has 1.
+func digitsOf(d decimal.Decimal) int64 {
+	if d.IsZero() {
+		return 1
+	}
+	d = stripTrailingZeros(d)
+	coefficientDigits := int64(len(d.Abs().Coefficient().String()))
+	exp := int64(d.Exponent())
+	if exp >= 0 {
+		return coefficientDigits + exp
+	}
+	return max(coefficientDigits, -exp)
 }
 
 // zeroToPower handles a zero base with a non-zero exponent: 0^n is 0 and

@@ -24,7 +24,7 @@ Defaults used in the examples: `max_operand_length = 64`, `max_exponent = 1000`,
 
 Examples per reason: `""` is `empty`, `" 1"` is `whitespace`, `"+1"` is `plus_sign`, `"1e5"` is `exponent`, `"0x1F"` is `hex`, `"NaN"` is `nan`, `"Infinity"` is `infinity`, `"1,000"` is `separator`, `"1.2.3"` is `multiple_points`, `"abc"` is `invalid_format`.
 
-`RESULT_TOO_LARGE` limit: a power result may have at most `max_operand_length * 10` digits (640 by default). The check is an upper bound, floor(exponent * log10(base)) + 1 digits plus a margin of one, made before any multiplication. So `power 2 1000` (302 digits) is computed and `power 9 1000` (955 digits) is refused.
+`RESULT_TOO_LARGE` limit: a power result may have at most `max_operand_length * 10` digits (640 by default), counting integer and fraction digits. Trailing zeros of the base and its decimal places count too: `power 10 1000` (1001 digits), `power 0.1 1000` (1000 fraction digits) and `power 0.1 -1000` (1001 digits) are refused. The check is an upper bound with a margin of one digit, made before any multiplication, and the finished result is counted exactly as well. So `power 2 1000` (302 digits) is computed and `power 9 1000` (955 digits) is refused.
 
 ## Generic errors
 

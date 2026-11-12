@@ -122,7 +122,7 @@ func (s *PowerTestSuite) TestPowerWhenBaseIsTenReturnsOneFollowedByZeros() {
 	s.Equal(testTenToTheThirty, s.power("10", "30"))
 }
 
-func (s *PowerTestSuite) TestPowerWhenBaseHasTrailingZerosIgnoresThemInTheSizeEstimate() {
+func (s *PowerTestSuite) TestPowerWhenBaseHasTrailingZerosKeepsThemInTheResult() {
 	got := s.power("10", "500")
 
 	s.Len(got, 501)
@@ -246,4 +246,46 @@ func (s *PowerTestSuite) TestPowerDigitBudgetScalesWithTheConfiguredOperandLengt
 	s.Equal("9223372036854775808", allowed)
 	s.Require().NotNil(errRefused)
 	s.Equal(int64(testSmallBudget), errRefused.Fields()[entities.FieldLimit])
+}
+
+func (s *PowerTestSuite) TestPowerWhenTrailingZerosPushPastTheBudgetReturnsResultTooLarge() {
+	s.Equal(apperror.CodeResultTooLarge, s.failure("10", "1000").Code())
+}
+
+func (s *PowerTestSuite) TestPowerWhenBaseIsAMillionAndResultIsTooLongReturnsResultTooLarge() {
+	s.Equal(apperror.CodeResultTooLarge, s.failure("1000000", "1000").Code())
+}
+
+func (s *PowerTestSuite) TestPowerWhenBaseIsTenAndResultFitsReturnsEveryDigit() {
+	got := s.power("10", "638")
+
+	s.Len(got, 639)
+}
+
+func (s *PowerTestSuite) TestPowerWhenFractionDigitsExceedTheBudgetReturnsResultTooLarge() {
+	s.Equal(apperror.CodeResultTooLarge, s.failure("0.1", "1000").Code())
+}
+
+func (s *PowerTestSuite) TestPowerWhenFractionDigitsEqualTheBudgetComputesTheResult() {
+	got := s.power("0.1", "640")
+
+	s.Equal("0."+strings.Repeat("0", 639)+"1", got)
+}
+
+func (s *PowerTestSuite) TestPowerWhenFractionDigitsAreOneOverTheBudgetReturnsResultTooLarge() {
+	s.Equal(apperror.CodeResultTooLarge, s.failure("0.1", "641").Code())
+}
+
+func (s *PowerTestSuite) TestPowerWhenSmallBaseHasNegativeExponentReturnsResultTooLarge() {
+	s.Equal(apperror.CodeResultTooLarge, s.failure("0.1", "-1000").Code())
+}
+
+func (s *PowerTestSuite) TestPowerWhenTinyBaseHasNegativeExponentReturnsResultTooLarge() {
+	base := "0." + strings.Repeat("0", 61) + "2"
+
+	s.Equal(apperror.CodeResultTooLarge, s.failure(base, "-1000").Code())
+}
+
+func (s *PowerTestSuite) TestPowerWhenSmallBaseHasNegativeExponentThatFitsReturnsTheExactValue() {
+	s.Equal("1"+strings.Repeat("0", 600), s.power("0.1", "-600"))
 }
