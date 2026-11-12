@@ -11,6 +11,7 @@ const (
 	MsgMethodNotAllowed     = "The method is not allowed for this resource."
 	MsgInternal             = "An internal error occurred."
 	MsgServiceUnavailable   = "The service is temporarily unavailable."
+	MsgRequestTimeout       = "The request took too long to process."
 	MsgUnknownOperation     = "The requested operation is not supported."
 	MsgInvalidOperandCount  = "The operation received the wrong number of operands."
 	MsgOperandTooLarge      = "An operand is larger than the allowed limit."

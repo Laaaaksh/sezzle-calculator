@@ -3,6 +3,8 @@
 package operations
 
 import (
+	"context"
+
 	"github.com/shopspring/decimal"
 
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/entities"
@@ -24,6 +26,8 @@ type Operation interface {
 	// Description is one line of plain text for help text and tooltips.
 	Description() string
 	// Apply computes the result. It uses decimal maths only: a float64 would
-	// make 0.1 + 0.2 differ from 0.3.
-	Apply(operands []decimal.Decimal) (decimal.Decimal, apperror.IError)
+	// make 0.1 + 0.2 differ from 0.3. Operations that loop (power, square
+	// root) check ctx on every iteration and return REQUEST_TIMEOUT once it is
+	// done, so a request deadline stops the work and not just the reply.
+	Apply(ctx context.Context, operands []decimal.Decimal) (decimal.Decimal, apperror.IError)
 }

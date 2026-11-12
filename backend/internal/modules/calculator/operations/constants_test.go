@@ -54,3 +54,27 @@ const (
 	wantPercentageSymbol      = "%"
 	wantPercentageDescription = "Returns the first operand percent of the second."
 )
+
+// Constants for the printed-length budget tests of power, divide and sqrt.
+const (
+	testTenToTheSixHundredLen   = 601
+	testTenToTheLastAllowed     = "638"
+	testTenToTheFirstRefused    = "640"
+	testRoundBaseZeros          = 62
+	testMaxPowerExponent        = "1000"
+	testNegMaxPowerExponent     = "-1000"
+	testSixHundred              = "600"
+	testHalfToTheFiveHundred    = "500"
+	testPointOneToTheSixHundred = 602
+	testFullOperandDigits       = 64
+	testNarrowOperandDigits     = 63
+	testNarrowFractionZeros     = 61
+	testSignedBoundaryBase      = "-10"
+	testSignedBoundaryExponent  = "639"
+)
+
+const (
+	digitNine = "9"
+	digitZero = "0"
+	digitOne  = "1"
+)

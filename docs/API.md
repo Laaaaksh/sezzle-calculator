@@ -61,7 +61,8 @@ These come from the `[calculator]` section of the config, except `max_body_bytes
 | --- | --- | --- | --- |
 | `max_operand_length` | 64 | The length in bytes of each operand string, including `-` and `.`. Checked before parsing. The significant digits and decimal places of the parsed value are held to the same number. | `422 OPERAND_TOO_LARGE` |
 | `max_exponent` | 1000 | The absolute value of the exponent in `power`. | `422 EXPONENT_TOO_LARGE` |
-| result digit budget | `max_operand_length * 10` (640) | The number of digits a `power` result may have. The check uses an upper bound and runs before any multiplication, so `2^1000` (302 digits) is computed and `9^1000` (955 digits) is refused. | `422 RESULT_TOO_LARGE` |
+| result digit budget | `max_operand_length * 10` (640) | The number of printed characters a `power` result may have: every digit, zero, decimal point and minus sign in the returned text. Zeros count, so `10^1000` (1001 characters) and `0.1^1000` (1002 characters) are refused even though they have one significant digit. A cheap upper bound runs before any multiplication and the finished text is measured again, so `2^1000` (302 digits) is computed and `9^1000` (955 digits) is refused. | `422 RESULT_TOO_LARGE` |
+| `request_timeout` | 5s | How long one request may run. The calculation checks the deadline before it starts, inside the power and square root loops, and after it finishes. See the note below the error table. | `503 REQUEST_TIMEOUT` |
 | `max_body_bytes` | 1048576 (1 MiB) | The size of the request body. | `413 PAYLOAD_TOO_LARGE` |
 
 ## POST /api/v1/calculate
@@ -246,6 +247,7 @@ An operand over the length limit says which one and what the limit is:
 | `METHOD_NOT_ALLOWED` | 405 | The path exists but not for this method. |
 | `INTERNAL` | 500 | An unexpected server fault. The cause is logged and never sent. |
 | `SERVICE_UNAVAILABLE` | 503 | The readiness probe while the service is not ready. |
+| `REQUEST_TIMEOUT` | 503 | The calculation was still running when `request_timeout` expired, or the client went away. |
 | `UNKNOWN_OPERATION` | 422 | `operation` is not a name from `GET /api/v1/operations`. The name is echoed in `fields.operation` only when it fits the 32 byte limit. |
 | `INVALID_OPERAND_COUNT` | 422 | The number of operands does not match the operation's arity. |
 | `OPERAND_TOO_LARGE` | 422 | An operand is longer than `max_operand_length`. |
@@ -253,7 +255,7 @@ An operand over the length limit says which one and what the limit is:
 | `DIVISION_BY_ZERO` | 422 | `divide` by zero, or zero to a negative power. |
 | `INVALID_EXPONENT` | 422 | The exponent in `power` is not a whole number. |
 | `EXPONENT_TOO_LARGE` | 422 | The exponent in `power` is outside `-max_exponent` to `max_exponent`. |
-| `RESULT_TOO_LARGE` | 422 | A `power` result would exceed the digit budget. |
+| `RESULT_TOO_LARGE` | 422 | A `power` result would print more characters than the digit budget allows. |
 | `NEGATIVE_SQUARE_ROOT` | 422 | `sqrt` of a negative number. |
 
 ### Why 400 for malformed and 422 for domain errors
@@ -268,6 +270,8 @@ So the frontend can follow one rule. On `422`, show `message` next to the input.
 `VALIDATION_FAILED` is a judgement call and is `422`, not `400`. The JSON parsed and had the right shape, the value is just absent, and the user can fix it by filling in a field. `400` is kept for requests that fail before the server knows what they say.
 
 `415`, `413`, `404`, `405`, `500` and `503` use their standard statuses, because HTTP already says what they mean.
+
+`REQUEST_TIMEOUT` is `503` and not `408` or `504`. `408` says the client was too slow to send its request, and `504` says a gateway timed out waiting for an upstream; neither describes this case. The request was valid and the server's own deadline ran out, which is temporary and safe to retry, and that is what `503` tells a client.
 
 ## Why one endpoint and not one route per operation
 

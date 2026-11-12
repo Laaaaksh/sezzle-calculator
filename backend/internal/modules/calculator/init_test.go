@@ -4,10 +4,12 @@ import (
 	"context"
 	"testing"
 
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/config"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator"
+	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/entities"
 	"github.com/Laaaaksh/sezzle-calculator/backend/pkg/apperror"
 )
 
@@ -21,16 +23,9 @@ func TestInitTestSuite(t *testing.T) {
 	suite.Run(t, new(InitTestSuite))
 }
 
-// SetupTest and TearDownTest reset the package singleton so no test sees the
-// module another one built.
 func (s *InitTestSuite) SetupTest() {
 	s.ctx = context.Background()
 	s.cfg = config.CalculatorConfig{MaxOperandLength: testMaxOperandLength, MaxExponent: testMaxExponent, DecimalPrecision: testPrecision}
-	calculator.CalculatorModule = nil
-}
-
-func (s *InitTestSuite) TearDownTest() {
-	calculator.CalculatorModule = nil
 }
 
 func (s *InitTestSuite) TestNewModuleWiresACore() {
@@ -39,12 +34,12 @@ func (s *InitTestSuite) TestNewModuleWiresACore() {
 	s.NotNil(module.GetCore())
 }
 
-func (s *InitTestSuite) TestNewModuleReturnsSameInstanceOnSecondCall() {
+func (s *InitTestSuite) TestNewModuleReturnsADistinctInstanceOnEachCall() {
 	first := calculator.NewModule(s.ctx, s.cfg)
 
 	second := calculator.NewModule(s.ctx, s.cfg)
 
-	s.Same(first, second)
+	s.NotSame(first, second)
 }
 
 func (s *InitTestSuite) TestNewModuleCoreRejectsOperationsThatAreNotRegistered() {
@@ -60,4 +55,19 @@ func (s *InitTestSuite) TestNewModuleWiresAHandler() {
 	module := calculator.NewModule(s.ctx, s.cfg)
 
 	s.NotNil(module.GetHandler())
+}
+
+func (s *InitTestSuite) TestNewModuleUsesTheConfigOfEachCall() {
+	tight := s.cfg
+	tight.MaxExponent = testTightExponent
+	loose := s.cfg
+	loose.MaxExponent = testMaxExponent
+	operands := []decimal.Decimal{mustDecimal("2"), mustDecimal(testExponentAboveTight)}
+
+	_, tightErr := calculator.NewModule(s.ctx, tight).GetCore().Calculate(s.ctx, entities.OpPower, operands)
+	_, looseErr := calculator.NewModule(s.ctx, loose).GetCore().Calculate(s.ctx, entities.OpPower, operands)
+
+	s.Require().NotNil(tightErr)
+	s.Equal(apperror.CodeExponentTooLarge, tightErr.Code())
+	s.Nil(looseErr)
 }

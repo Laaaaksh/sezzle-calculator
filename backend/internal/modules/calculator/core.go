@@ -48,7 +48,15 @@ func NewCore(registry operations.IRegistry, limits config.CalculatorConfig) *Cor
 // Calculate runs the pipeline: look up the operation, check the operand count,
 // check each operand against the limits, apply, then normalise. The checks run
 // before Apply so an operation never sees input it was not written for.
-func (c *Core) Calculate(_ context.Context, op entities.OperationType, operands []decimal.Decimal) (entities.Result, apperror.IError) {
+//
+// ctx is honoured at three points: before any work, inside Apply (the loops in
+// power and square root check it every iteration) and after Apply, so a result
+// finished past the deadline is dropped and the client gets REQUEST_TIMEOUT,
+// never a late answer it has already given up on.
+func (c *Core) Calculate(ctx context.Context, op entities.OperationType, operands []decimal.Decimal) (entities.Result, apperror.IError) {
+	if aerr := operations.CheckContext(ctx); aerr != nil {
+		return entities.Result{}, aerr
+	}
 	operation, aerr := c.registry.Lookup(op)
 	if aerr != nil {
 		return entities.Result{}, aerr
@@ -59,8 +67,11 @@ func (c *Core) Calculate(_ context.Context, op entities.OperationType, operands 
 	if aerr = c.checkLimits(operands); aerr != nil {
 		return entities.Result{}, aerr
 	}
-	value, aerr := operation.Apply(operands)
+	value, aerr := operation.Apply(ctx, operands)
 	if aerr != nil {
+		return entities.Result{}, aerr
+	}
+	if aerr = operations.CheckContext(ctx); aerr != nil {
 		return entities.Result{}, aerr
 	}
 	return normalise(value), nil

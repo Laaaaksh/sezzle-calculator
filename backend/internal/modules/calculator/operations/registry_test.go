@@ -1,6 +1,7 @@
 package operations_test
 
 import (
+	"context"
 	"net/http"
 	"strings"
 	"testing"
@@ -25,7 +26,7 @@ func (n namedOperation) Symbol() string { return testFakeSymbol }
 
 func (n namedOperation) Description() string { return testFakeDescription }
 
-func (n namedOperation) Apply(_ []decimal.Decimal) (decimal.Decimal, apperror.IError) {
+func (n namedOperation) Apply(_ context.Context, _ []decimal.Decimal) (decimal.Decimal, apperror.IError) {
 	return decimal.Zero, nil
 }
 

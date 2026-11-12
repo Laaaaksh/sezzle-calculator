@@ -7,17 +7,13 @@ import (
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/operations"
 )
 
-// CalculatorModule is the process-wide module instance, built once by NewModule.
-var CalculatorModule IModule
-
-// NewModule builds the module on first call and returns the same instance
-// afterwards. It is a var so tests can replace it.
-var NewModule = func(_ context.Context, cfg config.CalculatorConfig) IModule {
-	if CalculatorModule == nil {
-		core := NewCore(operations.NewDefaultRegistry(cfg), cfg)
-		CalculatorModule = &Module{Core: core, Handler: NewHTTPHandler(core, cfg)}
-	}
-	return CalculatorModule
+// NewModule builds a fresh module on every call from the cfg it is given.
+// There is deliberately no package-level instance: a cached one would make a
+// later call silently ignore its cfg, and tests would share state. Boot calls
+// it once and owns the result.
+func NewModule(_ context.Context, cfg config.CalculatorConfig) IModule {
+	core := NewCore(operations.NewDefaultRegistry(cfg), cfg)
+	return &Module{Core: core, Handler: NewHTTPHandler(core, cfg)}
 }
 
 // IModule exposes the module's parts to boot.

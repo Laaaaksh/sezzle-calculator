@@ -1,6 +1,7 @@
 package operations
 
 import (
+	"context"
 	"math"
 	"math/big"
 	"strconv"
@@ -76,7 +77,7 @@ func NewPower(cfg config.CalculatorConfig) *Power {
 
 // Apply returns operands[0] ^ operands[1]. The exponent is validated before
 // the base so a bad exponent is reported even for a zero base.
-func (p *Power) Apply(operands []decimal.Decimal) (decimal.Decimal, apperror.IError) {
+func (p *Power) Apply(ctx context.Context, operands []decimal.Decimal) (decimal.Decimal, apperror.IError) {
 	base := operands[0]
 	exponent, aerr := p.wholeExponent(operands[1])
 	if aerr != nil {
@@ -95,7 +96,10 @@ func (p *Power) Apply(operands []decimal.Decimal) (decimal.Decimal, apperror.IEr
 	if aerr = p.checkResultSize(base, exponent); aerr != nil {
 		return decimal.Zero, aerr
 	}
-	result := integerPower(base, abs64(exponent))
+	result, aerr := integerPower(ctx, base, abs64(exponent))
+	if aerr != nil {
+		return decimal.Zero, aerr
+	}
 	if exponent < 0 {
 		result = divideHalfEven(one, result, p.precision)
 	}
@@ -230,9 +234,12 @@ func unitToPower(base decimal.Decimal, exponent int64) decimal.Decimal {
 // integerPower is exponentiation by squaring: O(log e) exact multiplications.
 // The final squaring is skipped so the base is never squared past what the
 // result needs.
-func integerPower(base decimal.Decimal, exponent int64) decimal.Decimal {
+func integerPower(ctx context.Context, base decimal.Decimal, exponent int64) (decimal.Decimal, apperror.IError) {
 	result := one
 	for exponent > 0 {
+		if aerr := CheckContext(ctx); aerr != nil {
+			return decimal.Zero, aerr
+		}
 		if exponent&1 == 1 {
 			result = result.Mul(base)
 		}
@@ -241,7 +248,7 @@ func integerPower(base decimal.Decimal, exponent int64) decimal.Decimal {
 			base = base.Mul(base)
 		}
 	}
-	return result
+	return result, nil
 }
 
 func abs64(n int64) int64 {

@@ -1,6 +1,8 @@
 package operations
 
 import (
+	"context"
+
 	"github.com/shopspring/decimal"
 
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/entities"
@@ -24,6 +26,6 @@ func NewMultiply() *Multiply {
 }
 
 // Apply returns operands[0] * operands[1].
-func (*Multiply) Apply(operands []decimal.Decimal) (decimal.Decimal, apperror.IError) {
+func (*Multiply) Apply(_ context.Context, operands []decimal.Decimal) (decimal.Decimal, apperror.IError) {
 	return operands[0].Mul(operands[1]), nil
 }

@@ -17,10 +17,12 @@ const (
 	testBigText    = "100.00"
 	testBigWant    = "100"
 
-	testMaxOperandLength = 8
-	testMaxExponent      = 1000
-	testPrecision        = 20
-	testDefaultMaxLength = 64
+	testMaxOperandLength   = 8
+	testMaxExponent        = 1000
+	testPrecision          = 20
+	testDefaultMaxLength   = 64
+	testTightExponent      = 5
+	testExponentAboveTight = "6"
 
 	testOperandOk       = "12345678"
 	testOperandTooLong  = "123456789"

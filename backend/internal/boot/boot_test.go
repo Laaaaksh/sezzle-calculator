@@ -11,8 +11,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/boot"
-	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator"
-	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/health"
 )
 
 type InitializeTestSuite struct {
@@ -33,13 +31,9 @@ func (s *InitializeTestSuite) SetupTest() {
 	s.T().Setenv(envVarEnv, envNameTest)
 	s.T().Setenv(envVarConfigDir, s.dir)
 	s.T().Setenv(envVarPort, envValueEmpty)
-	health.HealthModule = nil
-	calculator.CalculatorModule = nil
 }
 
 func (s *InitializeTestSuite) TearDownTest() {
-	health.HealthModule = nil
-	calculator.CalculatorModule = nil
 }
 
 func (s *InitializeTestSuite) writeFile(name, content string) {
