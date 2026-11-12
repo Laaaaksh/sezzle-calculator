@@ -271,3 +271,13 @@ The handler depends on the ICore interface, not the concrete type. Generate the 
 ```
 
 Produced: The calculate and operations endpoints in the calculator module's server.go, mounted under /api/v1. Strict decoding (unknown fields, empty body, malformed JSON, trailing data, oversize body), Content-Type check, required-field validation with a fields map, and every apperror mapped to the shared error shape with the request ID. Operations are listed from the registry in a fixed order. Handler tests use gomock with exact arguments and .Times(1), plus one end-to-end suite through the real router and core.
+
+---
+
+## 15. Backend end-to-end check
+
+```
+Run make lint, make test and make test-coverage, and show me the totals. Then start the server and use curl to hit every operation once, every error code once, and the health and operations endpoints. Paste the real request and response pairs. If anything looks wrong, reproduce it first, then fix it and add a test that would have caught it. Update docs/REQUIREMENTS.md for everything the backend now covers.
+```
+
+Produced: lint 0 issues, race tests green, backend coverage 95.7%, and a real-server smoke test of all 7 operations and every error code ([API_SMOKE.md](API_SMOKE.md)). Backend requirements ticked in REQUIREMENTS.md with proof.
