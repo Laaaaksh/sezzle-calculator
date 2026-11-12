@@ -40,13 +40,13 @@ Legend: `[ ]` not done, `[x]` done and proven. Optional items are marked (option
 
 | ID | Requirement | Status | Proof |
 |---|---|---|---|
-| NF1 | Clean, readable, idiomatic frontend code | [ ] | |
-| NF2 | Clean, readable, idiomatic backend code | [ ] | |
-| NF3 | Unit tests covering key frontend functionality | [x] | Vitest + RTL + MSW, 100% coverage (`npm run test:coverage`) |
+| NF1 | Clean, readable, idiomatic frontend code | [x] | strict TS, ESLint strict type-checked + jsx-a11y, 0 warnings in CI |
+| NF2 | Clean, readable, idiomatic backend code | [x] | feature-module layout, golangci-lint (12 linters) 0 issues in CI |
+| NF3 | Unit tests covering key frontend functionality | [x] | Vitest + RTL + MSW, 485 tests, 100% coverage (`npm run test:coverage`) |
 | NF4 | Unit tests covering key backend functionality | [x] | testify suites per package, 95.7% backend coverage (`make test-coverage`) |
-| NF5 | Documentation: setup instructions | [ ] | |
-| NF6 | Documentation: API usage | [ ] | |
-| NF7 | Documentation: design rationale | [ ] | |
+| NF5 | Documentation: setup instructions | [x] | [README: run separately](../README.md#run-the-backend-and-frontend-separately) |
+| NF6 | Documentation: API usage | [x] | [API.md](API.md), [README: API](../README.md#api) |
+| NF7 | Documentation: design rationale | [x] | [DECISIONS.md](DECISIONS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
 | NF8 | Dockerfile for full-stack deployment (optional) | [ ] | |
 
 ## Constraints
@@ -60,22 +60,22 @@ Legend: `[ ]` not done, `[x]` done and proven. Optional items are marked (option
 
 | ID | Requirement | Status | Proof |
 |---|---|---|---|
-| D1 | Git repository with frontend and backend code | [ ] | |
-| D2 | README with setup instructions, API examples and design decisions | [ ] | |
-| D3 | Unit tests | [ ] | |
-| D4 | Coverage report | [ ] | |
+| D1 | Git repository with frontend and backend code | [x] | `backend/` and `frontend/` in this repo |
+| D2 | README with setup instructions, API examples and design decisions | [x] | [README.md](../README.md) |
+| D3 | Unit tests | [x] | Go testify suites and Vitest suites, run in CI |
+| D4 | Coverage report | [x] | `make test-coverage` (backend/coverage.html), `npm run test:coverage` (frontend/coverage/), CI artifacts |
 | D5 | Dockerfile to run frontend and backend together (optional) | [ ] | |
 
 ## Instructions
 
 | ID | Requirement | Status | Proof |
 |---|---|---|---|
-| I1 | AI tooling allowed (used, and disclosed in the README) | [ ] | |
-| I2 | Roughly 2 to 4 hours; correctness, clarity and maintainability over extra features | [ ] | |
+| I1 | AI tooling allowed (used, and disclosed in the README) | [x] | [README: AI usage](../README.md#ai-usage) |
+| I2 | Roughly 2 to 4 hours; correctness, clarity and maintainability over extra features | [x] | scope held to the brief, extras listed under next steps in the README |
 | I3 | Solution pushed to a Git host | [ ] | |
 | I4 | Repository link shared with the reviewers | [ ] | |
-| I5 | Prompts used are shared (docs/PROMPTS.md) | [ ] | |
-| I6 | README includes setup instructions | [ ] | |
-| I7 | README includes how to run the frontend and backend | [ ] | |
-| I8 | README includes examples of API calls | [ ] | |
-| I9 | README includes design decisions or assumptions | [ ] | |
+| I5 | Prompts used are shared (docs/PROMPTS.md) | [x] | [PROMPTS.md](PROMPTS.md) |
+| I6 | README includes setup instructions | [x] | [README: quick start](../README.md#quick-start) |
+| I7 | README includes how to run the frontend and backend | [x] | [README: run separately](../README.md#run-the-backend-and-frontend-separately) |
+| I8 | README includes examples of API calls | [x] | [README: API](../README.md#api), [API_SMOKE.md](API_SMOKE.md) |
+| I9 | README includes design decisions or assumptions | [x] | [README: design decisions](../README.md#design-decisions-and-assumptions) |
