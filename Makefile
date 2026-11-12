@@ -17,10 +17,6 @@ test-coverage: backend-test-coverage frontend-test-coverage ## Test everything a
 .PHONY: build
 build: backend-build frontend-build ## Build everything
 
-.PHONY: hooks
-hooks: ## Enable the git hooks in .githooks (no em dash, no agent co-author)
-	git config core.hooksPath .githooks
-
 # Each backend-* target delegates to the matching target in backend/Makefile.
 .PHONY: backend-deps backend-fmt backend-lint backend-mock backend-test backend-test-coverage backend-build backend-run backend-clean
 backend-deps: ## Backend: download modules and install tools
