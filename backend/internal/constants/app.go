@@ -15,3 +15,12 @@ const (
 // unusable. The logger is not built yet at that point, so plain stderr is the
 // only reliable channel.
 const MsgConfigLoadFailed = "failed to load configuration: %v\n"
+
+// Startup failures after configuration loads. The logger may be unusable at
+// these points, so they are reported on stderr.
+const (
+	ExitCodeLoggerInvalid = 3
+
+	MsgLoggerInitFailed = "failed to initialise logger: %v\n"
+	MsgLoggerSyncFailed = "failed to flush logger: %v\n"
+)

@@ -117,3 +117,25 @@ Validate the config at startup and fail fast with a clear message when a value i
 ```
 
 Produced: Go module in `backend/`, layered TOML config (default plus dev, test, prod) with `APP_` env overrides and fail-fast validation, `internal/constants`, a thin `cmd/api/main.go`, and config tests at 100% coverage.
+
+---
+
+## 5. Logger and error model
+
+```
+Add two packages.
+
+internal/logger: structured logging with zap. Use JSON in prod and console output in dev. Add a Ctx(ctx) helper that returns a logger carrying the request ID from the context. All log calls use constants for messages and keys.
+
+pkg/apperror: the single error model for the service.
+- An IError interface with Code(), PublicMessage(), HTTPStatus(), Fields(), Unwrap() and WithField(key, value).
+- Error codes as typed constants: BAD_REQUEST, VALIDATION_FAILED, UNSUPPORTED_MEDIA_TYPE, PAYLOAD_TOO_LARGE, NOT_FOUND, METHOD_NOT_ALLOWED, INTERNAL, plus the calculator codes we'll add later.
+- Each code maps to an HTTP status in one place.
+- Constructors New(code, cause) and NewWithMessage(code, cause, msg).
+- Internal causes are logged but never leak to the client.
+Test the status mapping, the field handling and that unwrap works with errors.Is and errors.As.
+```
+
+Produced: `internal/logger` (zap, JSON in prod and test, console in dev, request-scoped `Ctx`), `internal/contextkeys` for a typed request ID key, and `pkg/apperror` with typed codes, one status map, copy-on-write fields and errors.Is/As support. Coverage 97.6 to 100% per package.
+
+> Note: from entry 6 on, I queued the remaining prompts in advance (written before the build started) and let the assistant run them back to back while I was away, committing each step and shipping each phase through the no-mistakes pipeline. The prompts below are exactly what was queued.
