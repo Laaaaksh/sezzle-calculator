@@ -1,47 +1,61 @@
 .display {
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  background: #f4f4f5;
+  /* Lets .value size itself from the width it actually has (cqi), not from the viewport. */
+  container-type: inline-size;
+  min-width: 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-well);
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .expression {
   min-height: 1.5em;
   margin: 0;
-  color: #52525b;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
   overflow-wrap: anywhere;
 }
 
 .value {
-  margin: 0;
-  font-size: 2.25rem;
-  line-height: 1.2;
-  /* Long numbers wrap instead of overflowing. The size hints let the design shrink them. */
+  margin: var(--space-1) 0 0;
+  min-height: 1.15em;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  /*
+   * A monospace digit is 0.6em wide, so 0.62 leaves a little slack. Dividing the width by the
+   * character count gives the biggest size that still fits on one line, capped at the display
+   * size and floored for legibility.
+   */
+  font-size: clamp(
+    var(--text-lg),
+    calc(100cqi / (var(--value-length, 1) * 0.62)),
+    var(--text-display)
+  );
+  /* Last resort once the floor is reached: wrap instead of overflowing sideways. */
   overflow-wrap: anywhere;
   word-break: break-all;
 }
 
-.value[data-size='long'] {
-  font-size: 1.5rem;
-}
-
-.value[data-size='very-long'] {
-  font-size: 1rem;
+.error {
+  color: var(--color-error-text);
 }
 
 .pending {
-  opacity: 0.5;
-  animation: pulse 1s ease-in-out infinite;
+  opacity: 0.7;
 }
 
-@keyframes pulse {
-  50% {
-    opacity: 0.25;
+@keyframes result-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .pending {
-    animation: none;
+@media (prefers-reduced-motion: no-preference) {
+  .value {
+    animation: result-in var(--duration-base) var(--ease-out);
   }
 }

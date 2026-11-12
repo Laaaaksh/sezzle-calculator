@@ -1,5 +1,6 @@
 .keypad {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.5rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* Room for the active operator's ring (4px) without it touching the next key. */
+  gap: var(--space-2);
 }

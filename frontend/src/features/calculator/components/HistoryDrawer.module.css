@@ -1,0 +1,96 @@
+.drawer {
+  min-width: 0;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: var(--size-touch);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-card);
+  color: var(--color-text);
+  font-size: var(--text-base);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Drawn with borders so it needs no icon font and follows the text colour. */
+.chevron {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 2px solid currentcolor;
+  border-bottom: 2px solid currentcolor;
+  transform: translateY(-2px) rotate(45deg);
+}
+
+.toggle[aria-expanded='true'] .chevron {
+  transform: translateY(2px) rotate(-135deg);
+}
+
+.panel {
+  margin-top: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-card);
+}
+
+.panel[data-open='false'] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .chevron {
+    transition: transform var(--duration-base) var(--ease-out);
+  }
+
+  .panel[data-open='true'] {
+    animation: drawer-in var(--duration-base) var(--ease-out);
+  }
+}
+
+@keyframes drawer-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* Beside the keypad there is room for the tape, so the button and its open state do not apply. */
+@media (min-width: 900px) {
+  .toggle {
+    display: none;
+  }
+
+  .panel,
+  .panel[data-open='false'] {
+    display: block;
+    margin-top: 0;
+    box-shadow: var(--shadow-card);
+  }
+}
+
+/*
+ * In the drawer the toggle already says "History", so a visible heading right below it repeats
+ * it. Hide it on screen but keep it for screen readers. Same declarations as the global
+ * .visually-hidden class, repeated because a media query cannot apply a class.
+ */
+@media (max-width: 899.98px) {
+  .panel h2 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

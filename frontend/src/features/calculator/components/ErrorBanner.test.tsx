@@ -41,4 +41,11 @@ describe('ErrorBanner', () => {
 
     expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
   });
+
+  it('announces the message as an alert, outside the polite status region', () => {
+    render(<ErrorBanner error={error({})} onRetry={vi.fn()} />);
+
+    expect(screen.getByRole('alert')).toHaveTextContent("Couldn't reach the server.");
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
 });

@@ -364,3 +364,49 @@ Write integration tests for the main journeys: 12.5 + 7.25 = 19.75, divide by ze
 ```
 
 Produced: Calculator components (Display, Keypad, Key, HistoryTape, ErrorBanner, plus a Calculator that wires the hook and keyboard) rendered by App, with CSS modules and semantic buttons. Keys are data-driven from keys.ts with an aria-label on every symbol key; the display is a polite role=status region that also holds error text. All error codes get friendly copy in constants/errorMessages.ts (type-checked Record, generic fallback with the request ID), network, timeout, `INTERNAL` (500) and `SERVICE_UNAVAILABLE` (503) errors offer Retry, and equals is disabled with a loading state while pending. Integration tests run the real hook against MSW for the add, divide by zero, network retry, keyboard-only and history reuse journeys.
+
+---
+
+## 21. Visual design
+
+```
+Style the app. I want a calm, minimal fintech look. My inspiration is the finance category on awwwards.com: restrained, confident, lots of whitespace. Don't copy any one site.
+- Design tokens as CSS variables in src/styles/tokens.css.
+  - Light theme: off-white background #F7F6F3, white keys, near-black text #111827, borders #E5E7EB, and a single purple accent #5B3DF5 for equals and the active operator.
+  - Dark theme: background #0B0F14, keys #151B23, text #E6EDF3 and a teal accent #2DD4A7.
+- Fonts: Inter for the UI, and JetBrains Mono with tabular numbers for the display.
+- Layout: a centered card, a large right-aligned result with the expression above it in a muted tone, and a 4 by 5 keypad. On desktop the history tape sits beside the keypad; on mobile it's a drawer. Long results shrink to fit and never overflow.
+- Theme follows the system, with a toggle, and the choice is saved.
+- Motion: keys press down 1px, and the result fades and slides up slightly. Everything is under 200ms, and it's all off when the user prefers reduced motion.
+Keep it CSS modules or plain CSS, with no UI framework.
+```
+
+Produced: frontend/src/styles/tokens.css holds the design tokens (colour, spacing, radius, shadow, type scale, motion) with a light theme, a dark theme under [data-theme] and the same dark values under prefers-color-scheme. Inter and JetBrains Mono load from the self-hosted @fontsource-variable packages. The calculator is a centered card with a muted expression line over a large right-aligned result that shrinks to fit from its length, tinted operator keys, an accent equals key and an accent-filled, ringed active operator. At 900px and wider the history tape sits beside the card; below that it is a drawer opened by a History button (aria-expanded, aria-controls, Escape closes, focus returns to the button). A System/Light/Dark toggle saves the choice in localStorage (safe when storage is blocked) and public/theme-init.js applies it before first paint without an inline script. Motion is a 1px key press and a 4px result fade, all under 200ms and only when reduced motion is not requested. Tests cover the toggle, the drawer, the init script and the token files.
+
+---
+
+## 22. Accessibility pass
+
+```
+Do a full accessibility pass and fix what you find.
+- Contrast of at least 4.5 to 1 for text and 3 to 1 for UI parts, checked in both themes.
+- A visible focus ring on every interactive element.
+- A logical tab order.
+- Touch targets of at least 44px.
+- The active operator is shown with a ring as well as a colour.
+- Errors are announced.
+- Zoom isn't blocked, and the layout holds at 200 percent zoom.
+Add an axe check to the component tests. Tell me what you changed and why.
+```
+
+Produced: Full accessibility pass, written up in docs/ACCESSIBILITY.md. src/styles/contrast.test.ts computes WCAG ratios from tokens.css for both themes (4.5:1 text, 3:1 focus and active rings; all pass). stylesheets.test.ts fails on any removed outline, clickable rule without a focus ring or a 44px minimum height, and any motion outside the no-preference query. Fixes: the error message is a role=alert outside the polite status region, Retry and history entries reach 44px, the active operator has aria-pressed, a ring that stays visible when focused and an outline fallback in forced-colors mode. index.html.test.ts blocks zoom limits and inline scripts, App.test.tsx checks tab order, and src/test/axe.ts runs axe-core (contrast rule off in jsdom only, covered by the token test) on the calculator when idle, with a result, an active operator, both error kinds and the drawer open, plus the theme toggle and the app.
+
+---
+
+## 23. Browser check
+
+```
+Run the backend and frontend together and check the UI in a real browser at 320px, 375px, 768px and 1440px, in light and dark mode. Do a full calculation with the keyboard only. Take screenshots of each and show me. Be picky: alignment, spacing, overflow on long numbers, focus rings, the loading and error states. Fix anything that looks off, then run frontend typecheck, lint and test with coverage and show me the numbers.
+```
+
+Produced: a real-browser check at 320, 375, 768, 1280 and 1440 px in light and dark, keyboard-only flows, no horizontal overflow, exact results (0.1+0.2, 1/3, 987654321 squared, 2^200, sqrt 2). Found and fixed two issues: the error state read like "9 / 0 = 0", and the drawer repeated its heading. Screenshots in docs/screenshots.

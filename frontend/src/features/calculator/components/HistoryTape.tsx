@@ -10,7 +10,7 @@ interface HistoryTapeProps {
 
 export function HistoryTape({ entries, onReuse }: HistoryTapeProps) {
   return (
-    <section className={styles.tape} aria-labelledby="history-heading">
+    <section aria-labelledby="history-heading">
       <h2 id="history-heading" className={styles.heading}>
         History
       </h2>
@@ -30,7 +30,7 @@ export function HistoryTape({ entries, onReuse }: HistoryTapeProps) {
                   onReuse(entry);
                 }}
               >
-                <span className={styles.hidden}>Reuse </span>
+                <span className="visually-hidden">Reuse </span>
                 <span className={styles.expression}>{formatExpression(entry.request)}</span>
                 {' = '}
                 <span className={styles.result}>{entry.result}</span>

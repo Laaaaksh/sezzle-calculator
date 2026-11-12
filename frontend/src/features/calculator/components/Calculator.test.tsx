@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { delay, http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 import { createApiClient, type CalculateRequest } from '../../../api';
+import { expectNoAxeViolations } from '../../../test/axe';
 import { server } from '../../../test/server';
 import { Calculator } from './Calculator';
 
@@ -77,7 +78,7 @@ describe('Calculator', () => {
     await pressKeys(user, '8', 'Divide', '0', 'Equals');
 
     await waitFor(() => {
-      expect(display()).toHaveTextContent("You can't divide by zero.");
+      expect(screen.getByRole('alert')).toHaveTextContent("You can't divide by zero.");
     });
     expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
   });
@@ -112,7 +113,7 @@ describe('Calculator', () => {
 
     await pressKeys(user, '1', 'Add', '2', 'Equals');
     await waitFor(() => {
-      expect(display()).toHaveTextContent("Couldn't reach the server.");
+      expect(screen.getByRole('alert')).toHaveTextContent("Couldn't reach the server.");
     });
     await pressKeys(user, 'Retry');
 
@@ -143,7 +144,9 @@ describe('Calculator', () => {
     await pressKeys(user, '1', 'Add', '2', 'Equals');
 
     await waitFor(() => {
-      expect(display()).toHaveTextContent('Something went wrong. Request ID: req-77');
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Something went wrong. Request ID: req-77',
+      );
     });
   });
 
@@ -230,5 +233,124 @@ describe('Calculator', () => {
       expect(display()).toHaveTextContent('6');
     });
     expect(bodies.at(-1)).toEqual({ operation: 'add', operands: ['5', '1'] });
+  });
+
+  it('shows which operator is waiting for its second operand', async () => {
+    const user = renderCalculator();
+
+    await pressKeys(user, '5', 'Add');
+    expect(screen.getByRole('button', { name: 'Add' })).toHaveAttribute('aria-pressed', 'true');
+
+    await pressKeys(user, 'Clear');
+    expect(screen.getByRole('button', { name: 'Add' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('keeps Escape inside the open history drawer from clearing the display', async () => {
+    const user = renderCalculator();
+    await pressKeys(user, '7');
+    const toggle = screen.getByRole('button', { name: 'History' });
+    await user.click(toggle);
+
+    await user.keyboard('{Escape}');
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(display()).toHaveTextContent('7');
+  });
+
+  it('announces an error as an alert and leaves the status region for the display', async () => {
+    recordCalculate(divideByZero);
+    const user = renderCalculator();
+
+    await pressKeys(user, '8', 'Divide', '0', 'Equals');
+
+    expect(await screen.findByRole('alert')).toHaveTextContent("You can't divide by zero.");
+    expect(display()).not.toContainElement(screen.getByRole('alert'));
+  });
+
+  describe('axe', () => {
+    it('finds no violations when idle', async () => {
+      const { container } = render(<Calculator client={client} />);
+
+      await expectNoAxeViolations(container);
+    });
+
+    it('finds no violations when showing a result', async () => {
+      recordCalculate(() =>
+        HttpResponse.json({ operation: 'add', operands: ['1', '2'], result: '3' }),
+      );
+      const { container } = render(<Calculator client={client} />);
+      const user = userEvent.setup();
+
+      await pressKeys(user, '1', 'Add', '2', 'Equals');
+      await waitFor(() => {
+        expect(display()).toHaveTextContent('3');
+      });
+
+      await expectNoAxeViolations(container);
+    });
+
+    it('finds no violations while an operator is active', async () => {
+      const { container } = render(<Calculator client={client} />);
+      const user = userEvent.setup();
+
+      await pressKeys(user, '1', 'Add');
+
+      await expectNoAxeViolations(container);
+    });
+
+    it('finds no violations in the error state', async () => {
+      recordCalculate(divideByZero);
+      const { container } = render(<Calculator client={client} />);
+      const user = userEvent.setup();
+
+      await pressKeys(user, '8', 'Divide', '0', 'Equals');
+      await screen.findByRole('alert');
+
+      await expectNoAxeViolations(container);
+    });
+
+    it('finds no violations with a retryable error and its Retry button', async () => {
+      recordCalculate(() => HttpResponse.error());
+      const { container } = render(<Calculator client={client} />);
+      const user = userEvent.setup();
+
+      await pressKeys(user, '1', 'Add', '2', 'Equals');
+      await screen.findByRole('button', { name: 'Retry' });
+
+      await expectNoAxeViolations(container);
+    });
+
+    it('finds no violations with the history drawer open and holding entries', async () => {
+      recordCalculate(() =>
+        HttpResponse.json({ operation: 'add', operands: ['1', '2'], result: '3' }),
+      );
+      const { container } = render(<Calculator client={client} />);
+      const user = userEvent.setup();
+      await pressKeys(user, '1', 'Add', '2', 'Equals');
+      await screen.findByRole('list');
+
+      await user.click(screen.getByRole('button', { name: 'History' }));
+
+      expect(screen.getByRole('button', { name: 'History' })).toHaveAttribute(
+        'aria-expanded',
+        'true',
+      );
+      await expectNoAxeViolations(container);
+    });
+  });
+
+  it('reads Error, not a number, after dividing by zero, and a digit starts fresh', async () => {
+    recordCalculate(divideByZero);
+    const user = renderCalculator();
+
+    await pressKeys(user, '9', 'Divide', '0', 'Equals');
+    await screen.findByRole('alert');
+
+    expect(display()).toHaveTextContent('Error');
+    expect(display()).not.toHaveTextContent('=');
+    await pressKeys(user, '4');
+    expect(display()).toHaveTextContent('4');
+    expect(display()).not.toHaveTextContent('Error');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });

@@ -1,0 +1,30 @@
+.page {
+  display: grid;
+  gap: var(--space-5);
+  /* Matches the calculator column, so the title lines up with the card at every width. */
+  max-width: calc(26.25rem + 2 * var(--space-4));
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4) var(--space-7);
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Wide enough for the history tape beside the card. Keep in step with Calculator.module.css. */
+@media (min-width: 900px) {
+  .page {
+    max-width: calc(48rem + 2 * var(--space-4));
+  }
+}

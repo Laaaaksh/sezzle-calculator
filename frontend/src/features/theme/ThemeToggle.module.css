@@ -1,0 +1,43 @@
+.group {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-card);
+}
+
+.option {
+  min-width: var(--size-touch);
+  min-height: var(--size-touch);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: calc(var(--radius-md) - 2px);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.option:hover {
+  color: var(--color-text);
+}
+
+/* Inverted colours plus weight: the selected option is not told apart by hue alone. */
+.option[aria-pressed='true'] {
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-weight: 600;
+}
+
+.option:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Forced colours replace the inverted fill, so mark the selected option another way. */
+@media (forced-colors: active) {
+  .option[aria-pressed='true'] {
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+}
