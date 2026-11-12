@@ -81,7 +81,7 @@ DOCKER_URL := http://localhost:8080
 
 .PHONY: docker-up docker-down docker-logs
 docker-up: ## Docker: build and start backend and frontend, wait until healthy
-	docker compose up --build -d --wait
+	docker compose up --build --wait --wait-timeout 180
 	@echo "Calculator is up at $(DOCKER_URL)"
 
 docker-down: ## Docker: stop and remove the containers

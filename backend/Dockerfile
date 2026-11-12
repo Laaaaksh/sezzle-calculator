@@ -29,7 +29,6 @@ ENV APP_ENV=prod \
 USER nonroot:nonroot
 EXPOSE 8080
 
-# Exec form: distroless has no shell to interpret a string command. The probe reads the same config as the API.
-HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 CMD ["/app/healthcheck"]
+# No HEALTHCHECK here: docker-compose.yml owns it (it runs /app/healthcheck), so there is one definition.
 
 ENTRYPOINT ["/app/api"]

@@ -133,3 +133,57 @@ jobs:
           name: frontend-coverage
           path: frontend/coverage/
           if-no-files-found: error
+
+  # Builds both images and runs the stack exactly as `make docker-up` does, then probes it over HTTP.
+  docker:
+    name: Docker (compose smoke test)
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      # Fetch the repository.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Build and start both services; --wait fails the step if a healthcheck does not pass in 180s.
+      - name: Start the stack
+        run: docker compose up --build --wait --wait-timeout 180
+
+      # Probe the app through nginx, the only published port.
+      - name: Smoke test
+        run: |
+          set -euo pipefail
+          base=http://localhost:8080
+
+          code=$(curl -sS -o body.html -w '%{http_code}' "$base/")
+          test "$code" = 200 || { echo "GET / returned $code"; exit 1; }
+          grep -qi '<html' body.html || { echo "GET / did not return HTML"; exit 1; }
+
+          code=$(curl -sS -o body.json -w '%{http_code}' "$base/api/v1/operations")
+          test "$code" = 200 || { echo "GET /api/v1/operations returned $code"; exit 1; }
+          grep -q '^[[:space:]]*[{[]' body.json || { echo "operations did not return JSON"; exit 1; }
+
+          code=$(curl -sS -o calc.json -w '%{http_code}' -X POST "$base/api/v1/calculate" \
+            -H 'Content-Type: application/json' \
+            -d '{"operation":"add","operands":["0.1","0.2"]}')
+          test "$code" = 200 || { echo "POST /api/v1/calculate returned $code"; exit 1; }
+          grep -Eq '"result" *: *"0\.3"' calc.json || { echo "unexpected calculate body:"; cat calc.json; exit 1; }
+
+          # 2 MB body: the backend or nginx answers, and either way it must be the JSON error shape.
+          head -c 2000000 /dev/zero | tr '\0' 'a' > big.txt
+          code=$(curl -sS -o big.json -w '%{http_code}' -X POST "$base/api/v1/calculate" \
+            -H 'Content-Type: application/json' --data-binary @big.txt)
+          test "$code" = 413 || { echo "oversized body returned $code, want 413"; exit 1; }
+          grep -q 'PAYLOAD_TOO_LARGE' big.json || { echo "413 body lacks PAYLOAD_TOO_LARGE:"; cat big.json; exit 1; }
+
+      # Show container output when anything above failed.
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose logs
+
+      # Always remove containers and volumes, even after a failure.
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
