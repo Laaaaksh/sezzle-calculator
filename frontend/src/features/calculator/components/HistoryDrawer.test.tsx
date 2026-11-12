@@ -1,6 +1,6 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { HistoryEntry } from '../history';
 import { HistoryDrawer } from './HistoryDrawer';
 
@@ -11,6 +11,40 @@ const ENTRIES: HistoryEntry[] = [
 function toggle() {
   return screen.getByRole('button', { name: 'History' });
 }
+
+/** jsdom has no matchMedia, so tests stand in for the browser resizing across the breakpoint. */
+function stubMatchMedia() {
+  const listeners = new Set<(event: MediaQueryListEvent) => void>();
+  const queries: string[] = [];
+  vi.stubGlobal('matchMedia', (query: string) => {
+    queries.push(query);
+    return {
+      matches: false,
+      media: query,
+      addEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void) => {
+        listeners.add(listener);
+      },
+      removeEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void) => {
+        listeners.delete(listener);
+      },
+    };
+  });
+  return {
+    queries,
+    listeners,
+    resize(matches: boolean) {
+      act(() => {
+        for (const listener of listeners) {
+          listener({ matches } as MediaQueryListEvent);
+        }
+      });
+    },
+  };
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe('HistoryDrawer', () => {
   it('starts closed', () => {
@@ -113,5 +147,41 @@ describe('HistoryDrawer', () => {
     render(<HistoryDrawer entries={ENTRIES} onReuse={vi.fn()} />);
 
     expect(screen.getByRole('heading', { name: 'History' })).toBeInTheDocument();
+  });
+
+  it('closes when the window widens into the sidebar layout, so Escape reaches the calculator', async () => {
+    const media = stubMatchMedia();
+    const user = userEvent.setup();
+    render(<HistoryDrawer entries={ENTRIES} onReuse={vi.fn()} />);
+    await user.click(toggle());
+
+    media.resize(true);
+
+    expect(media.queries).toEqual(['(min-width: 900px)']);
+    expect(toggle()).toHaveAttribute('aria-expanded', 'false');
+    const event = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+    screen.getByRole('button', { name: /12\.5 \+ 7\.25/ }).dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it('stays open when the window narrows', async () => {
+    const media = stubMatchMedia();
+    const user = userEvent.setup();
+    render(<HistoryDrawer entries={ENTRIES} onReuse={vi.fn()} />);
+    await user.click(toggle());
+
+    media.resize(false);
+
+    expect(toggle()).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('stops listening for resizes once removed', () => {
+    const media = stubMatchMedia();
+    const { unmount } = render(<HistoryDrawer entries={ENTRIES} onReuse={vi.fn()} />);
+    expect(media.listeners.size).toBe(1);
+
+    unmount();
+
+    expect(media.listeners.size).toBe(0);
   });
 });

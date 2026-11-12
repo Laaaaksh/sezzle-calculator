@@ -16,10 +16,6 @@ afterEach(() => {
 });
 
 describe('public/theme-init.js', () => {
-  it('uses the same storage key as the app, or a saved theme would flash', () => {
-    expect(themeInitSource).toContain(`'${THEME_STORAGE_KEY}'`);
-  });
-
   it.each(['light', 'dark'])('applies a saved %s theme', (theme) => {
     window.localStorage.setItem(THEME_STORAGE_KEY, theme);
 
