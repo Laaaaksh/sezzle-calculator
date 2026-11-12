@@ -14,6 +14,14 @@ const OPERATOR_KEYS = new Map<string, BinaryOperation>([
 
 const EQUALS_KEYS = ['Enter', '='];
 
+/** Non-operator shortcuts, lowercase because the key is lowercased before it is compared. */
+const SHORTCUT_KEYS = {
+  decimal: '.',
+  backspace: 'backspace',
+  clear: 'escape',
+  sqrt: 'r',
+} as const;
+
 /**
  * What a key press means for the calculator, or null when the key is not a shortcut.
  * Letters are matched without regard to case so Caps Lock does not break x and r.
@@ -31,13 +39,13 @@ export function actionForKey(key: string): CalculatorAction | null {
     return { type: 'equals' };
   }
   switch (key.toLowerCase()) {
-    case '.':
+    case SHORTCUT_KEYS.decimal:
       return { type: 'decimal' };
-    case 'backspace':
+    case SHORTCUT_KEYS.backspace:
       return { type: 'backspace' };
-    case 'escape':
+    case SHORTCUT_KEYS.clear:
       return { type: 'clear' };
-    case 'r':
+    case SHORTCUT_KEYS.sqrt:
       return { type: 'unary', operation: 'sqrt' };
     default:
       return null;

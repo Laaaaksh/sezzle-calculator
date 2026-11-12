@@ -23,6 +23,7 @@ import (
 	calcmock "github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/mock"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/health"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/health/mock"
+	"github.com/Laaaaksh/sezzle-calculator/backend/pkg/apperror"
 )
 
 type RouterTestSuite struct {
@@ -55,15 +56,10 @@ func (s *RouterTestSuite) SetupTest() {
 		},
 		Calculator: &calculator.Module{
 			Core:    s.calcCore,
-			Handler: calculator.NewHTTPHandler(s.calcCore, cfg.Calculator),
+			Handler: calculator.NewHTTPHandler(s.calcCore, calcentities.Limits{MaxOperandLength: e2eMaxOperandLength}),
 		},
 	}
-	ping := func(api chi.Router) {
-		api.Get(testPingRoute, func(w http.ResponseWriter, _ *http.Request) {
-			_, _ = w.Write([]byte(testPingBody))
-		})
-	}
-	s.router = boot.NewRouter(cfg, modules, ping)
+	s.router = boot.NewRouter(cfg, modules)
 }
 
 func (s *RouterTestSuite) TearDownTest() {
@@ -113,25 +109,12 @@ func (s *RouterTestSuite) TestWrongMethodReturnsJSONMethodNotAllowed() {
 	s.Equal(wantLiveAllow, s.recorder.Header().Get(headerAllow))
 }
 
-func (s *RouterTestSuite) TestAPIRoutesAreServedUnderVersionedPrefix() {
-	s.serve(httptest.NewRequest(http.MethodGet, testAPIPingPath, nil))
-
-	s.Equal(http.StatusOK, s.recorder.Code)
-	s.Equal(testPingBody, s.recorder.Body.String())
-}
-
-func (s *RouterTestSuite) TestAPIRoutesAreNotServedWithoutVersionedPrefix() {
-	s.serve(httptest.NewRequest(http.MethodGet, testPingRoute, nil))
-
-	s.Equal(http.StatusNotFound, s.recorder.Code)
-}
-
 func (s *RouterTestSuite) TestWrongMethodUnderAPIPrefixReturnsJSONMethodNotAllowed() {
-	s.serve(httptest.NewRequest(http.MethodPost, testAPIPingPath, nil))
+	s.serve(httptest.NewRequest(http.MethodPost, testOperationsPath, nil))
 
 	s.Equal(http.StatusMethodNotAllowed, s.recorder.Code)
 	s.Equal(wantMethodCode, string(s.errorBody().Code))
-	s.Equal(wantPingAllow, s.recorder.Header().Get(headerAllow))
+	s.Equal(wantOperationsAllow, s.recorder.Header().Get(headerAllow))
 }
 
 func (s *RouterTestSuite) TestUnknownAPIPathReturnsJSONNotFoundFromSubrouter() {
@@ -200,7 +183,7 @@ func (s *RouterTestSuite) TestOversizedBodyIsRejectedBeforeRouting() {
 
 	s.Equal(http.StatusRequestEntityTooLarge, s.recorder.Code)
 	s.Equal(wantTooLargeCode, string(s.errorBody().Code))
-	s.Equal(map[string]any{constants.LogKeyLimit: float64(testBodyLimit)}, s.errorBody().Fields)
+	s.Equal(map[string]any{apperror.FieldLimit: float64(testBodyLimit)}, s.errorBody().Fields)
 }
 
 func (s *RouterTestSuite) TestCalculateRouteIsMountedUnderVersionedPrefix() {

@@ -15,7 +15,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 
-	"github.com/Laaaaksh/sezzle-calculator/backend/internal/config"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/constants"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/contextkeys"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/httpx"
@@ -24,6 +23,12 @@ import (
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/mock"
 	"github.com/Laaaaksh/sezzle-calculator/backend/pkg/apperror"
 )
+
+var testHandlerLimits = entities.Limits{
+	MaxOperandLength: testHandlerMaxLen,
+	MaxExponent:      testHandlerMaxExponent,
+	DecimalPrecision: testHandlerPrecision,
+}
 
 type ServerTestSuite struct {
 	suite.Suite
@@ -43,7 +48,7 @@ func (s *ServerTestSuite) SetupTest() {
 	s.ctrl = gomock.NewController(s.T())
 	s.mockCore = mock.NewMockICore(s.ctrl)
 	s.recorder = httptest.NewRecorder()
-	s.handler = calculator.NewHTTPHandler(s.mockCore, config.CalculatorConfig{MaxOperandLength: testHandlerMaxLen})
+	s.handler = calculator.NewHTTPHandler(s.mockCore, testHandlerLimits)
 }
 
 func (s *ServerTestSuite) TearDownTest() {
@@ -100,7 +105,7 @@ func (s *ServerTestSuite) expectCalculateError(op entities.OperationType, operan
 }
 
 func (s *ServerTestSuite) TestCalculateReturns200WithResultAndEchoedRequest() {
-	s.expectCalculate(entities.OpDivide, []decimal.Decimal{mustDecimal("10"), mustDecimal("4")}, wantResultText)
+	s.expectCalculate(entities.OpDivide, []decimal.Decimal{mustDecimal(handlerNum10), mustDecimal(handlerNum4)}, wantResultText)
 
 	s.post(contentTypeJSON, bodyDivide)
 
@@ -109,7 +114,7 @@ func (s *ServerTestSuite) TestCalculateReturns200WithResultAndEchoedRequest() {
 }
 
 func (s *ServerTestSuite) TestCalculateSuccessSetsContentTypeAndNoStore() {
-	s.expectCalculate(entities.OpDivide, []decimal.Decimal{mustDecimal("10"), mustDecimal("4")}, wantResultText)
+	s.expectCalculate(entities.OpDivide, []decimal.Decimal{mustDecimal(handlerNum10), mustDecimal(handlerNum4)}, wantResultText)
 
 	s.post(contentTypeJSON, bodyDivide)
 
@@ -117,7 +122,7 @@ func (s *ServerTestSuite) TestCalculateSuccessSetsContentTypeAndNoStore() {
 }
 
 func (s *ServerTestSuite) TestCalculateEchoesTheOriginalOperandStrings() {
-	s.expectCalculate(entities.OpDivide, []decimal.Decimal{mustDecimal("10.0"), mustDecimal("4.00")}, wantResultText)
+	s.expectCalculate(entities.OpDivide, []decimal.Decimal{mustDecimal(handlerNum10Pt0), mustDecimal(handlerNum4Pt00)}, wantResultText)
 
 	s.post(contentTypeJSON, bodyDivideSpaced)
 
@@ -125,7 +130,7 @@ func (s *ServerTestSuite) TestCalculateEchoesTheOriginalOperandStrings() {
 }
 
 func (s *ServerTestSuite) TestCalculateAcceptsOneOperandForUnaryOperation() {
-	s.expectCalculate(entities.OpSqrt, []decimal.Decimal{mustDecimal("144")}, wantSqrtText)
+	s.expectCalculate(entities.OpSqrt, []decimal.Decimal{mustDecimal(handlerNum144)}, wantSqrtText)
 
 	s.post(contentTypeJSON, bodySqrt)
 
@@ -134,7 +139,7 @@ func (s *ServerTestSuite) TestCalculateAcceptsOneOperandForUnaryOperation() {
 }
 
 func (s *ServerTestSuite) TestCalculateAcceptsUTF8CharsetParameter() {
-	s.expectCalculate(entities.OpDivide, []decimal.Decimal{mustDecimal("10"), mustDecimal("4")}, wantResultText)
+	s.expectCalculate(entities.OpDivide, []decimal.Decimal{mustDecimal(handlerNum10), mustDecimal(handlerNum4)}, wantResultText)
 
 	s.post(contentTypeJSONUTF8, bodyDivide)
 
@@ -142,7 +147,7 @@ func (s *ServerTestSuite) TestCalculateAcceptsUTF8CharsetParameter() {
 }
 
 func (s *ServerTestSuite) TestCalculateAcceptsMediaTypeInAnyCase() {
-	s.expectCalculate(entities.OpDivide, []decimal.Decimal{mustDecimal("10"), mustDecimal("4")}, wantResultText)
+	s.expectCalculate(entities.OpDivide, []decimal.Decimal{mustDecimal(handlerNum10), mustDecimal(handlerNum4)}, wantResultText)
 
 	s.post(contentTypeMixedCase, bodyDivide)
 
@@ -150,7 +155,7 @@ func (s *ServerTestSuite) TestCalculateAcceptsMediaTypeInAnyCase() {
 }
 
 func (s *ServerTestSuite) TestCalculateAcceptsWhitespaceAfterTheObject() {
-	s.expectCalculate(entities.OpDivide, []decimal.Decimal{mustDecimal("10"), mustDecimal("4")}, wantResultText)
+	s.expectCalculate(entities.OpDivide, []decimal.Decimal{mustDecimal(handlerNum10), mustDecimal(handlerNum4)}, wantResultText)
 
 	s.post(contentTypeJSON, bodyTrailingSpace)
 
@@ -209,6 +214,59 @@ func (s *ServerTestSuite) TestCalculateUnknownFieldReturns400() {
 	s.post(contentTypeJSON, bodyUnknownField)
 
 	s.requireError(http.StatusBadRequest, apperror.CodeBadRequest)
+}
+
+func (s *ServerTestSuite) TestCalculateThreeOperandsForAddStillReachesTheCore() {
+	operands := []decimal.Decimal{mustDecimal("1"), mustDecimal("2"), mustDecimal("3")}
+	s.expectCalculateError(entities.OpAdd, operands, apperror.New(entities.CodeInvalidOperandCount, nil))
+
+	s.post(contentTypeJSON, bodyThreeOperands)
+
+	s.requireError(http.StatusUnprocessableEntity, entities.CodeInvalidOperandCount)
+}
+
+func (s *ServerTestSuite) TestCalculateMoreOperandsThanTheCapReturns422BeforeParsing() {
+	s.post(contentTypeJSON, bodyTooManyOperands)
+
+	body := s.requireError(http.StatusUnprocessableEntity, apperror.CodeValidationFailed)
+	s.Equal(map[string]any{fieldOperands: problemMany}, body.Fields)
+}
+
+func (s *ServerTestSuite) TestCalculateRepeatedKeyReturns400NamingTheKey() {
+	s.post(contentTypeJSON, bodyDuplicateKey)
+
+	body := s.requireError(http.StatusBadRequest, apperror.CodeBadRequest)
+	s.Equal(map[string]any{fieldKey: fieldOperands, entities.FieldReason: reasonDup}, body.Fields)
+}
+
+func (s *ServerTestSuite) TestCalculateKeyRepeatedInAnotherCaseReturns400NamingTheVariant() {
+	s.post(contentTypeJSON, bodyCaseVariantDup)
+
+	body := s.requireError(http.StatusBadRequest, apperror.CodeBadRequest)
+	s.Equal(map[string]any{fieldKey: "OPERANDS", entities.FieldReason: reasonCase}, body.Fields)
+}
+
+func (s *ServerTestSuite) TestCalculateKeyInTheWrongCaseReturns400() {
+	s.post(contentTypeJSON, bodyWrongCaseKey)
+
+	body := s.requireError(http.StatusBadRequest, apperror.CodeBadRequest)
+	s.Equal(map[string]any{fieldKey: "Operation", entities.FieldReason: reasonCase}, body.Fields)
+}
+
+func (s *ServerTestSuite) TestCalculateRepeatedUnknownKeyIsLeftToTheUnknownFieldCheck() {
+	s.post(contentTypeJSON, bodyDuplicateUnk)
+
+	body := s.requireError(http.StatusBadRequest, apperror.CodeBadRequest)
+	s.Empty(body.Fields)
+}
+
+func (s *ServerTestSuite) TestCalculateBodyWithEachKeyOnceStillSucceeds() {
+	s.expectCalculate(entities.OpAdd, []decimal.Decimal{mustDecimal(handlerNum1), mustDecimal(handlerNum2)}, wantAddText)
+
+	s.post(contentTypeJSON, bodyAdd)
+
+	s.Equal(http.StatusOK, s.recorder.Code)
+	s.JSONEq(wantAddEcho, s.recorder.Body.String())
 }
 
 func (s *ServerTestSuite) TestCalculateNumericOperandsReturn400() {
@@ -288,7 +346,7 @@ func (s *ServerTestSuite) TestCalculateBlankOperationReturns422NamingOperation()
 }
 
 func (s *ServerTestSuite) postOperationOfLength(n int) {
-	s.post(contentTypeJSON, `{"operation":"`+strings.Repeat("a", n)+`","operands":["1","2"]}`)
+	s.post(contentTypeJSON, bodyOperationHead+strings.Repeat("a", n)+bodyOperationTail)
 }
 
 func (s *ServerTestSuite) TestCalculateOperationOverTheLengthBoundReturns422WithoutCallingCore() {
@@ -332,7 +390,7 @@ func (s *ServerTestSuite) TestCalculateNullOperandsReturns422NamingOperands() {
 func (s *ServerTestSuite) TestCalculateInvalidOperandReturns422WithoutCallingCore() {
 	s.post(contentTypeJSON, bodyBadOperand)
 
-	body := s.requireError(http.StatusUnprocessableEntity, apperror.CodeInvalidOperand)
+	body := s.requireError(http.StatusUnprocessableEntity, entities.CodeInvalidOperand)
 	s.Equal(map[string]any{entities.FieldOperandIndex: float64(testIndexSecond), entities.FieldReason: entities.ReasonExponent}, body.Fields)
 	s.NotContains(s.recorder.Body.String(), calculator.ErrOperandSyntax.Error())
 }
@@ -340,40 +398,40 @@ func (s *ServerTestSuite) TestCalculateInvalidOperandReturns422WithoutCallingCor
 func (s *ServerTestSuite) TestCalculateOperandLongerThanConfiguredLimitReturns422() {
 	s.post(contentTypeJSON, bodyLongOperand)
 
-	body := s.requireError(http.StatusUnprocessableEntity, apperror.CodeOperandTooLarge)
+	body := s.requireError(http.StatusUnprocessableEntity, entities.CodeOperandTooLarge)
 	s.Equal(map[string]any{entities.FieldOperandIndex: float64(testIndexSecond), entities.FieldLimit: float64(testHandlerMaxLen)}, body.Fields)
 	s.NotContains(s.recorder.Body.String(), calculator.ErrOperandTooLong.Error())
 }
 
 func (s *ServerTestSuite) TestCalculateEmptyOperandsArrayReachesCoreAndReturnsOperandCountError() {
-	s.expectCalculateError(entities.OpAdd, []decimal.Decimal{}, apperror.New(apperror.CodeInvalidOperandCount, nil))
+	s.expectCalculateError(entities.OpAdd, []decimal.Decimal{}, apperror.New(entities.CodeInvalidOperandCount, nil))
 
 	s.post(contentTypeJSON, bodyEmptyOperands)
 
-	s.requireError(http.StatusUnprocessableEntity, apperror.CodeInvalidOperandCount)
+	s.requireError(http.StatusUnprocessableEntity, entities.CodeInvalidOperandCount)
 }
 
 func (s *ServerTestSuite) TestCalculateMapsDomainErrorFromCoreTo422() {
-	divisor := []decimal.Decimal{mustDecimal("10"), mustDecimal("4")}
-	s.expectCalculateError(entities.OpDivide, divisor, apperror.New(apperror.CodeDivisionByZero, errFakeCause))
+	divisor := []decimal.Decimal{mustDecimal(handlerNum10), mustDecimal(handlerNum4)}
+	s.expectCalculateError(entities.OpDivide, divisor, apperror.New(entities.CodeDivisionByZero, errFakeCause))
 
 	s.post(contentTypeJSON, bodyDivide)
 
-	body := s.requireError(http.StatusUnprocessableEntity, apperror.CodeDivisionByZero)
-	s.Equal(apperror.MsgDivisionByZero, body.Message)
+	body := s.requireError(http.StatusUnprocessableEntity, entities.CodeDivisionByZero)
+	s.Equal(entities.MsgDivisionByZero, body.Message)
 }
 
 func (s *ServerTestSuite) TestCalculateMapsUnknownOperationFromCoreTo422() {
-	operands := []decimal.Decimal{mustDecimal("1"), mustDecimal("2")}
-	s.expectCalculateError(entities.OperationType(opModulo), operands, apperror.New(apperror.CodeUnknownOperation, nil))
+	operands := []decimal.Decimal{mustDecimal(handlerNum1), mustDecimal(handlerNum2)}
+	s.expectCalculateError(entities.OperationType(opModulo), operands, apperror.New(entities.CodeUnknownOperation, nil))
 
 	s.post(contentTypeJSON, bodyUnknownOp)
 
-	s.requireError(http.StatusUnprocessableEntity, apperror.CodeUnknownOperation)
+	s.requireError(http.StatusUnprocessableEntity, entities.CodeUnknownOperation)
 }
 
 func (s *ServerTestSuite) TestCalculateMapsInternalErrorFromCoreTo500() {
-	operands := []decimal.Decimal{mustDecimal("10"), mustDecimal("4")}
+	operands := []decimal.Decimal{mustDecimal(handlerNum10), mustDecimal(handlerNum4)}
 	s.expectCalculateError(entities.OpDivide, operands, apperror.New(apperror.CodeInternal, errors.New(secretCause)))
 
 	s.post(contentTypeJSON, bodyDivide)
@@ -382,7 +440,7 @@ func (s *ServerTestSuite) TestCalculateMapsInternalErrorFromCoreTo500() {
 }
 
 func (s *ServerTestSuite) TestCalculateNeverSendsTheInternalCause() {
-	operands := []decimal.Decimal{mustDecimal("10"), mustDecimal("4")}
+	operands := []decimal.Decimal{mustDecimal(handlerNum10), mustDecimal(handlerNum4)}
 	s.expectCalculateError(entities.OpDivide, operands, apperror.New(apperror.CodeInternal, errors.New(secretCause)))
 
 	s.post(contentTypeJSON, bodyDivide)
@@ -420,6 +478,16 @@ func (s *ServerTestSuite) TestOperationsEncodesNilListAsEmptyArray() {
 	s.JSONEq(wantEmptyOpsJS, s.recorder.Body.String())
 }
 
+func (s *ServerTestSuite) TestOperationsPublishesTheConfiguredLimits() {
+	s.mockCore.EXPECT().ListOperations(gomock.Eq(s.ctx)).Return(nil).Times(1)
+
+	s.handler.Operations(s.recorder, httptest.NewRequest(http.MethodGet, testOperationsPath, nil).WithContext(s.ctx))
+
+	var got entities.OperationsResponse
+	s.Require().NoError(json.Unmarshal(s.recorder.Body.Bytes(), &got))
+	s.Equal(testHandlerLimits, got.Limits)
+}
+
 // routed sends req through a chi router so route registration and method
 // matching are covered; the mock matches on the request ID in the context.
 func (s *ServerTestSuite) routed(req *http.Request) {
@@ -442,7 +510,7 @@ func (s *ServerTestSuite) hasRequestID() gomock.Matcher {
 }
 
 func (s *ServerTestSuite) TestRegisterRoutesServesPostCalculate() {
-	operands := []decimal.Decimal{mustDecimal("10"), mustDecimal("4")}
+	operands := []decimal.Decimal{mustDecimal(handlerNum10), mustDecimal(handlerNum4)}
 	s.mockCore.EXPECT().
 		Calculate(s.hasRequestID(), gomock.Eq(entities.OpDivide), gomock.Eq(operands)).
 		Return(entities.Result{Text: wantResultText}, nil).

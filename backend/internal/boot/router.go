@@ -21,9 +21,6 @@ type Modules struct {
 	Calculator calculator.IModule
 }
 
-// RouteRegistrar adds a feature's routes to the versioned API router.
-type RouteRegistrar func(api chi.Router)
-
 // NewRouter assembles the middleware chain and routes. Middleware order
 // matters:
 //
@@ -33,7 +30,7 @@ type RouteRegistrar func(api chi.Router)
 //	CORS        before the limits, so a rejected preflight costs nothing
 //	body limit  before handlers read
 //	timeout     innermost, so the deadline covers only handler work
-func NewRouter(cfg *config.Config, modules Modules, apiRoutes ...RouteRegistrar) chi.Router {
+func NewRouter(cfg *config.Config, modules Modules) chi.Router {
 	r := chi.NewRouter()
 	r.Use(
 		interceptors.RequestID,
@@ -53,9 +50,6 @@ func NewRouter(cfg *config.Config, modules Modules, apiRoutes ...RouteRegistrar)
 	// Feature modules register their routes on this sub-router.
 	r.Route(constants.APIBasePath, func(api chi.Router) {
 		modules.Calculator.GetHandler().RegisterRoutes(api)
-		for _, register := range apiRoutes {
-			register(api)
-		}
 	})
 	return r
 }

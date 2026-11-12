@@ -1,16 +1,53 @@
 import { describe, expect, it } from 'vitest';
-import { darkTokens, lightTokens, systemDarkTokens } from '../test/tokens';
+import {
+  darkTokens,
+  declarationsOf,
+  lightTokens,
+  rawTokens,
+  resolveLightDark,
+  ruleFor,
+} from '../test/tokens';
+
+function colorScheme(selector: string): string[] {
+  const rule = ruleFor(selector);
+  const values: string[] = [];
+  rule.walkDecls('color-scheme', (decl) => {
+    values.push(decl.value.trim());
+  });
+  return values;
+}
 
 describe('tokens.css', () => {
-  it('gives the system dark theme exactly the same values as the explicit dark theme', () => {
-    // The two copies exist because CSS cannot share a block between a media query and an
-    // attribute selector. If they drift, "System" and "Dark" would look different.
-    expect(systemDarkTokens).toEqual(darkTokens);
+  it('defines each colour once as light-dark(), so the explicit and system dark themes cannot drift', () => {
+    // The old file kept two copies of the dark values. light-dark() has one, and color-scheme
+    // picks the side: 'light dark' follows the system, [data-theme] pins one.
+    const colours = Object.entries(rawTokens).filter(([name]) => name.startsWith('--color-'));
+
+    expect(colours.length).toBeGreaterThan(0);
+    for (const [name, value] of colours) {
+      expect(value, name).toMatch(/^light-dark\(/);
+    }
+    expect(declarationsOf('--color-bg')).toHaveLength(1);
   });
 
-  it('overrides only tokens the light theme defines', () => {
-    for (const name of Object.keys(darkTokens)) {
-      expect(lightTokens, name).toHaveProperty(name);
+  it('follows the system by default and lets an explicit choice win', () => {
+    expect(colorScheme(':root')).toEqual(['light dark']);
+    expect(colorScheme(":root[data-theme='light']")).toEqual(['light']);
+    expect(colorScheme(":root[data-theme='dark']")).toEqual(['dark']);
+  });
+
+  it('resolves nested light-dark() calls to the side of the scheme', () => {
+    expect(resolveLightDark('0 1px light-dark(rgb(1 2 3 / 4%), #000)', 'light')).toBe(
+      '0 1px rgb(1 2 3 / 4%)',
+    );
+    expect(resolveLightDark('light-dark(#fff, #000) light-dark(a, b)', 'dark')).toBe('#000 b');
+    expect(() => resolveLightDark('light-dark(#fff', 'dark')).toThrow('Unbalanced');
+    expect(() => resolveLightDark('light-dark(#fff)', 'dark')).toThrow('two arguments');
+  });
+
+  it('gives the two schemes different surfaces and text', () => {
+    for (const name of ['--color-bg', '--color-card', '--color-text', '--color-accent']) {
+      expect(darkTokens[name], name).not.toBe(lightTokens[name]);
     }
   });
 

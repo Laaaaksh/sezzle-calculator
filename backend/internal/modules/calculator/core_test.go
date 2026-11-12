@@ -9,7 +9,6 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/Laaaaksh/sezzle-calculator/backend/internal/config"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/entities"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/operations"
@@ -30,7 +29,7 @@ func TestCoreTestSuite(t *testing.T) {
 func (s *CoreTestSuite) SetupTest() {
 	s.ctx = context.Background()
 	s.fake = &fakeOperation{name: testOpFake, arity: entities.ArityBinary, result: mustDecimal(testFakeResult)}
-	limits := config.CalculatorConfig{
+	limits := entities.Limits{
 		MaxOperandLength: testMaxOperandLength,
 		MaxExponent:      testMaxExponent,
 		DecimalPrecision: testPrecision,
@@ -46,7 +45,7 @@ func (s *CoreTestSuite) TestCalculateWhenOperationIsUnknownReturnsUnknownOperati
 	_, err := s.core.Calculate(s.ctx, testOpMissing, s.binary("1", "2"))
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeUnknownOperation, err.Code())
+	s.Equal(entities.CodeUnknownOperation, err.Code())
 	s.Equal(testOpMissing, err.Fields()[entities.FieldOperation])
 }
 
@@ -60,14 +59,14 @@ func (s *CoreTestSuite) TestCalculateWhenOperationNameIsEmptyReturnsUnknownOpera
 	_, err := s.core.Calculate(s.ctx, testOpBlank, s.binary("1", "2"))
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeUnknownOperation, err.Code())
+	s.Equal(entities.CodeUnknownOperation, err.Code())
 }
 
 func (s *CoreTestSuite) TestCalculateWhenTooFewOperandsReturnsInvalidOperandCount() {
 	_, err := s.core.Calculate(s.ctx, testOpFake, []decimal.Decimal{mustDecimal("1")})
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeInvalidOperandCount, err.Code())
+	s.Equal(entities.CodeInvalidOperandCount, err.Code())
 	s.Equal(entities.ArityBinary, err.Fields()[entities.FieldExpected])
 	s.Equal(1, err.Fields()[entities.FieldActual])
 }
@@ -78,7 +77,7 @@ func (s *CoreTestSuite) TestCalculateWhenTooManyOperandsReturnsInvalidOperandCou
 	_, err := s.core.Calculate(s.ctx, testOpFake, operands)
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeInvalidOperandCount, err.Code())
+	s.Equal(entities.CodeInvalidOperandCount, err.Code())
 	s.Equal(3, err.Fields()[entities.FieldActual])
 }
 
@@ -86,7 +85,7 @@ func (s *CoreTestSuite) TestCalculateWhenNoOperandsReturnsInvalidOperandCount() 
 	_, err := s.core.Calculate(s.ctx, testOpFake, nil)
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeInvalidOperandCount, err.Code())
+	s.Equal(entities.CodeInvalidOperandCount, err.Code())
 }
 
 func (s *CoreTestSuite) TestCalculateWhenOperandCountIsWrongDoesNotCallApply() {
@@ -97,7 +96,7 @@ func (s *CoreTestSuite) TestCalculateWhenOperandCountIsWrongDoesNotCallApply() {
 
 func (s *CoreTestSuite) TestCalculateHonoursAUnaryArity() {
 	unary := &fakeOperation{name: testOpUnary, arity: entities.ArityUnary, result: mustDecimal("3")}
-	core := calculator.NewCore(operations.NewRegistry(unary), config.CalculatorConfig{MaxOperandLength: testMaxOperandLength})
+	core := calculator.NewCore(operations.NewRegistry(unary), entities.Limits{MaxOperandLength: testMaxOperandLength})
 
 	result, err := core.Calculate(s.ctx, testOpUnary, []decimal.Decimal{mustDecimal("9")})
 
@@ -115,7 +114,7 @@ func (s *CoreTestSuite) TestCalculateWhenOperandExceedsDigitLimitReturnsOperandT
 	_, err := s.core.Calculate(s.ctx, testOpFake, s.binary("1", testOperandTooLong))
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeOperandTooLarge, err.Code())
+	s.Equal(entities.CodeOperandTooLarge, err.Code())
 	s.Equal(testIndexSecond, err.Fields()[entities.FieldOperandIndex])
 	s.Equal(testMaxOperandLength, err.Fields()[entities.FieldLimit])
 }
@@ -124,7 +123,7 @@ func (s *CoreTestSuite) TestCalculateWhenNegativeOperandExceedsDigitLimitReturns
 	_, err := s.core.Calculate(s.ctx, testOpFake, s.binary(testOperandNegLong, "1"))
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeOperandTooLarge, err.Code())
+	s.Equal(entities.CodeOperandTooLarge, err.Code())
 	s.Equal(testIndexFirst, err.Fields()[entities.FieldOperandIndex])
 }
 
@@ -138,21 +137,21 @@ func (s *CoreTestSuite) TestCalculateWhenFractionExceedsDigitLimitReturnsOperand
 	_, err := s.core.Calculate(s.ctx, testOpFake, s.binary(testOperandLongFrac, "1"))
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeOperandTooLarge, err.Code())
+	s.Equal(entities.CodeOperandTooLarge, err.Code())
 }
 
 func (s *CoreTestSuite) TestCalculateWhenTinyExponentExceedsLimitReturnsOperandTooLarge() {
 	_, err := s.core.Calculate(s.ctx, testOpFake, s.binary(testTinyExponent, "1"))
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeOperandTooLarge, err.Code())
+	s.Equal(entities.CodeOperandTooLarge, err.Code())
 }
 
 func (s *CoreTestSuite) TestCalculateWhenHugeExponentExceedsLimitReturnsOperandTooLarge() {
 	_, err := s.core.Calculate(s.ctx, testOpFake, s.binary("1", testHugeExponent))
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeOperandTooLarge, err.Code())
+	s.Equal(entities.CodeOperandTooLarge, err.Code())
 }
 
 func (s *CoreTestSuite) TestCalculateWhenOperandIsTooLargeDoesNotCallApply() {
@@ -175,7 +174,7 @@ func (s *CoreTestSuite) TestCalculatePassesOperandsToApplyUnchanged() {
 func (s *CoreTestSuite) TestCalculateReturnsOperationErrorUnchanged() {
 	boom := apperror.New(apperror.CodeValidationFailed, errFakeCause)
 	failing := &fakeOperation{name: testOpBoom, arity: entities.ArityBinary, err: boom}
-	core := calculator.NewCore(operations.NewRegistry(failing), config.CalculatorConfig{MaxOperandLength: testMaxOperandLength})
+	core := calculator.NewCore(operations.NewRegistry(failing), entities.Limits{MaxOperandLength: testMaxOperandLength})
 
 	_, err := core.Calculate(s.ctx, testOpBoom, s.binary("1", "2"))
 
@@ -205,7 +204,6 @@ func (s *CoreTestSuite) TestCalculateTurnsNegativeZeroIntoZero() {
 
 	s.Require().Nil(err)
 	s.Equal(testZeroText, result.Text)
-	s.True(result.Value.IsZero())
 }
 
 func (s *CoreTestSuite) TestCalculateKeepsTheSignOfNegativeResults() {
@@ -215,13 +213,6 @@ func (s *CoreTestSuite) TestCalculateKeepsTheSignOfNegativeResults() {
 
 	s.Require().Nil(err)
 	s.Equal("-0.25", result.Text)
-}
-
-func (s *CoreTestSuite) TestCalculateKeepsTheNumericValueOfTheResult() {
-	result, err := s.core.Calculate(s.ctx, testOpFake, s.binary("1", "2"))
-
-	s.Require().Nil(err)
-	s.True(mustDecimal(testFakeResult).Equal(result.Value))
 }
 
 type DefaultOperationsTestSuite struct {
@@ -236,7 +227,7 @@ func TestDefaultOperationsTestSuite(t *testing.T) {
 
 func (s *DefaultOperationsTestSuite) SetupTest() {
 	s.ctx = context.Background()
-	cfg := config.CalculatorConfig{MaxOperandLength: testDefaultMaxLength, MaxExponent: testMaxExponent, DecimalPrecision: testPrecision}
+	cfg := entities.Limits{MaxOperandLength: testDefaultMaxLength, MaxExponent: testMaxExponent, DecimalPrecision: testPrecision}
 	s.core = calculator.NewCore(operations.NewDefaultRegistry(cfg), cfg)
 }
 
@@ -269,8 +260,8 @@ func (s *DefaultOperationsTestSuite) TestCalculateDivideByZeroReturnsDivisionByZ
 	_, err := s.calculate(entities.OpDivide, "1", "0")
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeDivisionByZero, err.Code())
-	s.Equal(apperror.MsgDivisionByZero, err.PublicMessage())
+	s.Equal(entities.CodeDivisionByZero, err.Code())
+	s.Equal(entities.MsgDivisionByZero, err.PublicMessage())
 }
 
 func (s *DefaultOperationsTestSuite) TestCalculateSubtractTrimsTrailingZeros() {
@@ -284,12 +275,12 @@ func (s *DefaultOperationsTestSuite) TestCalculateWhenNameIsNotRegisteredReturns
 	_, err := s.calculate(testOpMissing, "1", "2")
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeUnknownOperation, err.Code())
+	s.Equal(entities.CodeUnknownOperation, err.Code())
 }
 
 func (s *CoreTestSuite) TestListOperationsDescribesEachRegisteredOperationInOrder() {
 	unary := &fakeOperation{name: testOpUnary, arity: entities.ArityUnary}
-	core := calculator.NewCore(operations.NewRegistry(s.fake, unary), config.CalculatorConfig{})
+	core := calculator.NewCore(operations.NewRegistry(s.fake, unary), entities.Limits{})
 
 	got := core.ListOperations(s.ctx)
 
@@ -300,7 +291,7 @@ func (s *CoreTestSuite) TestListOperationsDescribesEachRegisteredOperationInOrde
 }
 
 func (s *CoreTestSuite) TestListOperationsWithNothingRegisteredReturnsAnEmptyList() {
-	core := calculator.NewCore(operations.NewRegistry(), config.CalculatorConfig{})
+	core := calculator.NewCore(operations.NewRegistry(), entities.Limits{})
 
 	got := core.ListOperations(s.ctx)
 

@@ -1,6 +1,7 @@
 package calculator
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"io"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/Laaaaksh/sezzle-calculator/backend/internal/config"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/constants"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/httpx"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/entities"
@@ -21,14 +21,15 @@ import (
 // ICore, not on Core, so tests can replace the business logic. Every response
 // goes through httpx, which sets Content-Type and Cache-Control: no-store.
 type HTTPHandler struct {
-	core             ICore
-	maxOperandLength int
+	core   ICore
+	limits entities.Limits
 }
 
-// NewHTTPHandler returns a handler backed by core. cfg supplies the operand
-// length limit the parser enforces before core sees the input.
-func NewHTTPHandler(core ICore, cfg config.CalculatorConfig) *HTTPHandler {
-	return &HTTPHandler{core: core, maxOperandLength: cfg.MaxOperandLength}
+// NewHTTPHandler returns a handler backed by core. limits supplies the operand
+// length the parser enforces before core sees the input, and is published by
+// the operations endpoint.
+func NewHTTPHandler(core ICore, limits entities.Limits) *HTTPHandler {
+	return &HTTPHandler{core: core, limits: limits}
 }
 
 // RegisterRoutes mounts the calculator endpoints on r, the versioned API
@@ -57,7 +58,7 @@ func (h *HTTPHandler) Calculate(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteError(ctx, w, validationFailed(problems))
 		return
 	}
-	operands, aerr := ParseOperands(req.Operands, h.maxOperandLength)
+	operands, aerr := ParseOperands(req.Operands, h.limits.MaxOperandLength)
 	if aerr != nil {
 		httpx.WriteError(ctx, w, aerr)
 		return
@@ -83,7 +84,7 @@ func (h *HTTPHandler) Operations(w http.ResponseWriter, r *http.Request) {
 		// The contract promises an array; nil would encode as null.
 		infos = []entities.OperationInfo{}
 	}
-	httpx.WriteJSON(r.Context(), w, http.StatusOK, entities.OperationsResponse{Operations: infos})
+	httpx.WriteJSON(r.Context(), w, http.StatusOK, entities.OperationsResponse{Operations: infos, Limits: h.limits})
 }
 
 // checkContentType accepts application/json, optionally with a utf-8 charset.
@@ -111,7 +112,17 @@ func unsupportedMediaType(cause error) apperror.IError {
 // misspelled field fails loudly instead of being ignored, and anything after
 // the object is refused so two concatenated requests are never half-read.
 func decodeRequest(body io.Reader) (entities.CalculateRequest, apperror.IError) {
-	decoder := json.NewDecoder(body)
+	// The body is read whole (it is already capped by the BodyLimit
+	// interceptor) so its keys can be checked before the struct decode, which
+	// would otherwise let encoding/json silently pick one of two spellings.
+	raw, err := io.ReadAll(body)
+	if err != nil {
+		return entities.CalculateRequest{}, decodeFailure(err)
+	}
+	if aerr := checkKeys(raw); aerr != nil {
+		return entities.CalculateRequest{}, aerr
+	}
+	decoder := json.NewDecoder(bytes.NewReader(raw))
 	decoder.DisallowUnknownFields()
 	var req entities.CalculateRequest
 	if err := decoder.Decode(&req); err != nil {
@@ -121,7 +132,7 @@ func decodeRequest(body io.Reader) (entities.CalculateRequest, apperror.IError) 
 		return entities.CalculateRequest{}, decodeFailure(err)
 	}
 	var extra json.RawMessage
-	err := decoder.Decode(&extra)
+	err = decoder.Decode(&extra)
 	if errors.Is(err, io.EOF) {
 		return req, nil
 	}
@@ -138,13 +149,14 @@ func decodeFailure(err error) apperror.IError {
 	var tooLarge *http.MaxBytesError
 	if errors.As(err, &tooLarge) {
 		return apperror.New(apperror.CodePayloadTooLarge, err).
-			WithField(constants.LogKeyLimit, tooLarge.Limit)
+			WithField(apperror.FieldLimit, tooLarge.Limit)
 	}
 	return apperror.New(apperror.CodeBadRequest, err)
 }
 
 // invalidFields names each required field the request leaves out, and an
-// operation name over the length bound. An empty operands array is not
+// operation name over the length bound, and an operand list longer than any
+// operation takes. An empty operands array is not
 // missing: it is present with the wrong count, which the core reports as
 // INVALID_OPERAND_COUNT. The length bound runs before the core so a huge name
 // never reaches an error field or the logs.
@@ -157,6 +169,8 @@ func invalidFields(req entities.CalculateRequest) map[string]string {
 	}
 	if req.Operands == nil {
 		problems[entities.FieldNameOperands] = entities.ProblemRequired
+	} else if len(req.Operands) > entities.MaxOperandCount {
+		problems[entities.FieldNameOperands] = entities.ProblemTooMany
 	}
 	return problems
 }

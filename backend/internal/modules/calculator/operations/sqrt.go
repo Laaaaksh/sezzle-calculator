@@ -21,6 +21,9 @@ const (
 	// halfUnitDigit is the digit 5 that, one place past the precision, marks a
 	// rounding tie.
 	halfUnitDigit = 5
+	// rootDigitDivisor is 2: a square root has about half the digits of its
+	// operand, which is how the starting guess is sized.
+	rootDigitDivisor = 2
 )
 
 // Sqrt is the square root of one operand.
@@ -74,7 +77,7 @@ func NewBoundedSqrt(precision, maxIterations int) *Sqrt {
 func (s *Sqrt) Apply(ctx context.Context, operands []decimal.Decimal) (decimal.Decimal, apperror.IError) {
 	x := operands[0]
 	if x.IsNegative() {
-		return decimal.Zero, apperror.New(apperror.CodeNegativeSquareRoot, ErrNegativeSquareRoot)
+		return decimal.Zero, apperror.New(entities.CodeNegativeSquareRoot, ErrNegativeSquareRoot)
 	}
 	if x.IsZero() {
 		return decimal.Zero, nil
@@ -114,8 +117,8 @@ func (s *Sqrt) newton(ctx context.Context, x decimal.Decimal) (decimal.Decimal, 
 // division is never by zero.
 func initialGuess(x decimal.Decimal, scale int32) decimal.Decimal {
 	digitsBeforePoint := scaleOf(len(x.Coefficient().String())) + x.Exponent()
-	halved := digitsBeforePoint / 2
-	if digitsBeforePoint > 0 && digitsBeforePoint%2 != 0 {
+	halved := digitsBeforePoint / rootDigitDivisor
+	if digitsBeforePoint > 0 && digitsBeforePoint%rootDigitDivisor != 0 {
 		halved++
 	}
 	return decimal.Max(decimal.New(1, halved), decimal.New(1, -scale))

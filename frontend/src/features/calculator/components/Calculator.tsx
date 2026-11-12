@@ -1,9 +1,9 @@
 import { useCallback, useRef } from 'react';
 import { isActionAvailable } from '../keys';
 import type { CalculatorAction } from '../state';
-import { useCalculator, type CalculatorClient } from '../useCalculator';
+import { useCalculator } from '../useCalculator';
 import { useCalculatorKeyboard } from '../useCalculatorKeyboard';
-import { useSupportedOperations, type OperationsClient } from '../useSupportedOperations';
+import { useOperationsCatalog } from '../useOperationsCatalog';
 import { activeOperatorOf } from '../display';
 import styles from './Calculator.module.css';
 import { Display } from './Display';
@@ -11,14 +11,12 @@ import { ErrorBanner } from './ErrorBanner';
 import { HistoryDrawer } from './HistoryDrawer';
 import { Keypad } from './Keypad';
 
-interface CalculatorProps {
-  /** Tests pass a client aimed at their mock server. The app uses the default. */
-  client?: (CalculatorClient & OperationsClient) | undefined;
-}
-
-export function Calculator({ client }: CalculatorProps) {
-  const { state, history, isPending, dispatch, reuse } = useCalculator({ client });
-  const supportedOperations = useSupportedOperations(client);
+/** Reads its API client from ApiClientContext, which defaults to the real client. */
+export function Calculator() {
+  const { supported: supportedOperations, limits } = useOperationsCatalog();
+  const { state, history, isPending, dispatch, reuse } = useCalculator({
+    maxOperandLength: limits?.maxOperandLength,
+  });
   const displayRef = useRef<HTMLDivElement>(null);
 
   // One gate for the keypad and the keyboard shortcuts, so neither can start an operation the

@@ -76,6 +76,7 @@ describe('Keypad', () => {
     expect(power).toHaveAttribute('aria-disabled', 'true');
     expect(power).toHaveAttribute('title', 'Not available on this server');
     expect(screen.getByRole('button', { name: 'Add' })).not.toHaveAttribute('aria-disabled');
+    expect(screen.getByRole('button', { name: 'Add' })).not.toHaveAttribute('aria-describedby');
     expect(screen.getByRole('button', { name: '7' })).not.toHaveAttribute('aria-disabled');
   });
 

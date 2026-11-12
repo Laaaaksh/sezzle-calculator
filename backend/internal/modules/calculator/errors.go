@@ -22,3 +22,9 @@ var (
 	ErrTrailingData        = errors.New("request body has data after the JSON object")
 	ErrMissingRequestField = errors.New("operation or operands is missing")
 )
+
+// Internal causes behind BAD_REQUEST for a body whose keys are ambiguous.
+var (
+	ErrDuplicateKey = errors.New("request body repeats a key")
+	ErrKeyWrongCase = errors.New("request body key differs from the field name only in case")
+)

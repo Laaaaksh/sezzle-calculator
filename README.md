@@ -22,11 +22,11 @@ Open http://localhost:8080. Stop with `Ctrl+C`, then `docker compose down`.
 
 | Tool | Version |
 | --- | --- |
-| Go | 1.26 (`backend/go.mod`, toolchain go1.26.6) |
-| Node | 26.7 locally, 24 in the Docker build, current LTS in CI |
+| Go | 1.26 (`backend/go.mod`, toolchain go1.26.11) |
+| Node | 24 or newer (`frontend/.nvmrc` pins 24, which the Docker build and CI use) |
 | npm | the one bundled with Node |
 
-Vite 8 needs a recent Node, so use a current LTS or newer.
+Vite 8 needs a recent Node. `package.json` sets `engines` to `>=24 <27`.
 
 Backend, on port 8080:
 
@@ -51,7 +51,7 @@ Operands go in as strings and results come back as strings. The full contract is
 | Method | Path | Purpose |
 | --- | --- | --- |
 | POST | `/api/v1/calculate` | Run one operation |
-| GET | `/api/v1/operations` | List the supported operations |
+| GET | `/api/v1/operations` | List the supported operations and the limits |
 | GET | `/health/live` | Liveness probe |
 | GET | `/health/ready` | Readiness probe |
 
@@ -62,7 +62,7 @@ curl localhost:8080/api/v1/operations
 ```
 
 ```json
-{"operations":[{"name":"add","arity":2,"symbol":"+","description":"Adds the two operands."},{"name":"subtract","arity":2,"symbol":"-","description":"Subtracts the second operand from the first."},{"name":"multiply","arity":2,"symbol":"*","description":"Multiplies the two operands."},{"name":"divide","arity":2,"symbol":"/","description":"Divides the first operand by the second."},{"name":"power","arity":2,"symbol":"^","description":"Raises the first operand to the whole-number power given by the second."},{"name":"sqrt","arity":1,"symbol":"√","description":"Returns the square root of the operand."},{"name":"percentage","arity":2,"symbol":"%","description":"Returns the first operand percent of the second."}]}
+{"operations":[{"name":"add","arity":2,"symbol":"+","description":"Adds the two operands."},{"name":"subtract","arity":2,"symbol":"-","description":"Subtracts the second operand from the first."},{"name":"multiply","arity":2,"symbol":"*","description":"Multiplies the two operands."},{"name":"divide","arity":2,"symbol":"/","description":"Divides the first operand by the second."},{"name":"power","arity":2,"symbol":"^","description":"Raises the first operand to the whole-number power given by the second."},{"name":"sqrt","arity":1,"symbol":"√","description":"Returns the square root of the operand."},{"name":"percentage","arity":2,"symbol":"%","description":"Returns the first operand percent of the second."}],"limits":{"maxOperandLength":64,"maxExponent":1000,"decimalPrecision":20}}
 ```
 
 ### One success per operation
@@ -139,12 +139,12 @@ Every error has the same shape: `code`, `message`, `requestId` and an optional `
 
 | Code | HTTP | Cause |
 | --- | --- | --- |
-| `BAD_REQUEST` | 400 | Empty body, invalid JSON, unknown field, wrong field type or trailing data |
-| `VALIDATION_FAILED` | 422 | `operation` or `operands` is missing |
+| `BAD_REQUEST` | 400 | Empty body, invalid JSON, unknown field, wrong field type, trailing data, or a top-level key that repeats or is not lower case (`fields` has `key` and `reason`) |
+| `VALIDATION_FAILED` | 422 | `operation` or `operands` is missing, `operation` is over 32 bytes, or `operands` has more than 16 items |
 | `UNSUPPORTED_MEDIA_TYPE` | 415 | `Content-Type` is not `application/json` |
 | `PAYLOAD_TOO_LARGE` | 413 | Body over 1 MiB |
-| `NOT_FOUND` | 404 | Unknown path |
-| `METHOD_NOT_ALLOWED` | 405 | Wrong method for the path |
+| `NOT_FOUND` | 404 | Unknown path. `fields.path` repeats at most 256 bytes of it |
+| `METHOD_NOT_ALLOWED` | 405 | Wrong method for the path. `fields.path` repeats at most 256 bytes of it |
 | `INTERNAL` | 500 | Unexpected server fault. The cause is logged and never sent. |
 | `SERVICE_UNAVAILABLE` | 503 | `/health/ready` before startup ends or after shutdown starts |
 | `REQUEST_TIMEOUT` | 503 | A calculation runs past the server's request deadline (5s by default) |
@@ -211,10 +211,22 @@ All bodies are sent with `Content-Type: application/json` unless noted. The full
 {"error":{"code":"BAD_REQUEST","message":"The request could not be understood.","requestId":"3ce3b06b-9bac-40e1-bd32-8e2b416e716e"}}
 ```
 
+`BAD_REQUEST` for a key in the wrong case, body `{"operation":"add","operands":["1","2"],"OPERANDS":["9","9"]}`, HTTP 400. A repeated key returns the same code with `"reason":"duplicate"`. Only exact lowercase `operation` and `operands` are accepted, so two readers of one body never see different values:
+
+```json
+{"error":{"code":"BAD_REQUEST","message":"The request could not be understood.","requestId":"f2920dad-6fb6-457f-a23c-3f6df63887b4","fields":{"key":"OPERANDS","reason":"wrong_case"}}}
+```
+
+`VALIDATION_FAILED` for 17 operands to `add`, HTTP 422. The count is checked before any operand is parsed. Three operands to `add` still return `INVALID_OPERAND_COUNT`:
+
+```json
+{"error":{"code":"VALIDATION_FAILED","message":"The request failed validation.","requestId":"7882a092-c476-40f8-8f66-6e03ac726183","fields":{"operands":"too many"}}}
+```
+
 `PAYLOAD_TOO_LARGE`, a 1.1 MB body, HTTP 413:
 
 ```json
-{"error":{"code":"PAYLOAD_TOO_LARGE","message":"The request body is too large.","requestId":"838bf0e4-2942-47a1-a7eb-eaab52de325f","fields":{"content_length":1100039}}}
+{"error":{"code":"PAYLOAD_TOO_LARGE","message":"The request body is too large.","requestId":"838bf0e4-2942-47a1-a7eb-eaab52de325f","fields":{"limit":1048576}}}
 ```
 
 `METHOD_NOT_ALLOWED`, `curl -X GET localhost:8080/api/v1/calculate`, HTTP 405:
@@ -241,10 +253,10 @@ cd frontend && npm run test:coverage
 
 | Layer | Result | HTML report |
 | --- | --- | --- |
-| Backend (Go) | 95.9% total coverage, race detector on, mocks excluded | `backend/coverage.html` |
-| Frontend (React) | 522 tests, 100% statements, branches, functions and lines | `frontend/coverage/index.html` |
+| Backend (Go) | <!--cov-backend-->98.2%<!--/cov-backend--> total coverage, race detector on, mocks excluded | `backend/coverage.html` |
+| Frontend (React) | <!--cov-frontend-->547<!--/cov-frontend--> tests, 100% statements, branches, functions and lines | `frontend/coverage/index.html` |
 
-CI runs both suites on every push and pull request and uploads both reports as build artifacts. A third CI job builds the Docker stack and smoke tests it through nginx.
+CI runs both suites on every push and pull request and uploads both reports as build artifacts. A third CI job builds the Docker stack and smoke tests it through nginx. CI also runs `prettier --check`, `govulncheck` and `npm audit --omit=dev --audit-level=high`.
 
 Mocks are generated, not committed. On a fresh clone run `make test` (or `make mock` first), because a bare `go test ./...` fails until they exist. The frontend `make` targets run `npm ci` themselves when `frontend/node_modules` is missing or older than the lockfile.
 
@@ -266,12 +278,24 @@ Each decision has a longer entry in [docs/DECISIONS.md](docs/DECISIONS.md). The 
 - Operands are strings. JavaScript turns a JSON number into a float before the server sees the value, so the digits are already lost. A string arrives untouched. A JSON number in `operands` returns `400`.
 - Half-even rounding, 20 places. Divide, square root and negative powers have results with no end, so they round to 20 decimal places. An exact tie goes to the even digit, so `0.125` becomes `0.12`. Add, subtract, multiply and percentage are exact.
 - Percentage means x percent of y. `percentage(15, 200)` is `30`. The other common readings, such as "what percent is x of y", are not supported.
-- Input limits. An operand has at most 64 characters. A `power` exponent stays within 1000 either way. A `power` result has at most 640 digits, so `10^1000` is refused even though its exponent is allowed. Calculations stop at the 5 second request deadline. The request body is at most 1 MiB. All of these are config values.
+- Input limits. An operand has at most 64 characters. A `power` exponent stays within 1000 either way. A `power` result has at most 640 digits, so `10^1000` is refused even though its exponent is allowed. Calculations stop at the 5 second request deadline. The request body is at most 1 MiB. The operand length, exponent, precision and body limits are config values. The result digit limit is derived: 10 times the operand length.
 - One endpoint with an `operation` field. Validation, limits and the error shape live in one handler. A new operation needs no new route. The cost: logs and rate limits keyed on the path cannot tell operations apart.
 - 400 versus 422. `400` means the server cannot read the request, so the client code is wrong. `422` means the server read the request but the content breaks a rule, so the user types something else.
 - No database. A calculation is a pure function of its input, so the server keeps no state. The history in the UI lives in memory and is gone on reload.
-- Operation registry. Each operation is one type with a name, arity, symbol and `Apply`. The registry looks operations up by name and lists them at `GET /api/v1/operations`. The keypad renders at once from a built-in key list. When the list arrives, keys for operations the server does not report are disabled. If the request fails, every key stays enabled and the server still validates each calculation. A new operation is one file and one line of wiring.
+- Operation registry. Each operation is one type with a name, arity, symbol and `Apply`. The registry looks operations up by name and lists them at `GET /api/v1/operations`. `GET /api/v1/operations` also reports the configured limits. The keypad is a static key list that renders at once. When the response arrives, keys for operations the server does not report are disabled, and the input length follows `limits.maxOperandLength`. If the request fails, every key stays enabled and the server still validates each calculation. A new operation is one file and one line of wiring.
 - The frontend never computes. The keypad builds an expression, and the API returns the answer.
+
+## Scope and deliberate extras
+
+The brief asked for a working calculator, clear code and tests. These items go beyond the brief. Each one is small. I list them so the scope is clear.
+
+- Theme toggle and history drawer. Light and dark mode and a list of past calculations make the app usable for more than one sum. The history stays in memory.
+- Contrast and axe tests. A calculator is a keyboard and touch tool. The tests fail the build if a colour pair or a state breaks WCAG contrast or an accessibility rule.
+- Docker hardening. Read-only root filesystem, no Linux capabilities, a non-root user and image digests. A container should hold no more rights than the app needs.
+- nginx Content-Security-Policy. The page loads no outside scripts, so the policy blocks them all. The cost is a few lines of config.
+- CI Docker smoke test. Unit tests do not show nginx forwarding `/api` to the backend. The smoke test checks the full path.
+- no-mistakes pipeline. It runs `make lint` and `make test` before every push, so the local check and the CI check match.
+- Vulnerability and format checks. `govulncheck`, `npm audit` and Prettier run in CI to catch known flaws and style drift early.
 
 ## What I'd do next with more time
 
@@ -287,3 +311,5 @@ Each decision has a longer entry in [docs/DECISIONS.md](docs/DECISIONS.md). The 
 ## AI usage
 
 I used AI tools, mainly Claude Code, to write most of the code. I set the rules, gave one prompt per step and reviewed each result before the next. Every prompt is in [docs/PROMPTS.md](docs/PROMPTS.md), in order, with a line on what each produced.
+
+`AGENTS.md`, `CLAUDE.md` and `.no-mistakes.yaml` are in the repo for the same reason. `AGENTS.md` and `CLAUDE.md` hold the working rules I gave the AI tools while building this. `.no-mistakes.yaml` configures the review pipeline that checked each change. They are not part of the app.

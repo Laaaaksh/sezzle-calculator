@@ -11,7 +11,7 @@ One entry per decision. Each has the context, the decision and the trade-off.
 ## 2. Operands are strings
 
 - Context: JavaScript parses a JSON number into a float before the server sees the value. The digits a user typed are gone on arrival, and a 20-digit integer loses its tail.
-- Decision: Operands go in as JSON strings and results come back as strings. A JSON number in `operands` returns `400 BAD_REQUEST`.
+- Decision: Operands go in as JSON strings and results come back as strings. A JSON number in `operands` returns `400 BAD_REQUEST`. Top-level keys must be exact lower case and unique, or the request returns `400 BAD_REQUEST` with the key and reason in `fields`. Go's decoder would otherwise match `OPERANDS` to `operands` and keep the last of two duplicates.
 - Trade-off: The request is a little less natural to write by hand. Every client must send quotes. In exchange the server sees exactly what the user typed.
 
 ## 3. Half-even rounding and a precision of 20
@@ -29,7 +29,7 @@ One entry per decision. Each has the context, the decision and the trade-off.
 ## 5. Input and result limits
 
 - Context: A public endpoint with no bounds on numbers invites abuse of CPU and memory. `9^1000` has 955 digits, and larger exponents grow without bound.
-- Decision: An operand has at most 64 characters. A `power` exponent is within -1000 to 1000. A `power` result has at most 640 digits, checked from an upper bound before any multiplication. The body is at most 1 MiB. All four are config values.
+- Decision: An operand has at most 64 characters. A `power` exponent is within -1000 to 1000. A `power` result has at most 640 digits, checked from an upper bound before any multiplication. The body is at most 1 MiB. An `operation` name has at most 32 bytes and `operands` at most 16 items, both checked before parsing (`422 VALIDATION_FAILED`). The first three are config values. The result digit budget is derived as `max_operand_length * 10`, and the body limit is `max_body_bytes`.
 - Trade-off: Some valid maths is refused with a clear error. The limits are generous for a calculator and cheap to raise in config.
 
 ## 6. One endpoint with an operation field
@@ -53,13 +53,14 @@ One entry per decision. Each has the context, the decision and the trade-off.
 ## 9. An operation registry, open for extension
 
 - Context: Adding an operation should not mean editing a switch statement in five places.
-- Decision: Each operation is one type with `Name`, `Arity`, `Symbol`, `Description` and `Apply`. A registry looks them up by name, lists them in a fixed order and panics at boot on a duplicate name. The frontend builds its keys from `GET /api/v1/operations`.
+- Decision: Each operation is one type with `Name`, `Arity`, `Symbol`, `Description` and `Apply`. A registry looks them up by name, lists them in a fixed order and panics at boot on a duplicate name. `GET /api/v1/operations` reports the registered operations and the configured limits. The web UI keeps a static key list, disables keys the server does not report and reads `limits.maxOperandLength` from the response, falling back to 64 if the request fails. A new operation needs a key in the UI as well.
 - Trade-off: More types and one level of indirection than a single function with a `switch`. A new operation is one file and one line of wiring, and the core never changes.
 
 ## 10. An error model with client-safe fields
 
 - Context: Error bodies are read by users and by logs. Leaking internal text or echoing user input is a security and support problem.
 - Decision: Every error has `code`, `message`, `requestId` and an optional `fields` object. The message is fixed text per code. The cause stays in the server log under the same request ID. A test checks the code tables in the docs against the code.
+- Layering: `pkg/apperror` holds only the generic codes and `Register`. The calculator codes are defined in `internal/modules/calculator/entities/codes.go` and registered in that package's `init`, so the shared package stays free of one module's vocabulary. `Register` panics on a duplicate code or a status outside 400-599.
 - Trade-off: Each new failure needs a code, a status and a message. Clients get a stable contract, and one request ID connects a user report to a log line.
 
 ## 11. The frontend never computes
@@ -85,3 +86,9 @@ One entry per decision. Each has the context, the decision and the trade-off.
 - Context: typescript-eslint supports only certain TypeScript versions. A newer compiler leaves the linter unable to parse the code.
 - Decision: Pin `typescript` to `~6.0`, the range the installed typescript-eslint supports.
 - Trade-off: The project does not get newer compiler features until typescript-eslint catches up. A working lint beats a compiler one release ahead.
+
+## 15. Shutdown timing and the container stop period
+
+- Context: On shutdown the backend turns readiness to 503, keeps serving for `shutdown_drain_delay`, then waits up to `shutdown_grace_period` for open requests. Docker sends SIGKILL once `stop_grace_period` ends. A kill in the middle of a drain drops live requests.
+- Decision: `stop_grace_period` in `docker-compose.yml` must be longer than `shutdown_drain_delay + shutdown_grace_period`. Production uses 5s + 10s, so compose sets 20s for the backend. If you raise either config value, raise `stop_grace_period` with it.
+- Trade-off: A slow stop takes up to 20s in the worst case. A normal stop ends as soon as the last request finishes after the drain delay.

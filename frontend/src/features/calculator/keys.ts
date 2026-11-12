@@ -1,5 +1,5 @@
 import type { OperationType } from '../../api';
-import { DIGITS } from '../../constants/calculator';
+import type { Digit } from '../../constants/calculator';
 import type { CalculatorAction } from './state';
 
 export type KeyKind = 'digit' | 'operator' | 'function' | 'equals';
@@ -18,12 +18,27 @@ export interface KeyDefinition {
   wide?: boolean;
 }
 
-const digitKeys = Object.fromEntries(
-  DIGITS.map((digit) => [
-    digit,
-    { id: `digit-${digit}`, label: digit, action: { type: 'digit', digit }, kind: 'digit' },
-  ]),
-) as Record<(typeof DIGITS)[number], KeyDefinition>;
+const digitKey = (digit: Digit): KeyDefinition => ({
+  id: `digit-${digit}`,
+  label: digit,
+  action: { type: 'digit', digit },
+  kind: 'digit',
+});
+
+// Written out key by key, not built from DIGITS with a cast: the Record type makes a missing
+// digit a compile error instead of an undefined key at runtime.
+const digitKeys: Record<Digit, KeyDefinition> = {
+  '0': digitKey('0'),
+  '1': digitKey('1'),
+  '2': digitKey('2'),
+  '3': digitKey('3'),
+  '4': digitKey('4'),
+  '5': digitKey('5'),
+  '6': digitKey('6'),
+  '7': digitKey('7'),
+  '8': digitKey('8'),
+  '9': digitKey('9'),
+};
 
 const symbol = (
   id: string,

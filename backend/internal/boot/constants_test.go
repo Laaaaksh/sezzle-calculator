@@ -15,9 +15,6 @@ const (
 	testMissingPath    = "/nope"
 	testAPIPath        = "/api/v1/missing"
 	testLivePath       = "/health/live"
-	testPingRoute      = "/ping"
-	testAPIPingPath    = "/api/v1/ping"
-	testPingBody       = "pong"
 	testReadyPath      = "/health/ready"
 	testCalculatePath  = "/api/v1/calculate"
 	testCalculateBare  = "/calculate"
@@ -34,14 +31,14 @@ const (
 
 	wantNotFoundCode     = "NOT_FOUND"
 	wantMethodCode       = "METHOD_NOT_ALLOWED"
-	wantPingAllow        = "GET"
+	wantOperationsAllow  = "GET"
 	wantLiveAllow        = "GET"
 	wantTooLargeCode     = "PAYLOAD_TOO_LARGE"
 	wantContentType      = "application/json"
 	wantLiveBody         = `{"status":"ok"}`
 	wantReadyBody        = `{"status":"ready"}`
 	wantAddResponse      = `{"operation":"add","operands":["1","2"],"result":"3"}`
-	wantNoOperationsBody = `{"operations":[]}`
+	wantNoOperationsBody = `{"operations":[],"limits":{"maxOperandLength":64,"maxExponent":0,"decimalPrecision":0}}`
 	wantHeaderTemplate   = "X-Request-ID"
 )
 
@@ -106,4 +103,10 @@ const (
 	e2eHugeOperationLength      = 1 << 19
 	e2eSmallErrorBodyBytes      = 1 << 10
 	e2eBodyEmptyObject          = `{}`
+	e2eBodyTooManyOperands      = `{"operation":"add","operands":["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17"]}`
+	e2eBodyThreeOperands        = `{"operation":"add","operands":["1","2","3"]}`
+	e2eBodyCaseVariantKey       = `{"operation":"add","operands":["1","2"],"OPERANDS":["9","9"]}`
+	e2eWantLimitsJSON           = `{"maxOperandLength":64,"maxExponent":1000,"decimalPrecision":20}`
+	e2eDuplicateKeyField        = "key"
+	e2eLimitsKey                = "limits"
 )

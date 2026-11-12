@@ -9,7 +9,6 @@ import (
 
 	"github.com/shopspring/decimal"
 
-	"github.com/Laaaaksh/sezzle-calculator/backend/internal/config"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/entities"
 	"github.com/Laaaaksh/sezzle-calculator/backend/pkg/apperror"
 )
@@ -28,6 +27,8 @@ const (
 	// leadingDigits is how many leading digits of the coefficient are read
 	// as a float64 (it holds 15 decimal digits exactly).
 	leadingDigits = 15
+	// parityDivisor is 2: an exponent is even when it divides by 2 without remainder.
+	parityDivisor = 2
 )
 
 var one = decimal.NewFromInt(1)
@@ -60,8 +61,9 @@ type Power struct {
 
 var _ Operation = (*Power)(nil)
 
-// NewPower returns the power operation bounded by cfg.
-func NewPower(cfg config.CalculatorConfig) *Power {
+// NewPower returns the power operation bounded by limits: the exponent range,
+// the rounding precision and the operand length its digit budget derives from.
+func NewPower(limits entities.Limits) *Power {
 	return &Power{
 		descriptor: descriptor{
 			name:        entities.OpPower,
@@ -69,9 +71,9 @@ func NewPower(cfg config.CalculatorConfig) *Power {
 			symbol:      entities.SymbolPower,
 			description: entities.DescriptionPower,
 		},
-		precision:       scaleOf(cfg.DecimalPrecision),
-		maxExponent:     decimal.NewFromInt(int64(cfg.MaxExponent)),
-		maxResultDigits: int64(cfg.MaxOperandLength) * resultDigitsFactor,
+		precision:       scaleOf(limits.DecimalPrecision),
+		maxExponent:     decimal.NewFromInt(int64(limits.MaxExponent)),
+		maxResultDigits: int64(limits.MaxOperandLength) * resultDigitsFactor,
 	}
 }
 
@@ -113,11 +115,11 @@ func (p *Power) Apply(ctx context.Context, operands []decimal.Decimal) (decimal.
 // values beyond the configured range. 2.0 is accepted: it equals 2 exactly.
 func (p *Power) wholeExponent(exponent decimal.Decimal) (int64, apperror.IError) {
 	if !exponent.Equal(exponent.Truncate(0)) {
-		return 0, apperror.New(apperror.CodeInvalidExponent, ErrFractionalExponent).
+		return 0, apperror.New(entities.CodeInvalidExponent, ErrFractionalExponent).
 			WithField(entities.FieldOperandIndex, exponentOperandIndex)
 	}
 	if exponent.Abs().GreaterThan(p.maxExponent) {
-		return 0, apperror.New(apperror.CodeExponentTooLarge, ErrExponentBeyondLimit).
+		return 0, apperror.New(entities.CodeExponentTooLarge, ErrExponentBeyondLimit).
 			WithField(entities.FieldOperandIndex, exponentOperandIndex).
 			WithField(entities.FieldLimit, p.maxExponent.IntPart())
 	}
@@ -164,7 +166,7 @@ func (p *Power) checkResultSize(base decimal.Decimal, exponent int64) apperror.I
 }
 
 func (p *Power) tooLarge() apperror.IError {
-	return apperror.New(apperror.CodeResultTooLarge, ErrResultBeyondBudget).
+	return apperror.New(entities.CodeResultTooLarge, ErrResultBeyondBudget).
 		WithField(entities.FieldLimit, p.maxResultDigits)
 }
 
@@ -216,7 +218,7 @@ func digitsOf(d decimal.Decimal) int64 {
 // 0^-n is a division by zero.
 func zeroToPower(exponent int64) (decimal.Decimal, apperror.IError) {
 	if exponent < 0 {
-		return decimal.Zero, apperror.New(apperror.CodeDivisionByZero, ErrZeroToNegativePower)
+		return decimal.Zero, apperror.New(entities.CodeDivisionByZero, ErrZeroToNegativePower)
 	}
 	return decimal.Zero, nil
 }
@@ -225,7 +227,7 @@ func zeroToPower(exponent int64) (decimal.Decimal, apperror.IError) {
 // parity. Without this, 1^1000 would be refused by the digit estimate even
 // though its result has one digit.
 func unitToPower(base decimal.Decimal, exponent int64) decimal.Decimal {
-	if base.Sign() > 0 || exponent%2 == 0 {
+	if base.Sign() > 0 || exponent%parityDivisor == 0 {
 		return one
 	}
 	return one.Neg()

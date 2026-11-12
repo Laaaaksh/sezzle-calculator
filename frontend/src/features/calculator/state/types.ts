@@ -2,11 +2,17 @@ import type { ApiErrorCode, OperationType } from '../../../api';
 import type { BinaryOperation, Digit, UnaryOperation } from '../../../constants/calculator';
 
 /** Codes the UI makes up for failures that have no server response. */
-export type ClientFailureCode = 'NETWORK_ERROR' | 'TIMEOUT' | 'RESULT_TOO_LONG_TO_REUSE';
+export const CLIENT_FAILURE_CODE = {
+  NETWORK_ERROR: 'NETWORK_ERROR',
+  TIMEOUT: 'TIMEOUT',
+  RESULT_TOO_LONG_TO_REUSE: 'RESULT_TOO_LONG_TO_REUSE',
+} as const;
+
+export type ClientFailureCode = (typeof CLIENT_FAILURE_CODE)[keyof typeof CLIENT_FAILURE_CODE];
 
 export interface CalculatorError {
+  /** The text to show comes from constants/errorMessages.ts, keyed by this code. */
   code: ApiErrorCode | ClientFailureCode;
-  message: string;
   /** Quote this to support. Absent when no response arrived. */
   requestId: string | undefined;
   /** True when sending the same request again can succeed (network and timeout failures). */
@@ -84,8 +90,6 @@ export type CalculatorState =
   | WaitingState
   | ShowingResultState
   | ErrorState;
-
-export type CalculatorStatus = CalculatorState['status'];
 
 export type CalculatorAction =
   | { type: 'digit'; digit: Digit }

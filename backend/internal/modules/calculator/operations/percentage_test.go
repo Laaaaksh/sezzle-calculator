@@ -37,52 +37,52 @@ func (s *PercentageTestSuite) TestPercentageArityIsTwo() {
 }
 
 func (s *PercentageTestSuite) TestPercentageTwentyOfFiftyIsTen() {
-	s.Equal("10", s.percentage("20", "50"))
+	s.Equal(percentageNum10, s.percentage(percentageNum20, percentageNum50))
 }
 
 func (s *PercentageTestSuite) TestPercentageIsPercentFirstAndAmountSecond() {
-	s.Equal("10", s.percentage("50", "20"))
-	s.Equal("0.2", s.percentage("20", "1"))
+	s.Equal(percentageNum10, s.percentage(percentageNum50, percentageNum20))
+	s.Equal(percentageNum0Pt2, s.percentage(percentageNum20, percentageNum1))
 }
 
 func (s *PercentageTestSuite) TestPercentageOfAHundredReturnsTheAmount() {
-	s.Equal("7.5", s.percentage("100", "7.5"))
+	s.Equal(percentageNum7Pt5, s.percentage(percentageNum100, percentageNum7Pt5))
 }
 
 func (s *PercentageTestSuite) TestPercentageOverAHundredReturnsMoreThanTheAmount() {
-	s.Equal("15", s.percentage("150", "10"))
+	s.Equal(percentageNum15, s.percentage(percentageNum150, percentageNum10))
 }
 
 func (s *PercentageTestSuite) TestPercentageOfZeroPercentIsZero() {
-	s.Equal("0", s.percentage("0", "100"))
+	s.Equal(percentageNum0, s.percentage(percentageNum0, percentageNum100))
 }
 
 func (s *PercentageTestSuite) TestPercentageOfAZeroAmountIsZero() {
-	s.Equal("0", s.percentage("12.5", "0"))
+	s.Equal(percentageNum0, s.percentage(percentageNum12Pt5, percentageNum0))
 }
 
 func (s *PercentageTestSuite) TestPercentageWhenPercentIsFractionalIsExact() {
-	s.Equal("10", s.percentage("12.5", "80"))
+	s.Equal(percentageNum10, s.percentage(percentageNum12Pt5, percentageNum80))
 }
 
 func (s *PercentageTestSuite) TestPercentageWhenPercentIsNegativeReturnsNegative() {
-	s.Equal("-5", s.percentage("-10", "50"))
+	s.Equal(percentageNumNeg5, s.percentage(percentageNumNeg10, percentageNum50))
 }
 
 func (s *PercentageTestSuite) TestPercentageWhenAmountIsNegativeReturnsNegative() {
-	s.Equal("-5", s.percentage("10", "-50"))
+	s.Equal(percentageNumNeg5, s.percentage(percentageNum10, percentageNumNeg50))
 }
 
 func (s *PercentageTestSuite) TestPercentageWhenBothAreNegativeReturnsPositive() {
-	s.Equal("5", s.percentage("-10", "-50"))
+	s.Equal(percentageNum5, s.percentage(percentageNumNeg10, percentageNumNeg50))
 }
 
 func (s *PercentageTestSuite) TestPercentageOfOnePercentOfThreeIsExactlyPointZeroThree() {
-	s.Equal("0.03", s.percentage("1", "3"))
+	s.Equal(percentageNum0Pt03, s.percentage(percentageNum1, percentageNum3))
 }
 
 func (s *PercentageTestSuite) TestPercentageDoesNotRoundManyDecimalPlaces() {
-	s.Equal("0.99999", s.percentage("33.333", "3"))
+	s.Equal(percentageNum0Pt99999, s.percentage(percentageNum33Pt333, percentageNum3))
 }
 
 func (s *PercentageTestSuite) TestPercentageWhenResultIsLargeKeepsEveryDigit() {

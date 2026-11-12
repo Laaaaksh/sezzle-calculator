@@ -5,7 +5,7 @@ import { ERROR_MESSAGES, GENERIC_ERROR_MESSAGE, messageForError } from './errorM
 
 function errorWith(code: string, requestId?: string): CalculatorError {
   // The cast stands in for a code from a newer server that slipped past the types.
-  return { code: code as CalculatorError['code'], message: 'raw', requestId, retryable: false };
+  return { code: code as CalculatorError['code'], requestId, retryable: false };
 }
 
 describe('messageForError', () => {

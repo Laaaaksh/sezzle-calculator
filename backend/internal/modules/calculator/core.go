@@ -15,7 +15,6 @@ import (
 
 	"github.com/shopspring/decimal"
 
-	"github.com/Laaaaksh/sezzle-calculator/backend/internal/config"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/entities"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/operations"
 	"github.com/Laaaaksh/sezzle-calculator/backend/pkg/apperror"
@@ -34,14 +33,14 @@ type ICore interface {
 // Core resolves, validates and runs operations.
 type Core struct {
 	registry operations.IRegistry
-	limits   config.CalculatorConfig
+	limits   entities.Limits
 }
 
 var _ ICore = (*Core)(nil)
 
 // NewCore returns a Core that resolves operations from registry and enforces
 // the operand limits in limits.
-func NewCore(registry operations.IRegistry, limits config.CalculatorConfig) *Core {
+func NewCore(registry operations.IRegistry, limits entities.Limits) *Core {
 	return &Core{registry: registry, limits: limits}
 }
 
@@ -77,9 +76,10 @@ func (c *Core) Calculate(ctx context.Context, op entities.OperationType, operand
 	return normalise(value), nil
 }
 
-// ListOperations describes each registered operation, in registration order,
-// so the frontend can build its UI from the server and not from a copy of the
-// list.
+// ListOperations describes each registered operation, in registration order.
+// The list lets a client discover the supported operations and their arity; the
+// web keypad itself is static and uses the list only to disable keys the
+// server does not support.
 func (c *Core) ListOperations(_ context.Context) []entities.OperationInfo {
 	registered := c.registry.List()
 	infos := make([]entities.OperationInfo, len(registered))

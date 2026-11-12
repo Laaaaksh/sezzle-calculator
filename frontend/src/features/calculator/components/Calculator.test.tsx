@@ -1,8 +1,9 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { delay, http, HttpResponse } from 'msw';
+import type { ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
-import { createApiClient, type CalculateRequest } from '../../../api';
+import { ApiClientContext, createApiClient, type CalculateRequest } from '../../../api';
 import { expectNoAxeViolations } from '../../../test/axe';
 import { server } from '../../../test/server';
 import { Calculator } from './Calculator';
@@ -11,8 +12,13 @@ const BASE_URL = 'http://api.test';
 const CALCULATE_URL = `${BASE_URL}/api/v1/calculate`;
 const client = createApiClient({ baseUrl: BASE_URL });
 
+/** Points the calculator at the mock server through the same context the app uses. */
+function wrapper({ children }: { children: ReactNode }) {
+  return <ApiClientContext value={client}>{children}</ApiClientContext>;
+}
+
 function renderCalculator() {
-  render(<Calculator client={client} />);
+  render(<Calculator />, { wrapper });
   return userEvent.setup();
 }
 
@@ -419,7 +425,7 @@ describe('Calculator', () => {
 
   describe('axe', () => {
     it('finds no violations when idle', async () => {
-      const { container } = render(<Calculator client={client} />);
+      const { container } = render(<Calculator />, { wrapper });
 
       await expectNoAxeViolations(container);
     });
@@ -428,7 +434,7 @@ describe('Calculator', () => {
       recordCalculate(() =>
         HttpResponse.json({ operation: 'add', operands: ['1', '2'], result: '3' }),
       );
-      const { container } = render(<Calculator client={client} />);
+      const { container } = render(<Calculator />, { wrapper });
       const user = userEvent.setup();
 
       await pressKeys(user, '1', 'Add', '2', 'Equals');
@@ -440,7 +446,7 @@ describe('Calculator', () => {
     });
 
     it('finds no violations while an operator is active', async () => {
-      const { container } = render(<Calculator client={client} />);
+      const { container } = render(<Calculator />, { wrapper });
       const user = userEvent.setup();
 
       await pressKeys(user, '1', 'Add');
@@ -450,7 +456,7 @@ describe('Calculator', () => {
 
     it('finds no violations in the error state', async () => {
       recordCalculate(divideByZero);
-      const { container } = render(<Calculator client={client} />);
+      const { container } = render(<Calculator />, { wrapper });
       const user = userEvent.setup();
 
       await pressKeys(user, '8', 'Divide', '0', 'Equals');
@@ -461,7 +467,7 @@ describe('Calculator', () => {
 
     it('finds no violations with a retryable error and its Retry button', async () => {
       recordCalculate(() => HttpResponse.error());
-      const { container } = render(<Calculator client={client} />);
+      const { container } = render(<Calculator />, { wrapper });
       const user = userEvent.setup();
 
       await pressKeys(user, '1', 'Add', '2', 'Equals');
@@ -474,7 +480,7 @@ describe('Calculator', () => {
       recordCalculate(() =>
         HttpResponse.json({ operation: 'add', operands: ['1', '2'], result: '3' }),
       );
-      const { container } = render(<Calculator client={client} />);
+      const { container } = render(<Calculator />, { wrapper });
       const user = userEvent.setup();
       await pressKeys(user, '1', 'Add', '2', 'Equals');
       await screen.findByRole('list');
@@ -502,5 +508,59 @@ describe('Calculator', () => {
     expect(display()).toHaveTextContent('4');
     expect(display()).not.toHaveTextContent('Error');
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+});
+
+describe('Calculator server limits', () => {
+  function reportLimits(limits: unknown) {
+    server.use(
+      http.get(OPERATIONS_URL, () =>
+        HttpResponse.json({
+          operations: [{ name: 'add', arity: 2, symbol: '+', description: 'add' }],
+          ...(limits === undefined ? {} : { limits }),
+        }),
+      ),
+    );
+  }
+
+  async function typeDigits(count: number) {
+    const user = renderCalculator();
+    // The limit arrives with the operations lookup, so wait for the keypad to apply it.
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Power' })).toHaveAttribute(
+        'aria-disabled',
+        'true',
+      );
+    });
+    for (let index = 0; index < count; index += 1) {
+      await user.click(screen.getByRole('button', { name: '7' }));
+    }
+  }
+
+  it('stops typing at the operand length the server reports', async () => {
+    reportLimits({ maxOperandLength: 5, maxExponent: 100, decimalPrecision: 10 });
+
+    await typeDigits(8);
+
+    expect(liveRegion()).toHaveTextContent(/^77777$/);
+  });
+
+  it('falls back to the built-in 64 when the server sends no limits', async () => {
+    reportLimits(undefined);
+
+    await typeDigits(66);
+
+    expect(liveRegion().textContent.replace(/\D/g, '')).toHaveLength(64);
+  });
+
+  it('falls back to the built-in 64 when the operations request fails', async () => {
+    server.use(http.get(OPERATIONS_URL, () => HttpResponse.error()));
+    const user = renderCalculator();
+
+    for (let index = 0; index < 66; index += 1) {
+      await user.click(screen.getByRole('button', { name: '7' }));
+    }
+
+    expect(liveRegion().textContent.replace(/\D/g, '')).toHaveLength(64);
   });
 });

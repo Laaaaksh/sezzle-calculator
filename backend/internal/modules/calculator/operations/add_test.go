@@ -37,41 +37,41 @@ func (s *AddTestSuite) TestAddArityIsTwo() {
 }
 
 func (s *AddTestSuite) TestAddWhenBothPositiveReturnsTheSum() {
-	s.Equal("5", s.add("2", "3"))
+	s.Equal(addNum5, s.add(addNum2, addNum3))
 }
 
 func (s *AddTestSuite) TestAddWhenBothNegativeReturnsANegativeSum() {
-	s.Equal("-5", s.add("-2", "-3"))
+	s.Equal(addNumNeg5, s.add(addNumNeg2, addNumNeg3))
 }
 
 func (s *AddTestSuite) TestAddWhenSignsDifferReturnsTheDifference() {
-	s.Equal("-1", s.add("2", "-3"))
+	s.Equal(addNumNeg1, s.add(addNum2, addNumNeg3))
 }
 
 func (s *AddTestSuite) TestAddWhenOneOperandIsZeroReturnsTheOther() {
-	s.Equal("7.5", s.add("7.5", "0"))
+	s.Equal(addNum7Pt5, s.add(addNum7Pt5, addNum0))
 }
 
 func (s *AddTestSuite) TestAddWhenOperandsCancelReturnsZero() {
-	s.Equal("0", s.add("4.2", "-4.2"))
+	s.Equal(addNum0, s.add(addNum4Pt2, addNumNeg4Pt2))
 }
 
 func (s *AddTestSuite) TestAddPointOneAndPointTwoIsExactlyPointThree() {
-	s.Equal("0.3", s.add("0.1", "0.2"))
+	s.Equal(addNum0Pt3, s.add(addNum0Pt1, addNum0Pt2))
 }
 
 func (s *AddTestSuite) TestAddWhenOperandsAreVeryLargeKeepsEveryDigit() {
-	s.Equal("100000000000000000000000000000000", s.add("99999999999999999999999999999999", "1"))
+	s.Equal(addLong1, s.add(addLong2, addNum1))
 }
 
 func (s *AddTestSuite) TestAddWhenOperandsAreVerySmallKeepsEveryDigit() {
-	s.Equal("0.000000000000000000000000002", s.add("0.000000000000000000000000001", "0.000000000000000000000000001"))
+	s.Equal(addLong3, s.add(addLong4, addLong4))
 }
 
 func (s *AddTestSuite) TestAddWhenOperandsHaveManyDecimalPlacesKeepsThemAll() {
-	s.Equal("0.123456789012345679", s.add("0.1234567890123456789", "0.0000000000000000001"))
+	s.Equal(addLong5, s.add(addLong6, addLong7))
 }
 
 func (s *AddTestSuite) TestAddWhenResultIsNegativeZeroReturnsZero() {
-	s.Equal("0", s.add("-0", "-0"))
+	s.Equal(addNum0, s.add(addNumNeg0, addNumNeg0))
 }

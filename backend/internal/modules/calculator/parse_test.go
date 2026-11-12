@@ -9,7 +9,6 @@ import (
 
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/entities"
-	"github.com/Laaaaksh/sezzle-calculator/backend/pkg/apperror"
 )
 
 type ParseOperandsTestSuite struct {
@@ -33,7 +32,7 @@ func (s *ParseOperandsTestSuite) parsed(text string) string {
 func (s *ParseOperandsTestSuite) rejected(text string) any {
 	_, err := calculator.ParseOperands([]string{text}, testDefaultMaxLength)
 	s.Require().NotNil(err)
-	s.Require().Equal(apperror.CodeInvalidOperand, err.Code())
+	s.Require().Equal(entities.CodeInvalidOperand, err.Code())
 	s.Equal(testIndexFirst, err.Fields()[entities.FieldOperandIndex])
 	return err.Fields()[entities.FieldReason]
 }
@@ -104,7 +103,7 @@ func (s *ParseOperandsTestSuite) TestParseOperandsWhenMinusSignCountsTowardTheMa
 	_, err := calculator.ParseOperands([]string{"-" + testOperandOk}, testParseMaxLen)
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeOperandTooLarge, err.Code())
+	s.Equal(entities.CodeOperandTooLarge, err.Code())
 }
 
 func (s *ParseOperandsTestSuite) TestParseOperandsWhenThereAreNoOperandsReturnsAnEmptySlice() {
@@ -283,7 +282,7 @@ func (s *ParseOperandsTestSuite) TestParseOperandsWhenOperandIsLongerThanTheLimi
 	_, err := calculator.ParseOperands([]string{testOperandTooLong}, testParseMaxLen)
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeOperandTooLarge, err.Code())
+	s.Equal(entities.CodeOperandTooLarge, err.Code())
 	s.Equal(testIndexFirst, err.Fields()[entities.FieldOperandIndex])
 	s.Equal(testParseMaxLen, err.Fields()[entities.FieldLimit])
 }
@@ -292,28 +291,28 @@ func (s *ParseOperandsTestSuite) TestParseOperandsWhenALongOperandIsNotANumberCh
 	_, err := calculator.ParseOperands([]string{testParseLongText}, testParseMaxLen)
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeOperandTooLarge, err.Code())
+	s.Equal(entities.CodeOperandTooLarge, err.Code())
 }
 
 func (s *ParseOperandsTestSuite) TestParseOperandsWhenOperandIsHugeReturnsOperandTooLargeWithoutParsingIt() {
 	_, err := calculator.ParseOperands([]string{strings.Repeat("9", 10_000_000)}, testDefaultMaxLength)
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeOperandTooLarge, err.Code())
+	s.Equal(entities.CodeOperandTooLarge, err.Code())
 }
 
 func (s *ParseOperandsTestSuite) TestParseOperandsWhenMultibyteCharactersExceedTheLimitCountsBytes() {
 	_, err := calculator.ParseOperands([]string{testFullwidth}, testParseMaxLen-1)
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeOperandTooLarge, err.Code())
+	s.Equal(entities.CodeOperandTooLarge, err.Code())
 }
 
 func (s *ParseOperandsTestSuite) TestParseOperandsWhenTheSecondOperandIsInvalidReportsIndexOne() {
 	_, err := calculator.ParseOperands([]string{"1", testWordsText}, testDefaultMaxLength)
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeInvalidOperand, err.Code())
+	s.Equal(entities.CodeInvalidOperand, err.Code())
 	s.Equal(testIndexSecond, err.Fields()[entities.FieldOperandIndex])
 }
 
@@ -321,7 +320,7 @@ func (s *ParseOperandsTestSuite) TestParseOperandsWhenTheSecondOperandIsTooLongR
 	_, err := calculator.ParseOperands([]string{"1", testOperandTooLong}, testParseMaxLen)
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeOperandTooLarge, err.Code())
+	s.Equal(entities.CodeOperandTooLarge, err.Code())
 	s.Equal(testIndexSecond, err.Fields()[entities.FieldOperandIndex])
 }
 
@@ -344,7 +343,7 @@ func (s *ParseOperandsTestSuite) TestParseOperandsWhenAnOperandIsInvalidUsesTheD
 	_, err := calculator.ParseOperands([]string{testWordsText}, testDefaultMaxLength)
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.MsgInvalidOperand, err.PublicMessage())
+	s.Equal(entities.MsgInvalidOperand, err.PublicMessage())
 	s.ErrorIs(err, calculator.ErrOperandSyntax)
 }
 

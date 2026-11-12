@@ -1,15 +1,18 @@
-import { ApiError, NetworkError, TimeoutError } from '../../../api';
-import type { CalculatorError } from './types';
-
-const NETWORK_MESSAGE = 'Could not reach the server.';
-const TIMEOUT_MESSAGE = 'The request took too long.';
-const UNKNOWN_MESSAGE = 'Something went wrong.';
+import {
+  ApiError,
+  CLIENT_ERROR_CODE,
+  ERROR_CODE,
+  NetworkError,
+  TimeoutError,
+  type ApiErrorCode,
+} from '../../../api';
+import { CLIENT_FAILURE_CODE, type CalculatorError } from './types';
 
 /** Server-side failures that may clear up on their own, so sending the same request again can work. */
-const TRANSIENT_API_CODES: ReadonlySet<string> = new Set([
-  'INTERNAL',
-  'SERVICE_UNAVAILABLE',
-  'REQUEST_TIMEOUT',
+const TRANSIENT_API_CODES: ReadonlySet<ApiErrorCode> = new Set<ApiErrorCode>([
+  ERROR_CODE.INTERNAL,
+  ERROR_CODE.SERVICE_UNAVAILABLE,
+  ERROR_CODE.REQUEST_TIMEOUT,
 ]);
 
 /**
@@ -21,21 +24,15 @@ export function toCalculatorError(error: unknown): CalculatorError {
   if (error instanceof ApiError) {
     return {
       code: error.code,
-      message: error.message,
       requestId: error.requestId,
       retryable: TRANSIENT_API_CODES.has(error.code),
     };
   }
   if (error instanceof NetworkError) {
-    return {
-      code: 'NETWORK_ERROR',
-      message: NETWORK_MESSAGE,
-      requestId: undefined,
-      retryable: true,
-    };
+    return { code: CLIENT_FAILURE_CODE.NETWORK_ERROR, requestId: undefined, retryable: true };
   }
   if (error instanceof TimeoutError) {
-    return { code: 'TIMEOUT', message: TIMEOUT_MESSAGE, requestId: undefined, retryable: true };
+    return { code: CLIENT_FAILURE_CODE.TIMEOUT, requestId: undefined, retryable: true };
   }
-  return { code: 'UNKNOWN', message: UNKNOWN_MESSAGE, requestId: undefined, retryable: false };
+  return { code: CLIENT_ERROR_CODE.UNKNOWN, requestId: undefined, retryable: false };
 }

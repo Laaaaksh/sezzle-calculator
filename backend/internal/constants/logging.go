@@ -12,9 +12,7 @@ const (
 	LogMsgRequestCompleted  = "request completed"
 	LogMsgRequestPanicked   = "request handler panicked"
 	LogMsgErrorResponse     = "error response sent"
-	LogMsgRequestRejected   = "request rejected"
 	LogMsgResponseEncode    = "response encoding failed"
-	LogMsgServerListening   = "http server listening"
 )
 
 // Log field keys.

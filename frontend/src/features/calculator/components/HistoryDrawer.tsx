@@ -1,10 +1,8 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
+import { WIDE_LAYOUT_QUERY } from '../../../constants/layout';
 import type { HistoryEntry } from '../history';
 import styles from './HistoryDrawer.module.css';
 import { HistoryTape } from './HistoryTape';
-
-/** Must match the min-width breakpoint in HistoryDrawer.module.css that hides the toggle. */
-const WIDE_LAYOUT_QUERY = '(min-width: 900px)';
 
 interface HistoryDrawerProps {
   /** Newest first. */
@@ -72,6 +70,7 @@ export function HistoryDrawer({ entries, onReuse }: HistoryDrawerProps) {
       <div id={panelId} className={styles.panel} data-open={open}>
         <HistoryTape
           entries={entries}
+          headingClassName={styles.panelHeading}
           onReuse={(entry) => {
             onReuse(entry);
             if (open) {

@@ -2,6 +2,7 @@ package boot_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -13,7 +14,16 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/boot"
+	"github.com/Laaaaksh/sezzle-calculator/backend/internal/constants"
 )
+
+const runConfiguredAddress = ":8080"
+
+// runProbeClient has a timeout so a probe against a stuck server fails the
+// poll instead of blocking it.
+var runProbeClient = &http.Client{Timeout: runWaitLimit}
+
+var errTestBind = errors.New("bind exploded")
 
 const (
 	runPollInterval = 20 * time.Millisecond
@@ -62,7 +72,7 @@ func (s *RunTestSuite) url(path string) string {
 
 func (s *RunTestSuite) waitUntilServing() {
 	s.Require().Eventually(func() bool {
-		resp, err := http.Get(s.url(testLivePath))
+		resp, err := runProbeClient.Get(s.url(testLivePath))
 		if err != nil {
 			return false
 		}
@@ -72,7 +82,8 @@ func (s *RunTestSuite) waitUntilServing() {
 }
 
 func (s *RunTestSuite) TestRunServesUntilContextCancelledThenStopsCleanly() {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), 2*runWaitLimit)
+	defer cancel()
 	done := make(chan error, 1)
 	go func() { done <- s.app.Run(ctx) }()
 	s.waitUntilServing()
@@ -91,8 +102,79 @@ func (s *RunTestSuite) TestRunFailsFastWhenPortIsTaken() {
 	blocker, err := net.Listen("tcp", fmt.Sprintf(":%d", s.port))
 	s.Require().NoError(err)
 	defer func() { _ = blocker.Close() }()
+	// The deadline makes a Run that wrongly bound the port stop and fail the
+	// assertion below, instead of serving until the test binary times out.
+	ctx, cancel := context.WithTimeout(context.Background(), runWaitLimit)
+	defer cancel()
 
-	err = s.app.Run(context.Background())
+	err = s.app.Run(ctx)
 
 	s.Error(err)
+}
+
+// RunInjectedListenerTestSuite drives Run without a real port: the listener
+// comes from a test double, so the suite runs wherever binding is forbidden.
+type RunInjectedListenerTestSuite struct {
+	suite.Suite
+	app      *boot.App
+	network  string
+	address  string
+	listener *pipeListener
+}
+
+func TestRunInjectedListenerTestSuite(t *testing.T) {
+	suite.Run(t, new(RunInjectedListenerTestSuite))
+}
+
+func (s *RunInjectedListenerTestSuite) SetupTest() {
+	dir := s.T().TempDir()
+	s.Require().NoError(os.WriteFile(filepath.Join(dir, fileDefault), []byte(fixtureDefaultToml), 0o600))
+	s.Require().NoError(os.WriteFile(filepath.Join(dir, fileTest), []byte(fixtureTestToml), 0o600))
+	s.T().Setenv(envVarEnv, envNameTest)
+	s.T().Setenv(envVarConfigDir, dir)
+	s.T().Setenv(envVarPort, envValueEmpty)
+	s.listener = newPipeListener()
+
+	app, err := boot.Initialize(context.Background())
+	s.Require().NoError(err)
+	app.UseListen(func(network, address string) (net.Listener, error) {
+		s.network, s.address = network, address
+		return s.listener, nil
+	})
+	s.app = app
+}
+
+func (s *RunInjectedListenerTestSuite) TestRunWithACancelledContextShutsDownCleanly() {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	s.NoError(s.app.Run(ctx))
+}
+
+func (s *RunInjectedListenerTestSuite) TestRunBindsTheConfiguredAddressOverTCP() {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	s.Require().NoError(s.app.Run(ctx))
+
+	s.Equal(constants.ListenNetwork, s.network)
+	s.Equal(runConfiguredAddress, s.address)
+}
+
+func (s *RunInjectedListenerTestSuite) TestRunClosesTheListenerOnShutdown() {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	s.Require().NoError(s.app.Run(ctx))
+
+	_, err := s.listener.Accept()
+	s.ErrorIs(err, net.ErrClosed)
+}
+
+func (s *RunInjectedListenerTestSuite) TestRunReturnsTheBindFailure() {
+	s.app.UseListen(func(string, string) (net.Listener, error) { return nil, errTestBind })
+
+	err := s.app.Run(context.Background())
+
+	s.ErrorIs(err, errTestBind)
 }

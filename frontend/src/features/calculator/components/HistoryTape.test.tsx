@@ -33,3 +33,30 @@ describe('HistoryTape', () => {
     expect(onReuse).toHaveBeenCalledExactlyOnceWith(ENTRIES[1]);
   });
 });
+
+describe('HistoryTape heading', () => {
+  it('labels the section with its heading', () => {
+    render(<HistoryTape entries={[]} onReuse={vi.fn()} />);
+
+    expect(screen.getByRole('region', { name: 'History' })).toBeInTheDocument();
+  });
+
+  it('gives each tape its own heading id, so two on a page do not clash', () => {
+    render(
+      <>
+        <HistoryTape entries={[]} onReuse={vi.fn()} />
+        <HistoryTape entries={[]} onReuse={vi.fn()} />
+      </>,
+    );
+
+    const [first, second] = screen.getAllByRole('heading', { name: 'History' });
+    expect(first?.id).not.toBe('');
+    expect(first?.id).not.toBe(second?.id);
+  });
+
+  it('adds the class a parent passes to the heading', () => {
+    render(<HistoryTape entries={[]} onReuse={vi.fn()} headingClassName="from-parent" />);
+
+    expect(screen.getByRole('heading', { name: 'History' })).toHaveClass('from-parent');
+  });
+});

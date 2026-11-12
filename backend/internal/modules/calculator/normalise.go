@@ -13,5 +13,5 @@ func normalise(value decimal.Decimal) entities.Result {
 	if value.IsZero() {
 		value = decimal.Zero
 	}
-	return entities.Result{Value: value, Text: value.String()}
+	return entities.Result{Text: value.String()}
 }

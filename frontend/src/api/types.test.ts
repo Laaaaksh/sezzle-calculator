@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import apiDoc from '../../../docs/API.md?raw';
 import { ERROR_CODES, OPERATION_TYPES, type ErrorCode, type OperationType } from './types';
 
 // Written out by hand on purpose: adding a code to docs/API.md or removing one from types.ts
@@ -35,11 +34,22 @@ const EXPECTED_OPERATIONS: Record<OperationType, true> = {
   percentage: true,
 };
 
+// The contract document lives outside the frontend folder. A glob (unlike a plain import) does
+// not fail the whole suite when the file is missing, for example when only frontend/ is checked
+// out or built in a container. The check then skips with a message that says why.
+const API_DOC_PATH = '../../../docs/API.md';
+const docs = import.meta.glob<string>('../../../docs/API.md', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+});
+const apiDoc: string | undefined = docs[API_DOC_PATH];
+
 function firstColumnOfTableRows(pattern: RegExp): string[] {
-  return [...apiDoc.matchAll(pattern)].map((match) => match[1] ?? '');
+  return [...(apiDoc ?? '').matchAll(pattern)].map((match) => match[1] ?? '');
 }
 
-describe('API types match docs/API.md', () => {
+describe.skipIf(apiDoc === undefined)('API types match docs/API.md', () => {
   it('lists the same error codes as the constant', () => {
     expect([...ERROR_CODES].sort()).toEqual(Object.keys(EXPECTED_ERROR_CODES).sort());
   });
@@ -62,3 +72,10 @@ describe('API types match docs/API.md', () => {
     expect([...documented].sort()).toEqual([...OPERATION_TYPES].sort());
   });
 });
+
+// Listed as skipped in the report when the contract check could not run, never a silent pass.
+if (apiDoc === undefined) {
+  it.skip('docs/API.md not found next to the frontend, so the API contract check was not run', () => {
+    // Nothing to run: this entry only exists to make the skip visible.
+  });
+}

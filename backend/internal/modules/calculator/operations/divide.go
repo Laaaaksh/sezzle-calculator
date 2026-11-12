@@ -47,7 +47,7 @@ func NewDivide(precision int) *Divide {
 func (d *Divide) Apply(_ context.Context, operands []decimal.Decimal) (decimal.Decimal, apperror.IError) {
 	dividend, divisor := operands[0], operands[1]
 	if divisor.IsZero() {
-		return decimal.Zero, apperror.New(apperror.CodeDivisionByZero, ErrDivisionByZero)
+		return decimal.Zero, apperror.New(entities.CodeDivisionByZero, ErrDivisionByZero)
 	}
 	return divideHalfEven(dividend, divisor, d.precision), nil
 }

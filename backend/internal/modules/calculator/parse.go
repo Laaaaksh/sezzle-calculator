@@ -83,7 +83,7 @@ func ParseOperands(raw []string, maxLen int) ([]decimal.Decimal, apperror.IError
 
 func parseOperand(text string, index, maxLen int) (decimal.Decimal, apperror.IError) {
 	if len(text) > maxLen {
-		return decimal.Zero, apperror.New(apperror.CodeOperandTooLarge, ErrOperandTooLong).
+		return decimal.Zero, apperror.New(entities.CodeOperandTooLarge, ErrOperandTooLong).
 			WithField(entities.FieldOperandIndex, index).
 			WithField(entities.FieldLimit, maxLen)
 	}
@@ -100,7 +100,7 @@ func parseOperand(text string, index, maxLen int) (decimal.Decimal, apperror.IEr
 }
 
 func invalidOperand(index int, reason string) apperror.IError {
-	return apperror.New(apperror.CodeInvalidOperand, ErrOperandSyntax).
+	return apperror.New(entities.CodeInvalidOperand, ErrOperandSyntax).
 		WithField(entities.FieldOperandIndex, index).
 		WithField(entities.FieldReason, reason)
 }

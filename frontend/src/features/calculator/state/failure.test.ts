@@ -14,7 +14,7 @@ describe('toCalculatorError', () => {
     expect(toCalculatorError(error)).toMatchObject({ code: 'REQUEST_TIMEOUT', retryable: true });
   });
 
-  it('keeps the code, message and request ID of an API error', () => {
+  it('keeps the code and request ID of an API error', () => {
     const error = new ApiError({
       code: 'DIVISION_BY_ZERO',
       message: 'Cannot divide by zero.',
@@ -24,7 +24,6 @@ describe('toCalculatorError', () => {
 
     expect(toCalculatorError(error)).toEqual({
       code: 'DIVISION_BY_ZERO',
-      message: 'Cannot divide by zero.',
       requestId: 'req-9',
       retryable: false,
     });

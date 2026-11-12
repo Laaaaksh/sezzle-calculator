@@ -1,13 +1,14 @@
 import { MAX_OPERAND_LENGTH, type BinaryOperation } from '../../../constants/calculator';
-import type {
-  CalculatorAction,
-  CalculatorError,
-  CalculatorState,
-  EnteringFirstState,
-  EnteringSecondState,
-  PendingRequest,
-  ShowingResultState,
-  WaitingState,
+import {
+  CLIENT_FAILURE_CODE,
+  type CalculatorAction,
+  type CalculatorError,
+  type CalculatorState,
+  type EnteringFirstState,
+  type EnteringSecondState,
+  type PendingRequest,
+  type ShowingResultState,
+  type WaitingState,
 } from './types';
 
 /** Operand text when nothing has been typed. Shown as 0 and sent as "0". */
@@ -15,6 +16,23 @@ const EMPTY_OPERAND = '';
 const ZERO = '0';
 const DECIMAL_POINT = '.';
 const MINUS = '-';
+
+/**
+ * A decimal point needs room for itself plus one digit after it (an empty operand becomes "0.",
+ * two characters), so it is refused when fewer than this many characters remain.
+ */
+const DECIMAL_POINT_RESERVE = 2;
+
+/** Any non-zero digit. Not global, so .test() keeps no state between calls. */
+const NON_ZERO_DIGIT = /[1-9]/;
+
+/** Limits the reducer enforces. The server can report different values than the built-ins. */
+export interface ReducerLimits {
+  /** Longest operand, counting "-" and ".". */
+  maxOperandLength: number;
+}
+
+const DEFAULT_LIMITS: ReducerLimits = { maxOperandLength: MAX_OPERAND_LENGTH };
 
 export function createInitialState(lastRequestId = 0): CalculatorState {
   return { status: 'entering_first', operand: EMPTY_OPERAND, lastRequestId };
@@ -26,15 +44,15 @@ export const initialState: CalculatorState = createInitialState();
 // (see "Numbers are strings" in docs/API.md), so nothing here calls Number() or parseFloat().
 
 /** Adds one character to an operand, or returns the operand unchanged when the rule forbids it. */
-function appendChar(operand: string, char: string): string {
+function appendChar(operand: string, char: string, max: number): string {
   if (char === DECIMAL_POINT) {
-    if (operand.includes(DECIMAL_POINT) || operand.length + 2 > MAX_OPERAND_LENGTH) {
+    if (operand.includes(DECIMAL_POINT) || operand.length + DECIMAL_POINT_RESERVE > max) {
       return operand;
     }
     // A bare "." is not a valid operand, so an empty operand becomes "0.".
     return operand === EMPTY_OPERAND ? `${ZERO}${DECIMAL_POINT}` : `${operand}${DECIMAL_POINT}`;
   }
-  if (operand.length >= MAX_OPERAND_LENGTH) {
+  if (operand.length >= max) {
     return operand;
   }
   // Leading zeros collapse: typing after a lone 0 (or -0) replaces it, and 0 then 0 stays 0.
@@ -49,21 +67,21 @@ function appendChar(operand: string, char: string): string {
 
 /** True when the operand has no non-zero digit, so "0", "-0" and "0.00" all count. */
 function isZero(operand: string): boolean {
-  return !/[1-9]/.test(operand);
+  return !NON_ZERO_DIGIT.test(operand);
 }
 
 /**
  * Flips the sign. A zero stays unsigned, and the limit still counts the added "-":
  * an operand already at the limit comes back unchanged, which callers treat as a refusal.
  */
-function negate(operand: string): string {
+function negate(operand: string, max: number): string {
   if (isZero(operand)) {
     return operand;
   }
   if (operand.startsWith(MINUS)) {
     return operand.slice(1);
   }
-  return operand.length >= MAX_OPERAND_LENGTH ? operand : `${MINUS}${operand}`;
+  return operand.length >= max ? operand : `${MINUS}${operand}`;
 }
 
 /** The operand as it is sent: no dangling ".", and an empty or "-0" operand is 0. */
@@ -78,8 +96,8 @@ function removeLastChar(operand: string): string {
 }
 
 /** True when a result is longer than the server accepts as an operand (OPERAND_TOO_LARGE). */
-function tooLongToReuse(result: string): boolean {
-  return result.length > MAX_OPERAND_LENGTH;
+function tooLongToReuse(result: string, max: number): boolean {
+  return result.length > max;
 }
 
 /**
@@ -90,8 +108,7 @@ function refuseLongResult(state: ShowingResultState): ShowingResultState {
   return {
     ...state,
     notice: {
-      code: 'RESULT_TOO_LONG_TO_REUSE',
-      message: 'The result is too long to reuse.',
+      code: CLIENT_FAILURE_CODE.RESULT_TOO_LONG_TO_REUSE,
       requestId: undefined,
       retryable: false,
     } satisfies CalculatorError,
@@ -106,11 +123,11 @@ function startRequest(
   return { status: 'waiting', lastRequestId: id, pending: { id, ...request } };
 }
 
-function typeChar(state: CalculatorState, char: string): CalculatorState {
+function typeChar(state: CalculatorState, char: string, max: number): CalculatorState {
   switch (state.status) {
     case 'entering_first':
     case 'entering_second': {
-      const operand = appendChar(state.operand, char);
+      const operand = appendChar(state.operand, char, max);
       return operand === state.operand ? state : { ...state, operand };
     }
     case 'operator_chosen':
@@ -119,7 +136,7 @@ function typeChar(state: CalculatorState, char: string): CalculatorState {
         lastRequestId: state.lastRequestId,
         left: state.left,
         operator: state.operator,
-        operand: appendChar(EMPTY_OPERAND, char),
+        operand: appendChar(EMPTY_OPERAND, char, max),
       };
     case 'showing_result':
     case 'error':
@@ -127,14 +144,18 @@ function typeChar(state: CalculatorState, char: string): CalculatorState {
       return {
         status: 'entering_first',
         lastRequestId: state.lastRequestId,
-        operand: appendChar(EMPTY_OPERAND, char),
+        operand: appendChar(EMPTY_OPERAND, char, max),
       };
     case 'waiting':
       return state;
   }
 }
 
-function chooseOperator(state: CalculatorState, operator: BinaryOperation): CalculatorState {
+function chooseOperator(
+  state: CalculatorState,
+  operator: BinaryOperation,
+  max: number,
+): CalculatorState {
   switch (state.status) {
     case 'entering_first':
       return {
@@ -153,7 +174,7 @@ function chooseOperator(state: CalculatorState, operator: BinaryOperation): Calc
         then: operator,
       });
     case 'showing_result':
-      return tooLongToReuse(state.result)
+      return tooLongToReuse(state.result, max)
         ? refuseLongResult(state)
         : {
             status: 'operator_chosen',
@@ -167,7 +188,7 @@ function chooseOperator(state: CalculatorState, operator: BinaryOperation): Calc
   }
 }
 
-function applyUnary(state: CalculatorState, operation: 'sqrt'): CalculatorState {
+function applyUnary(state: CalculatorState, operation: 'sqrt', max: number): CalculatorState {
   switch (state.status) {
     case 'entering_first':
       // Nothing typed means nothing to compute.
@@ -179,7 +200,7 @@ function applyUnary(state: CalculatorState, operation: 'sqrt'): CalculatorState 
             then: null,
           });
     case 'showing_result':
-      return tooLongToReuse(state.result)
+      return tooLongToReuse(state.result, max)
         ? refuseLongResult(state)
         : startRequest(state, { operation, operands: [state.result], then: null });
     default:
@@ -232,19 +253,19 @@ function backspace(state: CalculatorState): CalculatorState {
   }
 }
 
-function toggleSign(state: CalculatorState): CalculatorState {
+function toggleSign(state: CalculatorState, max: number): CalculatorState {
   switch (state.status) {
     case 'entering_first':
     case 'entering_second': {
-      const operand = negate(state.operand);
+      const operand = negate(state.operand, max);
       return operand === state.operand ? state : { ...state, operand };
     }
     case 'showing_result': {
       // The negated result becomes an operand, so the same length rule applies.
-      if (tooLongToReuse(state.result)) {
+      if (tooLongToReuse(state.result, max)) {
         return refuseLongResult(state);
       }
-      const operand = negate(state.result);
+      const operand = negate(state.result, max);
       if (operand === state.result) {
         return isZero(state.result) ? state : refuseLongResult(state);
       }
@@ -263,6 +284,7 @@ function resultReceived(
   state: CalculatorState,
   requestId: number,
   result: string,
+  max: number,
 ): CalculatorState {
   // Only the answer to the request we are waiting for counts. Anything else is stale.
   if (state.status !== 'waiting' || state.pending.id !== requestId) {
@@ -275,7 +297,7 @@ function resultReceived(
     result,
     request: { operation, operands },
   };
-  if (then !== null && tooLongToReuse(result)) {
+  if (then !== null && tooLongToReuse(result, max)) {
     // The chained operator would send this result as an operand. Show it instead, with the reason.
     return refuseLongResult(shown);
   }
@@ -290,12 +312,12 @@ function resultReceived(
   return shown;
 }
 
-function reuse(state: CalculatorState, result: string): CalculatorState {
+function reuse(state: CalculatorState, result: string, max: number): CalculatorState {
   if (state.status === 'waiting') {
     // A request is in flight; the answer would overwrite whatever was reused.
     return state;
   }
-  if (tooLongToReuse(result)) {
+  if (tooLongToReuse(result, max)) {
     // Not usable as an operand, so it is shown for reading only. Any calculation in progress
     // is dropped, which the message makes clear by replacing the expression.
     return refuseLongResult({
@@ -325,19 +347,28 @@ function reuse(state: CalculatorState, result: string): CalculatorState {
   }
 }
 
-export function calculatorReducer(
-  state: CalculatorState,
-  action: CalculatorAction,
-): CalculatorState {
+/**
+ * Builds the reducer for a set of limits. The limits are fixed per reducer, so the hook builds a
+ * new one when the server reports different values; state itself never carries them.
+ */
+export function createCalculatorReducer({ maxOperandLength }: ReducerLimits) {
+  return (state: CalculatorState, action: CalculatorAction): CalculatorState =>
+    reduce(state, action, maxOperandLength);
+}
+
+/** The reducer with the built-in limits (MAX_OPERAND_LENGTH). */
+export const calculatorReducer = createCalculatorReducer(DEFAULT_LIMITS);
+
+function reduce(state: CalculatorState, action: CalculatorAction, max: number): CalculatorState {
   switch (action.type) {
     case 'digit':
-      return typeChar(state, action.digit);
+      return typeChar(state, action.digit, max);
     case 'decimal':
-      return typeChar(state, DECIMAL_POINT);
+      return typeChar(state, DECIMAL_POINT, max);
     case 'operator':
-      return chooseOperator(state, action.operator);
+      return chooseOperator(state, action.operator, max);
     case 'unary':
-      return applyUnary(state, action.operation);
+      return applyUnary(state, action.operation, max);
     case 'equals':
       return equals(state);
     case 'backspace':
@@ -346,9 +377,9 @@ export function calculatorReducer(
       // lastRequestId is kept so a request sent before the clear can never match a later one.
       return createInitialState(state.lastRequestId);
     case 'toggle_sign':
-      return toggleSign(state);
+      return toggleSign(state, max);
     case 'result_received':
-      return resultReceived(state, action.requestId, action.result);
+      return resultReceived(state, action.requestId, action.result, max);
     case 'request_failed':
       return state.status === 'waiting' && state.pending.id === action.requestId
         ? {
@@ -367,6 +398,6 @@ export function calculatorReducer(
           })
         : state;
     case 'reuse':
-      return reuse(state, action.result);
+      return reuse(state, action.result, max);
   }
 }

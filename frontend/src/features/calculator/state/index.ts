@@ -1,11 +1,16 @@
 export { toCalculatorError } from './failure';
-export { calculatorReducer, createInitialState, initialState } from './reducer';
+export {
+  calculatorReducer,
+  createCalculatorReducer,
+  createInitialState,
+  initialState,
+} from './reducer';
+export { CLIENT_FAILURE_CODE } from './types';
 export type {
   CalculationRequest,
   CalculatorAction,
   CalculatorError,
   CalculatorState,
-  CalculatorStatus,
   ClientFailureCode,
   PendingRequest,
 } from './types';

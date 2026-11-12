@@ -1,7 +1,14 @@
 import type { ApiErrorCode } from '../api';
 import type { CalculatorError, ClientFailureCode } from '../features/calculator/state';
 
+/**
+ * The one place error copy lives. api/errors.ts, the API client and the UI all read from here,
+ * so the same failure never gets two different sentences.
+ */
 export const GENERIC_ERROR_MESSAGE = 'Something went wrong.';
+
+/** Used as the CanceledError message. Never shown: a cancelled request is not reported to users. */
+export const CANCELED_MESSAGE = 'The request was canceled.';
 
 /**
  * Codes with their own copy. UNKNOWN is left out on purpose: it has no meaning of its own, so it

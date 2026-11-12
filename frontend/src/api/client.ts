@@ -6,9 +6,15 @@ import {
   HTTP_METHODS,
   JSON_MEDIA_TYPE,
 } from '../constants/api';
+import { ERROR_MESSAGES, GENERIC_ERROR_MESSAGE } from '../constants/errorMessages';
 import { ApiError, CanceledError, NetworkError, TimeoutError } from './errors';
 import { isCalculateResponse, isErrorBodyShape, isErrorCode, isOperationsResponse } from './guards';
-import type { CalculateRequest, CalculateResponse, OperationInfo } from './types';
+import {
+  CLIENT_ERROR_CODE,
+  type CalculateRequest,
+  type CalculateResponse,
+  type OperationsResponse,
+} from './types';
 
 export interface RequestOptions {
   /** Aborts the request. The call then rejects with a CanceledError. */
@@ -26,11 +32,9 @@ export interface ApiClientConfig {
 
 export interface ApiClient {
   calculate: (request: CalculateRequest, options?: RequestOptions) => Promise<CalculateResponse>;
-  getOperations: (options?: RequestOptions) => Promise<OperationInfo[]>;
+  /** The operations list, plus the server's input limits when it sends them. */
+  getOperations: (options?: RequestOptions) => Promise<OperationsResponse>;
 }
-
-const INVALID_RESPONSE_MESSAGE = 'The server sent a response this app cannot read.';
-const UNKNOWN_ERROR_MESSAGE = 'The server returned an unexpected error.';
 
 /** Turns the raw env value into a base URL: unset or blank becomes the default, no trailing slash. */
 export function resolveBaseUrl(raw: string | undefined): string {
@@ -60,8 +64,8 @@ function buildApiError(response: Response, text: string): ApiError {
 
   if (!isErrorBodyShape(body)) {
     return new ApiError({
-      code: 'UNKNOWN',
-      message: UNKNOWN_ERROR_MESSAGE,
+      code: CLIENT_ERROR_CODE.UNKNOWN,
+      message: GENERIC_ERROR_MESSAGE,
       status: response.status,
       requestId: headerRequestId,
     });
@@ -70,7 +74,7 @@ function buildApiError(response: Response, text: string): ApiError {
   const { code, message, requestId, fields } = body.error;
   return new ApiError({
     // A code from a newer server is kept out of the typed union and reported as UNKNOWN.
-    code: isErrorCode(code) ? code : 'UNKNOWN',
+    code: isErrorCode(code) ? code : CLIENT_ERROR_CODE.UNKNOWN,
     message,
     status: response.status,
     requestId,
@@ -80,11 +84,104 @@ function buildApiError(response: Response, text: string): ApiError {
 
 function buildInvalidResponseError(response: Response): ApiError {
   return new ApiError({
-    code: 'INVALID_RESPONSE',
-    message: INVALID_RESPONSE_MESSAGE,
+    code: CLIENT_ERROR_CODE.INVALID_RESPONSE,
+    message: ERROR_MESSAGES.INVALID_RESPONSE,
     status: response.status,
     requestId: response.headers.get(HEADER_NAMES.requestId) ?? undefined,
   });
+}
+
+/** What to send: everything that differs between endpoints. */
+interface RequestSpec<T> {
+  path: string;
+  method: string;
+  body?: string | undefined;
+  /** Runtime check for the parsed body. A body that fails it is an INVALID_RESPONSE error. */
+  isExpected: (value: unknown) => value is T;
+}
+
+/**
+ * One abort signal fed by two sources: the caller's signal and a timer. `timedOut` records which
+ * one fired, because fetch rejects with the same kind of error in both cases.
+ */
+interface AbortScope {
+  signal: AbortSignal;
+  timedOut: () => boolean;
+  /** Always call this (in a finally): it stops the timer and unhooks the caller's signal. */
+  dispose: () => void;
+}
+
+function createAbortScope(callerSignal: AbortSignal | undefined, timeoutMs: number): AbortScope {
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+  const onCallerAbort = () => {
+    controller.abort(callerSignal?.reason);
+  };
+  callerSignal?.addEventListener('abort', onCallerAbort, { once: true });
+
+  return {
+    signal: controller.signal,
+    timedOut: () => timedOut,
+    dispose: () => {
+      clearTimeout(timer);
+      callerSignal?.removeEventListener('abort', onCallerAbort);
+    },
+  };
+}
+
+/** Sends the request and reads the whole body as text, all under one abort signal. */
+async function fetchText(
+  url: string,
+  spec: Pick<RequestSpec<unknown>, 'method' | 'body'>,
+  signal: AbortSignal,
+): Promise<{ response: Response; text: string }> {
+  const response = await fetch(url, {
+    method: spec.method,
+    ...(spec.body === undefined ? {} : { body: spec.body }),
+    headers: {
+      [HEADER_NAMES.accept]: JSON_MEDIA_TYPE,
+      ...(spec.body === undefined ? {} : { [HEADER_NAMES.contentType]: JSON_MEDIA_TYPE }),
+    },
+    signal,
+  });
+  // The timer keeps running while the body downloads, so a stalled body also times out.
+  const text = await response.text();
+  return { response, text };
+}
+
+/** Names a failed fetch: timeout, the caller's cancel, or a plain network failure. */
+function classifyFetchFailure(
+  cause: unknown,
+  scope: AbortScope,
+  callerSignal: AbortSignal | undefined,
+  timeoutMs: number,
+): Error {
+  if (scope.timedOut()) {
+    return new TimeoutError(timeoutMs, { cause });
+  }
+  if (callerSignal?.aborted) {
+    return new CanceledError({ cause });
+  }
+  return new NetworkError({ cause });
+}
+
+/** Turns a received response into the typed body, or throws the matching ApiError. */
+function readBody<T>(
+  { response, text }: { response: Response; text: string },
+  isExpected: RequestSpec<T>['isExpected'],
+): T {
+  if (!response.ok) {
+    throw buildApiError(response, text);
+  }
+  const body = parseJson(text);
+  if (!isExpected(body)) {
+    throw buildInvalidResponseError(response);
+  }
+  return body;
 }
 
 /** Creates a client. Tests pass their own config; the app uses the default client below. */
@@ -93,12 +190,7 @@ export function createApiClient(config: ApiClientConfig = {}): ApiClient {
   const defaultTimeoutMs = config.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
   assertValidTimeout(defaultTimeoutMs);
 
-  async function send<T>(
-    path: string,
-    init: { method: string; body?: string },
-    isExpected: (value: unknown) => value is T,
-    options: RequestOptions,
-  ): Promise<T> {
+  async function send<T>(spec: RequestSpec<T>, options: RequestOptions): Promise<T> {
     const timeoutMs = options.timeoutMs ?? defaultTimeoutMs;
     assertValidTimeout(timeoutMs);
     const callerSignal = options.signal;
@@ -106,79 +198,36 @@ export function createApiClient(config: ApiClientConfig = {}): ApiClient {
       throw new CanceledError({ cause: callerSignal.reason });
     }
 
-    // One controller is aborted by either the caller or the timer. The flag records which one,
-    // because fetch rejects with the same kind of error in both cases.
-    const controller = new AbortController();
-    const state = { timedOut: false };
-    const timer = setTimeout(() => {
-      state.timedOut = true;
-      controller.abort();
-    }, timeoutMs);
-    const onCallerAbort = () => {
-      controller.abort(callerSignal?.reason);
-    };
-    callerSignal?.addEventListener('abort', onCallerAbort, { once: true });
-
-    let response: Response;
-    let text: string;
+    const scope = createAbortScope(callerSignal, timeoutMs);
+    let received: { response: Response; text: string };
     try {
-      response = await fetch(`${baseUrl}${path}`, {
-        ...init,
-        headers: {
-          [HEADER_NAMES.accept]: JSON_MEDIA_TYPE,
-          ...(init.body === undefined ? {} : { [HEADER_NAMES.contentType]: JSON_MEDIA_TYPE }),
-        },
-        signal: controller.signal,
-      });
-      // The timer keeps running while the body downloads, so a stalled body also times out.
-      text = await response.text();
+      received = await fetchText(`${baseUrl}${spec.path}`, spec, scope.signal);
     } catch (cause) {
-      if (state.timedOut) {
-        throw new TimeoutError(timeoutMs, { cause });
-      }
-      if (callerSignal?.aborted) {
-        throw new CanceledError({ cause });
-      }
-      throw new NetworkError({ cause });
+      throw classifyFetchFailure(cause, scope, callerSignal, timeoutMs);
     } finally {
-      clearTimeout(timer);
-      callerSignal?.removeEventListener('abort', onCallerAbort);
+      scope.dispose();
     }
-
-    if (!response.ok) {
-      throw buildApiError(response, text);
-    }
-    const body = parseJson(text);
-    if (!isExpected(body)) {
-      throw buildInvalidResponseError(response);
-    }
-    return body;
+    return readBody(received, spec.isExpected);
   }
 
   return {
     calculate: (request, options = {}) =>
       send(
-        API_PATHS.calculate,
-        { method: HTTP_METHODS.post, body: JSON.stringify(request) },
-        isCalculateResponse,
+        {
+          path: API_PATHS.calculate,
+          method: HTTP_METHODS.post,
+          body: JSON.stringify(request),
+          isExpected: isCalculateResponse,
+        },
         options,
       ),
-    getOperations: async (options = {}) => {
-      const body = await send(
-        API_PATHS.operations,
-        { method: HTTP_METHODS.get },
-        isOperationsResponse,
+    getOperations: (options = {}) =>
+      send(
+        { path: API_PATHS.operations, method: HTTP_METHODS.get, isExpected: isOperationsResponse },
         options,
-      );
-      return body.operations;
-    },
+      ),
   };
 }
 
-const defaultClient = createApiClient({ baseUrl: import.meta.env.VITE_API_BASE_URL });
-
-/** Runs one operation on the server. Rejects with ApiError, NetworkError, TimeoutError or CanceledError. */
-export const calculate = defaultClient.calculate;
-
-/** Lists the operations the server supports. Rejects like calculate. */
-export const getOperations = defaultClient.getOperations;
+/** The client the app uses. Components read it through ApiClientContext, which defaults to this. */
+export const defaultApiClient = createApiClient({ baseUrl: import.meta.env.VITE_API_BASE_URL });

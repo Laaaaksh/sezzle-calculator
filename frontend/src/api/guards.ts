@@ -5,6 +5,7 @@ import {
   type ErrorCode,
   type ErrorFields,
   type OperationInfo,
+  type OperationLimits,
   type OperationsResponse,
 } from './types';
 
@@ -55,9 +56,29 @@ function isOperationInfo(value: unknown): value is OperationInfo {
   );
 }
 
+function isPositiveInteger(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value > 0;
+}
+
+function isOperationLimits(value: unknown): value is OperationLimits {
+  return (
+    isRecord(value) &&
+    isPositiveInteger(value.maxOperandLength) &&
+    isPositiveInteger(value.maxExponent) &&
+    isPositiveInteger(value.decimalPrecision)
+  );
+}
+
+/**
+ * `limits` may be missing (an older server), but when it is present it must be well formed:
+ * a half-valid limit would silently mis-size the keypad, so it fails loudly instead.
+ */
 export function isOperationsResponse(value: unknown): value is OperationsResponse {
   return (
-    isRecord(value) && Array.isArray(value.operations) && value.operations.every(isOperationInfo)
+    isRecord(value) &&
+    Array.isArray(value.operations) &&
+    value.operations.every(isOperationInfo) &&
+    (value.limits === undefined || isOperationLimits(value.limits))
   );
 }
 

@@ -18,7 +18,6 @@ import (
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/httpx"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/entities"
-	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/operations"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/health"
 	"github.com/Laaaaksh/sezzle-calculator/backend/pkg/apperror"
 )
@@ -47,11 +46,10 @@ func (s *CalculateE2ETestSuite) SetupTest() {
 		CORS:       config.CORSConfig{AllowedOrigins: []string{testOrigin}},
 		Calculator: calc,
 	}
-	core := calculator.NewCore(operations.NewDefaultRegistry(calc), calc)
 	healthCore := health.NewCore()
 	modules := boot.Modules{
 		Health:     &health.Module{Core: healthCore, Handler: health.NewHTTPHandler(healthCore)},
-		Calculator: &calculator.Module{Core: core, Handler: calculator.NewHTTPHandler(core, calc)},
+		Calculator: calculator.NewModule(context.Background(), calc),
 	}
 	s.router = boot.NewRouter(cfg, modules)
 	s.recorder = httptest.NewRecorder()
@@ -92,8 +90,8 @@ func (s *CalculateE2ETestSuite) TestDivisionByZeroReturns422WithRequestID() {
 
 	body := s.errorBody()
 	s.Equal(http.StatusUnprocessableEntity, s.recorder.Code)
-	s.Equal(apperror.CodeDivisionByZero, body.Code)
-	s.Equal(apperror.MsgDivisionByZero, body.Message)
+	s.Equal(entities.CodeDivisionByZero, body.Code)
+	s.Equal(entities.MsgDivisionByZero, body.Message)
 	s.NotEmpty(body.RequestID)
 	s.Equal(body.RequestID, s.recorder.Header().Get(wantHeaderTemplate))
 }
@@ -119,6 +117,38 @@ func (s *CalculateE2ETestSuite) TestMissingFieldsReturn422WithFields() {
 	s.Equal(http.StatusUnprocessableEntity, s.recorder.Code)
 	s.Equal(apperror.CodeValidationFailed, body.Code)
 	s.Len(body.Fields, e2eExpectedFieldCount)
+}
+
+func (s *CalculateE2ETestSuite) TestThreeOperandsForAddReturnInvalidOperandCount() {
+	s.postJSON(wantContentType, e2eBodyThreeOperands)
+
+	s.Equal(http.StatusUnprocessableEntity, s.recorder.Code)
+	s.Equal(entities.CodeInvalidOperandCount, s.errorBody().Code)
+}
+
+func (s *CalculateE2ETestSuite) TestSeventeenOperandsReturn422BeforeAnyParsing() {
+	s.postJSON(wantContentType, e2eBodyTooManyOperands)
+
+	body := s.errorBody()
+	s.Equal(http.StatusUnprocessableEntity, s.recorder.Code)
+	s.Equal(apperror.CodeValidationFailed, body.Code)
+}
+
+func (s *CalculateE2ETestSuite) TestCaseVariantDuplicateKeyReturns400AndComputesNothing() {
+	s.postJSON(wantContentType, e2eBodyCaseVariantKey)
+
+	body := s.errorBody()
+	s.Equal(http.StatusBadRequest, s.recorder.Code)
+	s.Equal(apperror.CodeBadRequest, body.Code)
+	s.Contains(body.Fields, e2eDuplicateKeyField)
+}
+
+func (s *CalculateE2ETestSuite) TestOperationsPublishesTheConfiguredLimits() {
+	s.router.ServeHTTP(s.recorder, httptest.NewRequest(http.MethodGet, testOperationsPath, nil))
+
+	var got map[string]json.RawMessage
+	s.Require().NoError(json.Unmarshal(s.recorder.Body.Bytes(), &got))
+	s.JSONEq(e2eWantLimitsJSON, string(got[e2eLimitsKey]))
 }
 
 func (s *CalculateE2ETestSuite) TestOperationsListsEverySupportedOperationInOrder() {
@@ -149,7 +179,7 @@ func (s *CalculateE2ETestSuite) TestShortUnknownOperationIsEchoedInFields() {
 
 	body := s.errorBody()
 	s.Equal(http.StatusUnprocessableEntity, s.recorder.Code)
-	s.Equal(apperror.CodeUnknownOperation, body.Code)
+	s.Equal(entities.CodeUnknownOperation, body.Code)
 	s.Equal(map[string]any{entities.FieldOperation: e2eUnknownOperationName}, body.Fields)
 }
 

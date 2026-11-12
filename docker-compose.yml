@@ -7,6 +7,10 @@ services:
     build:
       context: ./backend
     restart: unless-stopped
+    # Docker sends SIGTERM, then SIGKILL after this period. It must exceed the backend shutdown time:
+    # server.shutdown_drain_delay (5s in prod) + server.shutdown_grace_period (10s) = 15s < 20s.
+    # See backend/config/*.toml and docs/DECISIONS.md.
+    stop_grace_period: 20s
     # Hardening: immutable root filesystem, no Linux capabilities, no privilege gain via setuid.
     read_only: true
     cap_drop: [ALL]
@@ -28,6 +32,8 @@ services:
     build:
       context: ./frontend
     restart: unless-stopped
+    # nginx finishes open requests on SIGQUIT and exits fast on SIGTERM. 10s is ample for a static site.
+    stop_grace_period: 10s
     # Same hardening. nginx-unprivileged keeps its pid file and temp dirs under /tmp, hence the tmpfs mounts.
     read_only: true
     cap_drop: [ALL]

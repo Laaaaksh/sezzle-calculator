@@ -7,7 +7,6 @@ import { ErrorBanner } from './ErrorBanner';
 function error(overrides: Partial<CalculatorError>): CalculatorError {
   return {
     code: 'NETWORK_ERROR',
-    message: 'raw',
     requestId: undefined,
     retryable: true,
     ...overrides,
