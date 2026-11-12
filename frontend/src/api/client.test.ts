@@ -305,6 +305,13 @@ describe('getOperations', () => {
 
   it.each([
     ['an empty operation name', { operations: [{ ...ADD_OPERATION, name: '' }] }],
+    ['a non-string operation name', { operations: [{ ...ADD_OPERATION, name: 7 }] }],
+    ['a string arity', { operations: [{ ...ADD_OPERATION, arity: '2' }] }],
+    ['a null entry', { operations: [null] }],
+    [
+      'a malformed entry next to an unknown name',
+      { operations: [{ ...ADD_OPERATION, name: 'modulo' }, { name: 'add' }] },
+    ],
     ['a missing description', { operations: [{ name: 'add', arity: 2, symbol: '+' }] }],
     ['a fractional arity', { operations: [{ ...ADD_OPERATION, arity: 1.5 }] }],
     ['a bare array', [ADD_OPERATION]],
