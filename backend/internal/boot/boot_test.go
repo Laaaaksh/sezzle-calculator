@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/boot"
+	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/health"
 )
 
@@ -33,10 +34,12 @@ func (s *InitializeTestSuite) SetupTest() {
 	s.T().Setenv(envVarConfigDir, s.dir)
 	s.T().Setenv(envVarPort, envValueEmpty)
 	health.HealthModule = nil
+	calculator.CalculatorModule = nil
 }
 
 func (s *InitializeTestSuite) TearDownTest() {
 	health.HealthModule = nil
+	calculator.CalculatorModule = nil
 }
 
 func (s *InitializeTestSuite) writeFile(name, content string) {
@@ -47,6 +50,22 @@ func (s *InitializeTestSuite) get(app *boot.App, path string) *httptest.Response
 	rec := httptest.NewRecorder()
 	app.Handler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
 	return rec
+}
+
+func (s *InitializeTestSuite) TestInitializeBuildsAppThatServesTheOperationsList() {
+	app, err := boot.Initialize(s.ctx)
+
+	s.Require().NoError(err)
+	rec := s.get(app, testOperationsPath)
+	s.Equal(http.StatusOK, rec.Code)
+	s.Contains(rec.Body.String(), wantOperationsBodyStart)
+}
+
+func (s *InitializeTestSuite) TestInitializeBuildsAppThatServesTheLiveProbe() {
+	app, err := boot.Initialize(s.ctx)
+
+	s.Require().NoError(err)
+	s.Equal(http.StatusOK, s.get(app, testLivePath).Code)
 }
 
 func (s *InitializeTestSuite) TestInitializeBuildsAppThatServesLive() {

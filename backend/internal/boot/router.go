@@ -10,13 +10,15 @@ import (
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/constants"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/httpx"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/interceptors"
+	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/health"
 )
 
 // Modules is every feature module the router needs. Adding a feature means
 // adding a field here and registering its routes in NewRouter.
 type Modules struct {
-	Health health.IModule
+	Health     health.IModule
+	Calculator calculator.IModule
 }
 
 // RouteRegistrar adds a feature's routes to the versioned API router.
@@ -50,6 +52,7 @@ func NewRouter(cfg *config.Config, modules Modules, apiRoutes ...RouteRegistrar)
 
 	// Feature modules register their routes on this sub-router.
 	r.Route(constants.APIBasePath, func(api chi.Router) {
+		modules.Calculator.GetHandler().RegisterRoutes(api)
 		for _, register := range apiRoutes {
 			register(api)
 		}

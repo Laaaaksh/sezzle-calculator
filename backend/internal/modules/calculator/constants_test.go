@@ -1,9 +1,13 @@
 package calculator_test
 
 const (
+	testFakeSymbol      = "?"
+	testFakeDescription = "Fake operation for tests."
+
 	testOpFake     = "fake"
 	testOpUnary    = "unary"
 	testOpMissing  = "missing"
+	opModulo       = "modulo"
 	testOpBlank    = ""
 	testOpBoom     = "boom"
 	testFakeResult = "7.500"
@@ -36,4 +40,65 @@ const (
 	testFullwidth     = "１２３"
 	testNoLeakText    = "secret99"
 	testWordsText     = "abc"
+)
+
+// Constants for the HTTP handler tests.
+const (
+	testRequestID = "req-calc-1"
+
+	testCalcPath       = "/calculate"
+	testOperationsPath = "/operations"
+
+	contentTypeJSON       = "application/json"
+	contentTypeJSONUTF8   = "application/json; charset=UTF-8"
+	contentTypeJSONLatin  = "application/json; charset=iso-8859-1"
+	contentTypeMixedCase  = "Application/JSON"
+	contentTypePlain      = "text/plain"
+	contentTypeUnreadable = ";;;"
+	contentTypeAbsent     = ""
+
+	cacheNoStore = "no-store"
+
+	bodyDivide         = `{"operation":"divide","operands":["10","4"]}`
+	bodyDivideSpaced   = `{"operation":"divide","operands":["10.0","4.00"]}`
+	bodySqrt           = `{"operation":"sqrt","operands":["144"]}`
+	bodyEmptyOperands  = `{"operation":"add","operands":[]}`
+	bodyEmpty          = ``
+	bodyBlank          = " \n\t "
+	bodyNotJSON        = `not json`
+	bodyCutOff         = `{"operation":"divide","operands":["10",`
+	bodyUnknownField   = `{"operation":"add","operands":["1","2"],"extra":true}`
+	bodyNumericOperand = `{"operation":"add","operands":[1,2]}`
+	bodyNumericOp      = `{"operation":7,"operands":["1","2"]}`
+	bodyArray          = `[1,2]`
+	bodyTwoObjects     = bodyDivide + bodyDivide
+	bodyTrailingText   = bodyDivide + ` x`
+	bodyTrailingSpace  = bodyDivide + " \n"
+	bodyNoFields       = `{}`
+	bodyNull           = `null`
+	bodyNoOperation    = `{"operands":["1","2"]}`
+	bodyBlankOperation = `{"operation":"","operands":["1","2"]}`
+	bodyNoOperands     = `{"operation":"add"}`
+	bodyNullOperands   = `{"operation":"add","operands":null}`
+	bodyBadOperand     = `{"operation":"add","operands":["1","1e5"]}`
+	bodyLongOperand    = `{"operation":"add","operands":["1","123456789012345678901234567890123456789012345678901234567890123456"]}`
+	bodyUnknownOp      = `{"operation":"modulo","operands":["1","2"]}`
+
+	testHandlerMaxLen = 64
+	testOversizeLimit = int64(10)
+	testTrailingLimit = int64(60)
+	testPadding       = 200
+
+	wantResultText   = "2.5"
+	wantSqrtText     = "12"
+	wantDivideResp   = `{"operation":"divide","operands":["10","4"],"result":"2.5"}`
+	wantSpacedResp   = `{"operation":"divide","operands":["10.0","4.00"],"result":"2.5"}`
+	wantSqrtResp     = `{"operation":"sqrt","operands":["144"],"result":"12"}`
+	wantOperationsJS = `{"operations":[{"name":"add","arity":2,"symbol":"+","description":"Adds the two operands."},{"name":"sqrt","arity":1,"symbol":"√","description":"Returns the square root of the operand."}]}`
+	wantEmptyOpsJS   = `{"operations":[]}`
+
+	fieldOperation = "operation"
+	fieldOperands  = "operands"
+	problemText    = "is required"
+	secretCause    = "pq: connection refused to db-7"
 )

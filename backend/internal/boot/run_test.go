@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/boot"
+	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/health"
 )
 
@@ -50,6 +51,7 @@ func (s *RunTestSuite) SetupTest() {
 	s.T().Setenv(envVarConfigDir, dir)
 	s.T().Setenv(envVarPort, fmt.Sprint(s.port))
 	health.HealthModule = nil
+	calculator.CalculatorModule = nil
 
 	s.app, err = boot.Initialize(context.Background())
 	s.Require().NoError(err)
@@ -57,6 +59,7 @@ func (s *RunTestSuite) SetupTest() {
 
 func (s *RunTestSuite) TearDownTest() {
 	health.HealthModule = nil
+	calculator.CalculatorModule = nil
 }
 
 func (s *RunTestSuite) url(path string) string {

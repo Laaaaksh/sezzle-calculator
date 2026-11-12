@@ -23,6 +23,7 @@ var two = decimal.NewFromInt(roundingFactor)
 // up half the time and down half the time, so totals are not biased in one
 // direction the way always-round-half-up is.
 type Divide struct {
+	descriptor
 	precision int32
 }
 
@@ -30,14 +31,16 @@ var _ Operation = (*Divide)(nil)
 
 // NewDivide returns the divide operation rounding to precision decimal places.
 func NewDivide(precision int) *Divide {
-	return &Divide{precision: scaleOf(precision)}
+	return &Divide{
+		descriptor: descriptor{
+			name:        entities.OpDivide,
+			arity:       entities.ArityBinary,
+			symbol:      entities.SymbolDivide,
+			description: entities.DescriptionDivide,
+		},
+		precision: scaleOf(precision),
+	}
 }
-
-// Name returns the registry key.
-func (*Divide) Name() entities.OperationType { return entities.OpDivide }
-
-// Arity is two: dividend and divisor.
-func (*Divide) Arity() int { return entities.ArityBinary }
 
 // Apply returns operands[0] / operands[1] or DIVISION_BY_ZERO.
 func (d *Divide) Apply(operands []decimal.Decimal) (decimal.Decimal, apperror.IError) {

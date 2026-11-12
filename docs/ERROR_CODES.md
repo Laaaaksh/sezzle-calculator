@@ -1,6 +1,6 @@
 # Error codes
 
-Every error the API returns uses one shape, `{"error": {"code": "...", "message": "...", "requestId": "...", "fields": {...}}}`. The message is fixed per code and never contains user input or internal detail. The `fields` column in the first table names the extra context an error carries.
+Every error the API returns uses one shape, `{"error": {"code": "...", "message": "...", "requestId": "...", "fields": {...}}}`. The message is fixed per code and never contains user input or internal detail. The `fields` column in the first table names the extra context an error carries in the server log. Only `VALIDATION_FAILED` sends a `fields` map to the client; see [API.md](API.md).
 
 Domain errors (the request was well formed but the calculation cannot be done) are 422. Malformed requests and infrastructure failures use the other statuses.
 
@@ -39,7 +39,7 @@ Examples per reason: `""` is `empty`, `" 1"` is `whitespace`, `"+1"` is `plus_si
 | `INTERNAL` | 500 | An unexpected server fault, such as a recovered panic | An internal error occurred. |
 | `SERVICE_UNAVAILABLE` | 503 | The readiness probe while the service is not ready | The service is temporarily unavailable. |
 
-`BAD_REQUEST`, `VALIDATION_FAILED` and `UNSUPPORTED_MEDIA_TYPE` are raised by the calculate handler, which arrives in a later step. Until then only `PAYLOAD_TOO_LARGE`, `NOT_FOUND`, `METHOD_NOT_ALLOWED`, `INTERNAL` and `SERVICE_UNAVAILABLE` can occur.
+`BAD_REQUEST`, `VALIDATION_FAILED`, `UNSUPPORTED_MEDIA_TYPE` and `PAYLOAD_TOO_LARGE` are raised by the calculate handler as well as by the router. [API.md](API.md) describes the request cases and the order of the checks.
 
 `INTERNAL` can also come from the core in one case: the square root iteration hits its fixed cap. The cap is far above what any accepted input needs, so this is a safety net and not an expected result.
 

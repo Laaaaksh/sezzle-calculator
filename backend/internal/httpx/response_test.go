@@ -153,3 +153,25 @@ func (s *ResponseTestSuite) TestErrorBodyIncludesFieldsWhenSet() {
 	s.Require().NoError(err)
 	s.JSONEq(`{"error":{"code":"VALIDATION_FAILED","message":"The request failed validation.","fields":{"account":"acc-42"}}}`, string(raw))
 }
+
+func (s *ResponseTestSuite) TestWriteErrorWithFieldsSendsStatusRequestIDAndFields() {
+	ctx := contextkeys.WithRequestID(context.Background(), testRequestID)
+	err := apperror.New(apperror.CodeValidationFailed, errTestSecret)
+
+	httpx.WriteErrorWithFields(ctx, s.recorder, err, map[string]string{testFieldKey: testFieldValue})
+
+	got := s.decodeError().Error
+	s.Equal(http.StatusUnprocessableEntity, s.recorder.Code)
+	s.Equal(apperror.CodeValidationFailed, got.Code)
+	s.Equal(testRequestID, got.RequestID)
+	s.Equal(map[string]string{testFieldKey: testFieldValue}, got.Fields)
+	s.Equal(wantNoStore, s.recorder.Header().Get(constants.HeaderCacheControl))
+}
+
+func (s *ResponseTestSuite) TestWriteErrorWithFieldsStillHidesTheCause() {
+	err := apperror.New(apperror.CodeValidationFailed, errTestSecret)
+
+	httpx.WriteErrorWithFields(context.Background(), s.recorder, err, map[string]string{testFieldKey: testFieldValue})
+
+	s.NotContains(s.recorder.Body.String(), testSecretCause)
+}

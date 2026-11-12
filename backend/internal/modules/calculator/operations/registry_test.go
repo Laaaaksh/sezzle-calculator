@@ -20,6 +20,10 @@ func (n namedOperation) Name() entities.OperationType { return n.name }
 
 func (n namedOperation) Arity() int { return testFakeArity }
 
+func (n namedOperation) Symbol() string { return testFakeSymbol }
+
+func (n namedOperation) Description() string { return testFakeDescription }
+
 func (n namedOperation) Apply(_ []decimal.Decimal) (decimal.Decimal, apperror.IError) {
 	return decimal.Zero, nil
 }
@@ -90,4 +94,25 @@ func (s *RegistryTestSuite) TestUnknownOperationIsA422() {
 
 	s.Require().NotNil(err)
 	s.Equal(http.StatusUnprocessableEntity, err.HTTPStatus())
+}
+
+func (s *RegistryTestSuite) TestListReturnsOperationsInRegistrationOrder() {
+	registry := operations.NewRegistry(namedOperation{name: testNameTwo}, namedOperation{name: testNameOne})
+
+	listed := registry.List()
+
+	s.Require().Len(listed, 2)
+	s.Equal(entities.OperationType(testNameTwo), listed[0].Name())
+	s.Equal(entities.OperationType(testNameOne), listed[1].Name())
+}
+
+func (s *RegistryTestSuite) TestListOnEmptyRegistryIsEmpty() {
+	s.Empty(operations.NewRegistry().List())
+}
+
+func (s *RegistryTestSuite) TestListReturnsACopyThatCannotReorderTheRegistry() {
+	registry := operations.NewRegistry(namedOperation{name: testNameOne}, namedOperation{name: testNameTwo})
+	registry.List()[0] = namedOperation{name: testNameMissing}
+
+	s.Equal(entities.OperationType(testNameOne), registry.List()[0].Name())
 }

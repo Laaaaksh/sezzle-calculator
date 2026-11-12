@@ -59,9 +59,16 @@ func WriteJSON(ctx context.Context, w http.ResponseWriter, status int, v any) {
 // WriteError logs err in full (code, cause, fields) and sends only its public
 // part, so internals such as driver errors never reach a client.
 func WriteError(ctx context.Context, w http.ResponseWriter, err apperror.IError) {
+	WriteErrorWithFields(ctx, w, err, nil)
+}
+
+// WriteErrorWithFields is WriteError plus a map of client-safe problems per
+// input field. The caller builds the map from text it controls (never from the
+// cause or from user input), because every value in it reaches the client.
+func WriteErrorWithFields(ctx context.Context, w http.ResponseWriter, err apperror.IError, fields map[string]string) {
 	logError(ctx, err)
 	public := apperror.ToPublic(err)
-	body := ErrorBody{Code: public.Code, Message: public.Message}
+	body := ErrorBody{Code: public.Code, Message: public.Message, Fields: fields}
 	if id, ok := contextkeys.RequestID(ctx); ok {
 		body.RequestID = id
 	}

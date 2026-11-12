@@ -284,3 +284,24 @@ func (s *DefaultOperationsTestSuite) TestCalculateWhenNameIsNotRegisteredReturns
 	s.Require().NotNil(err)
 	s.Equal(apperror.CodeUnknownOperation, err.Code())
 }
+
+func (s *CoreTestSuite) TestListOperationsDescribesEachRegisteredOperationInOrder() {
+	unary := &fakeOperation{name: testOpUnary, arity: entities.ArityUnary}
+	core := calculator.NewCore(operations.NewRegistry(s.fake, unary), config.CalculatorConfig{})
+
+	got := core.ListOperations(s.ctx)
+
+	s.Equal([]entities.OperationInfo{
+		{Name: testOpFake, Arity: entities.ArityBinary, Symbol: testFakeSymbol, Description: testFakeDescription},
+		{Name: testOpUnary, Arity: entities.ArityUnary, Symbol: testFakeSymbol, Description: testFakeDescription},
+	}, got)
+}
+
+func (s *CoreTestSuite) TestListOperationsWithNothingRegisteredReturnsAnEmptyList() {
+	core := calculator.NewCore(operations.NewRegistry(), config.CalculatorConfig{})
+
+	got := core.ListOperations(s.ctx)
+
+	s.NotNil(got)
+	s.Empty(got)
+}

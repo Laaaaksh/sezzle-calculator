@@ -55,3 +55,9 @@ func (s *InitTestSuite) TestNewModuleCoreRejectsOperationsThatAreNotRegistered()
 	s.Require().NotNil(err)
 	s.Equal(apperror.CodeUnknownOperation, err.Code())
 }
+
+func (s *InitTestSuite) TestNewModuleWiresAHandler() {
+	module := calculator.NewModule(s.ctx, s.cfg)
+
+	s.NotNil(module.GetHandler())
+}

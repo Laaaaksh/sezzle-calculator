@@ -255,3 +255,19 @@ Also explain why I chose one endpoint with an operation field over one route per
 ```
 
 Produced: docs/API.md, the REST contract for review before any handler code: POST /api/v1/calculate, GET /api/v1/operations, one error shape, a table of every error code with its HTTP status, why domain errors are 422 and malformed requests are 400, and why one endpoint with an operation field beats one route per operation, with the trade-off. No code.
+
+---
+
+## 14. Handler and validation
+
+```
+Implement the contract from docs/API.md in the calculator module's server.go.
+- Decode with DisallowUnknownFields.
+- Reject a missing or wrong Content-Type with UNSUPPORTED_MEDIA_TYPE, an empty body with BAD_REQUEST, malformed JSON with BAD_REQUEST, and trailing data after the JSON object.
+- Validate that operation and operands are present before calling core.
+- Map every apperror to the JSON error shape with the request ID.
+- Set Content-Type and Cache-Control: no-store on every response.
+The handler depends on the ICore interface, not the concrete type. Generate the mocks with mockgen and test the handler with gomock using exact arguments and .Times(1), never gomock.Any() or AnyTimes(). Cover every success and failure path.
+```
+
+Produced: The calculate and operations endpoints in the calculator module's server.go, mounted under /api/v1. Strict decoding (unknown fields, empty body, malformed JSON, trailing data, oversize body), Content-Type check, required-field validation with a fields map, and every apperror mapped to the shared error shape with the request ID. Operations are listed from the registry in a fixed order. Handler tests use gomock with exact arguments and .Times(1), plus one end-to-end suite through the real router and core.

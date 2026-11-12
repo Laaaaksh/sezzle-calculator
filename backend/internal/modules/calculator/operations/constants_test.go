@@ -6,6 +6,9 @@ const (
 	testNameMissing = "missing"
 	testNameBlank   = ""
 	testFakeArity   = 2
+
+	testFakeSymbol      = "?"
+	testFakeDescription = "Fake operation for tests."
 )
 
 const (
@@ -32,4 +35,22 @@ const (
 	testPercentSquareWant = "99999999999999999998000000000000000000.01"
 	testTinyUnit          = "0.00000000000000000001"
 	testTinyUnitSquareWnt = "0.000000000000000000000000000000000000000001"
+)
+
+// Expected display metadata, written out so a change to a symbol or a description is a deliberate edit here too.
+const (
+	wantAddSymbol             = "+"
+	wantAddDescription        = "Adds the two operands."
+	wantSubtractSymbol        = "-"
+	wantSubtractDescription   = "Subtracts the second operand from the first."
+	wantMultiplySymbol        = "*"
+	wantMultiplyDescription   = "Multiplies the two operands."
+	wantDivideSymbol          = "/"
+	wantDivideDescription     = "Divides the first operand by the second."
+	wantPowerSymbol           = "^"
+	wantPowerDescription      = "Raises the first operand to the whole-number power given by the second."
+	wantSqrtSymbol            = "\u221a"
+	wantSqrtDescription       = "Returns the square root of the operand."
+	wantPercentageSymbol      = "%"
+	wantPercentageDescription = "Returns the first operand percent of the second."
 )

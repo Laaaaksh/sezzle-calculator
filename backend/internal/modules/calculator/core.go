@@ -27,6 +27,8 @@ import (
 type ICore interface {
 	// Calculate applies op to operands and returns the normalised result.
 	Calculate(ctx context.Context, op entities.OperationType, operands []decimal.Decimal) (entities.Result, apperror.IError)
+	// ListOperations describes every registered operation in a fixed order.
+	ListOperations(ctx context.Context) []entities.OperationInfo
 }
 
 // Core resolves, validates and runs operations.
@@ -62,4 +64,21 @@ func (c *Core) Calculate(_ context.Context, op entities.OperationType, operands 
 		return entities.Result{}, aerr
 	}
 	return normalise(value), nil
+}
+
+// ListOperations describes each registered operation, in registration order,
+// so the frontend can build its UI from the server and not from a copy of the
+// list.
+func (c *Core) ListOperations(_ context.Context) []entities.OperationInfo {
+	registered := c.registry.List()
+	infos := make([]entities.OperationInfo, len(registered))
+	for i, op := range registered {
+		infos[i] = entities.OperationInfo{
+			Name:        op.Name(),
+			Arity:       op.Arity(),
+			Symbol:      op.Symbol(),
+			Description: op.Description(),
+		}
+	}
+	return infos
 }

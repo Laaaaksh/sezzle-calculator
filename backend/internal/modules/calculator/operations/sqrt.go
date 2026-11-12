@@ -35,6 +35,7 @@ const (
 // that merely looks like ...5000000000 within the guard digits is slightly
 // above it and rounds up.
 type Sqrt struct {
+	descriptor
 	precision     int32
 	maxIterations int
 }
@@ -49,14 +50,17 @@ func NewSqrt(precision int) *Sqrt {
 // NewBoundedSqrt is NewSqrt with an explicit iteration cap, so a test can
 // prove that hitting the cap fails cleanly instead of hanging.
 func NewBoundedSqrt(precision, maxIterations int) *Sqrt {
-	return &Sqrt{precision: scaleOf(precision), maxIterations: maxIterations}
+	return &Sqrt{
+		descriptor: descriptor{
+			name:        entities.OpSqrt,
+			arity:       entities.ArityUnary,
+			symbol:      entities.SymbolSqrt,
+			description: entities.DescriptionSqrt,
+		},
+		precision:     scaleOf(precision),
+		maxIterations: maxIterations,
+	}
 }
-
-// Name returns the registry key.
-func (*Sqrt) Name() entities.OperationType { return entities.OpSqrt }
-
-// Arity is one: the radicand.
-func (*Sqrt) Arity() int { return entities.ArityUnary }
 
 // Apply returns the square root of operands[0], NEGATIVE_SQUARE_ROOT for a
 // negative operand, or INTERNAL if the iteration cap is hit.

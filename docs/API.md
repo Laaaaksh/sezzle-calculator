@@ -81,6 +81,8 @@ Runs one operation.
 
 No other fields are allowed. An unknown field is a `400 BAD_REQUEST`, so a misspelled field (`"operand"`) fails loudly and is never ignored.
 
+Field names follow Go's JSON decoder, which matches them without regard to case, so `"Operation"` is read as `operation`. Send them in lower case as shown.
+
 ### Response 200
 
 ```json

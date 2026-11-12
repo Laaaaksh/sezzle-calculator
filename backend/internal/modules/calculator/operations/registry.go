@@ -1,6 +1,8 @@
 package operations
 
 import (
+	"slices"
+
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/entities"
 	"github.com/Laaaaksh/sezzle-calculator/backend/pkg/apperror"
 )
@@ -10,12 +12,18 @@ import (
 type IRegistry interface {
 	// Lookup returns the operation registered under name, or UNKNOWN_OPERATION.
 	Lookup(name entities.OperationType) (Operation, apperror.IError)
+	// List returns every operation in registration order. The order is fixed
+	// so the operations endpoint answers the same way on every call.
+	List() []Operation
 }
 
 // Registry maps operation names to operations. It is built once at boot and
 // only read afterwards, so it needs no lock.
 type Registry struct {
 	byName map[entities.OperationType]Operation
+	// ordered keeps registration order; a map alone would list operations in a
+	// random order that changes between calls.
+	ordered []Operation
 }
 
 var _ IRegistry = (*Registry)(nil)
@@ -31,7 +39,7 @@ func NewRegistry(ops ...Operation) *Registry {
 		}
 		byName[op.Name()] = op
 	}
-	return &Registry{byName: byName}
+	return &Registry{byName: byName, ordered: slices.Clone(ops)}
 }
 
 // Lookup returns the operation for name. Anything unregistered, including the
@@ -43,4 +51,10 @@ func (r *Registry) Lookup(name entities.OperationType) (Operation, apperror.IErr
 			WithField(entities.FieldOperation, string(name))
 	}
 	return op, nil
+}
+
+// List returns a copy of the operations in registration order, so a caller
+// cannot reorder or replace the registry's own slice.
+func (r *Registry) List() []Operation {
+	return slices.Clone(r.ordered)
 }

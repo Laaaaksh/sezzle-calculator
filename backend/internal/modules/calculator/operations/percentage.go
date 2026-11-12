@@ -21,18 +21,19 @@ const percentShift = -2
 // decimal point, so it always terminates, and multiplying decimals is exact.
 // No precision setting is involved. The API docs (docs/API.md) will carry this
 // definition for clients.
-type Percentage struct{}
+type Percentage struct{ descriptor }
 
 var _ Operation = (*Percentage)(nil)
 
 // NewPercentage returns the percentage operation.
-func NewPercentage() *Percentage { return &Percentage{} }
-
-// Name returns the registry key.
-func (*Percentage) Name() entities.OperationType { return entities.OpPercentage }
-
-// Arity is two: the percent, then the amount it applies to.
-func (*Percentage) Arity() int { return entities.ArityBinary }
+func NewPercentage() *Percentage {
+	return &Percentage{descriptor: descriptor{
+		name:        entities.OpPercentage,
+		arity:       entities.ArityBinary,
+		symbol:      entities.SymbolPercentage,
+		description: entities.DescriptionPercentage,
+	}}
+}
 
 // Apply returns operands[0] / 100 * operands[1].
 func (*Percentage) Apply(operands []decimal.Decimal) (decimal.Decimal, apperror.IError) {

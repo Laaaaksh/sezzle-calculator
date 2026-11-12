@@ -34,4 +34,5 @@ const (
 	LogKeyStack         = "stack"
 	LogKeyAddr          = "addr"
 	LogKeyContentLength = "content_length"
+	LogKeyLimit         = "limit"
 )

@@ -1,6 +1,7 @@
 package boot_test
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -14,7 +15,12 @@ import (
 
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/boot"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/config"
+	"github.com/Laaaaksh/sezzle-calculator/backend/internal/constants"
+	"github.com/Laaaaksh/sezzle-calculator/backend/internal/contextkeys"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/httpx"
+	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator"
+	calcentities "github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/entities"
+	calcmock "github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/mock"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/health"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/health/mock"
 )
@@ -23,6 +29,7 @@ type RouterTestSuite struct {
 	suite.Suite
 	ctrl     *gomock.Controller
 	mockCore *mock.MockICore
+	calcCore *calcmock.MockICore
 	router   chi.Router
 	recorder *httptest.ResponseRecorder
 }
@@ -34,15 +41,23 @@ func TestRouterTestSuite(t *testing.T) {
 func (s *RouterTestSuite) SetupTest() {
 	s.ctrl = gomock.NewController(s.T())
 	s.mockCore = mock.NewMockICore(s.ctrl)
+	s.calcCore = calcmock.NewMockICore(s.ctrl)
 	s.recorder = httptest.NewRecorder()
 	cfg := &config.Config{
-		Server: config.ServerConfig{MaxBodyBytes: testBodyLimit, RequestTimeout: testTimeout},
-		CORS:   config.CORSConfig{AllowedOrigins: []string{testOrigin}},
+		Server:     config.ServerConfig{MaxBodyBytes: testBodyLimit, RequestTimeout: testTimeout},
+		CORS:       config.CORSConfig{AllowedOrigins: []string{testOrigin}},
+		Calculator: config.CalculatorConfig{MaxOperandLength: e2eMaxOperandLength},
 	}
-	modules := boot.Modules{Health: &health.Module{
-		Core:    s.mockCore,
-		Handler: health.NewHTTPHandler(s.mockCore),
-	}}
+	modules := boot.Modules{
+		Health: &health.Module{
+			Core:    s.mockCore,
+			Handler: health.NewHTTPHandler(s.mockCore),
+		},
+		Calculator: &calculator.Module{
+			Core:    s.calcCore,
+			Handler: calculator.NewHTTPHandler(s.calcCore, cfg.Calculator),
+		},
+	}
 	ping := func(api chi.Router) {
 		api.Get(testPingRoute, func(w http.ResponseWriter, _ *http.Request) {
 			_, _ = w.Write([]byte(testPingBody))
@@ -53,6 +68,19 @@ func (s *RouterTestSuite) SetupTest() {
 
 func (s *RouterTestSuite) TearDownTest() {
 	s.ctrl.Finish()
+}
+
+// carriesRequestID matches the request context the router hands a handler: the
+// request-ID middleware must have stored a non-empty ID in it.
+func (s *RouterTestSuite) carriesRequestID() gomock.Matcher {
+	return gomock.Cond(func(x any) bool {
+		ctx, ok := x.(context.Context)
+		if !ok {
+			return false
+		}
+		id, found := contextkeys.RequestID(ctx)
+		return found && id != ""
+	})
 }
 
 func (s *RouterTestSuite) serve(req *http.Request) {
@@ -172,4 +200,36 @@ func (s *RouterTestSuite) TestOversizedBodyIsRejectedBeforeRouting() {
 
 	s.Equal(http.StatusRequestEntityTooLarge, s.recorder.Code)
 	s.Equal(wantTooLargeCode, string(s.errorBody().Code))
+}
+
+func (s *RouterTestSuite) TestCalculateRouteIsMountedUnderVersionedPrefix() {
+	s.calcCore.EXPECT().
+		Calculate(s.carriesRequestID(), gomock.Eq(calcentities.OpAdd), gomock.Eq(testAddOperands())).
+		Return(calcentities.Result{Text: testAddResult}, nil).
+		Times(1)
+	req := httptest.NewRequest(http.MethodPost, testCalculatePath, strings.NewReader(testAddBody))
+	req.Header.Set(constants.HeaderContentType, wantContentType)
+
+	s.serve(req)
+
+	s.Equal(http.StatusOK, s.recorder.Code)
+	s.JSONEq(wantAddResponse, s.recorder.Body.String())
+}
+
+func (s *RouterTestSuite) TestOperationsRouteIsMountedUnderVersionedPrefix() {
+	s.calcCore.EXPECT().
+		ListOperations(s.carriesRequestID()).
+		Return([]calcentities.OperationInfo{}).
+		Times(1)
+
+	s.serve(httptest.NewRequest(http.MethodGet, testOperationsPath, nil))
+
+	s.Equal(http.StatusOK, s.recorder.Code)
+	s.JSONEq(wantNoOperationsBody, s.recorder.Body.String())
+}
+
+func (s *RouterTestSuite) TestCalculateRouteIsNotServedWithoutVersionedPrefix() {
+	s.serve(httptest.NewRequest(http.MethodPost, testCalculateBare, nil))
+
+	s.Equal(http.StatusNotFound, s.recorder.Code)
 }

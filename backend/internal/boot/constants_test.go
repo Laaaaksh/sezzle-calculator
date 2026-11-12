@@ -1,35 +1,48 @@
 package boot_test
 
-import "time"
+import (
+	"time"
+
+	"github.com/shopspring/decimal"
+)
 
 const (
-	testOrigin        = "http://localhost:5173"
-	testOtherOrigin   = "http://evil.example.com"
-	testRequestID     = "client-id-7"
-	testMissingPath   = "/nope"
-	testAPIPath       = "/api/v1/missing"
-	testLivePath      = "/health/live"
-	testPingRoute     = "/ping"
-	testAPIPingPath   = "/api/v1/ping"
-	testPingBody      = "pong"
-	testReadyPath     = "/health/ready"
-	testBodyLimit     = int64(16)
-	testOversizedBody = "this body is longer than sixteen bytes"
-	testTimeout       = 3 * time.Second
+	wantOperationsBodyStart = `{"operations":[{"name":"add","arity":2`
+
+	testOrigin         = "http://localhost:5173"
+	testOtherOrigin    = "http://evil.example.com"
+	testRequestID      = "client-id-7"
+	testMissingPath    = "/nope"
+	testAPIPath        = "/api/v1/missing"
+	testLivePath       = "/health/live"
+	testPingRoute      = "/ping"
+	testAPIPingPath    = "/api/v1/ping"
+	testPingBody       = "pong"
+	testReadyPath      = "/health/ready"
+	testCalculatePath  = "/api/v1/calculate"
+	testCalculateBare  = "/calculate"
+	testOperationsPath = "/api/v1/operations"
+	testAddBody        = `{"operation":"add","operands":["1","2"]}`
+	testAddResult      = "3"
+	testBodyLimit      = int64(64)
+	testOversizedBody  = "this body is longer than sixty-four bytes: " + "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+	testTimeout        = 3 * time.Second
 
 	headerOrigin = "Origin"
 	headerACAO   = "Access-Control-Allow-Origin"
 	headerAllow  = "Allow"
 
-	wantNotFoundCode   = "NOT_FOUND"
-	wantMethodCode     = "METHOD_NOT_ALLOWED"
-	wantPingAllow      = "GET"
-	wantLiveAllow      = "GET"
-	wantTooLargeCode   = "PAYLOAD_TOO_LARGE"
-	wantContentType    = "application/json"
-	wantLiveBody       = `{"status":"ok"}`
-	wantReadyBody      = `{"status":"ready"}`
-	wantHeaderTemplate = "X-Request-ID"
+	wantNotFoundCode     = "NOT_FOUND"
+	wantMethodCode       = "METHOD_NOT_ALLOWED"
+	wantPingAllow        = "GET"
+	wantLiveAllow        = "GET"
+	wantTooLargeCode     = "PAYLOAD_TOO_LARGE"
+	wantContentType      = "application/json"
+	wantLiveBody         = `{"status":"ok"}`
+	wantReadyBody        = `{"status":"ready"}`
+	wantAddResponse      = `{"operation":"add","operands":["1","2"],"result":"3"}`
+	wantNoOperationsBody = `{"operations":[]}`
+	wantHeaderTemplate   = "X-Request-ID"
 )
 
 // Config fixtures for Initialize. Ports are placeholders: Initialize builds the
@@ -65,4 +78,28 @@ decimal_precision = 20
 	envNameTest     = "test"
 	envValueEmpty   = ""
 	missingDirName  = "does-not-exist"
+)
+
+func testAddOperands() []decimal.Decimal {
+	return []decimal.Decimal{decimal.NewFromInt(1), decimal.NewFromInt(2)}
+}
+
+// Constants for the end-to-end test through the real router and core.
+const (
+	e2eMaxOperandLength   = 64
+	e2eMaxExponent        = 1000
+	e2ePrecision          = 20
+	e2eBodyLimit          = int64(1048576)
+	e2eExpectedFieldCount = 2
+
+	e2eNoStore   = "no-store"
+	e2eTextPlain = "text/plain"
+
+	e2eBodyPointOnePlusPointTwo = `{"operation":"add","operands":["0.1","0.2"]}`
+	e2eWantPointThree           = `{"operation":"add","operands":["0.1","0.2"],"result":"0.3"}`
+	e2eBodyDivide               = `{"operation":"divide","operands":["10","4"]}`
+	e2eWantDivide               = `{"operation":"divide","operands":["10","4"],"result":"2.5"}`
+	e2eBodyDivideByZero         = `{"operation":"divide","operands":["10","0"]}`
+	e2eBodyUnknownField         = `{"operation":"add","operands":["1","2"],"extra":1}`
+	e2eBodyEmptyObject          = `{}`
 )
