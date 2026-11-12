@@ -76,7 +76,7 @@ Runs one operation.
 
 | Field | Type | Rule |
 | --- | --- | --- |
-| `operation` | string | Required and not empty. One of the names returned by `GET /api/v1/operations`. Names are lower case and exact: `"Add"` is `UNKNOWN_OPERATION`. |
+| `operation` | string | Required, not empty and at most 32 bytes. One of the names returned by `GET /api/v1/operations`. Names are lower case and exact: `"Add"` is `UNKNOWN_OPERATION`. |
 | `operands` | array of strings | Required. The count must match the operation's arity. Order matters. |
 
 No other fields are allowed. An unknown field is a `400 BAD_REQUEST`, so a misspelled field (`"operand"`) fails loudly and is never ignored.
@@ -133,6 +133,7 @@ One consequence: an unknown operation sent with a malformed operand reports the 
 | `{"operation": "add", "operands": ["1", "2"]} {"x": 1}` or any text after the object | `400 BAD_REQUEST` (trailing data) |
 | A body over `max_body_bytes` | `413 PAYLOAD_TOO_LARGE` |
 | `{}`, or `operation` missing, empty or `null` | `422 VALIDATION_FAILED`, with `fields.operation` |
+| `operation` longer than 32 bytes | `422 VALIDATION_FAILED`, with `fields.operation` (`is too long`) |
 | `operands` missing or `null` | `422 VALIDATION_FAILED`, with `fields.operands` |
 | `"operands": []` | `422 INVALID_OPERAND_COUNT` (the field is present, the count is wrong) |
 
@@ -238,14 +239,14 @@ An operand over the length limit says which one and what the limit is:
 | Code | HTTP status | When |
 | --- | --- | --- |
 | `BAD_REQUEST` | 400 | The body cannot be read as the request in this contract: empty, invalid JSON, an unknown field, a wrong field type or data after the JSON object. |
-| `VALIDATION_FAILED` | 422 | The JSON is fine, but `operation` or `operands` is missing or empty. |
+| `VALIDATION_FAILED` | 422 | The JSON is fine, but `operation` or `operands` is missing or empty, or `operation` is over 32 bytes. |
 | `UNSUPPORTED_MEDIA_TYPE` | 415 | `Content-Type` is missing, is not `application/json` or has a charset other than UTF-8. |
 | `PAYLOAD_TOO_LARGE` | 413 | The body is larger than `max_body_bytes`. `fields.limit` is that limit in bytes. |
 | `NOT_FOUND` | 404 | No route matches the path. |
 | `METHOD_NOT_ALLOWED` | 405 | The path exists but not for this method. |
 | `INTERNAL` | 500 | An unexpected server fault. The cause is logged and never sent. |
 | `SERVICE_UNAVAILABLE` | 503 | The readiness probe while the service is not ready. |
-| `UNKNOWN_OPERATION` | 422 | `operation` is not a name from `GET /api/v1/operations`. |
+| `UNKNOWN_OPERATION` | 422 | `operation` is not a name from `GET /api/v1/operations`. The name is echoed in `fields.operation` only when it fits the 32 byte limit. |
 | `INVALID_OPERAND_COUNT` | 422 | The number of operands does not match the operation's arity. |
 | `OPERAND_TOO_LARGE` | 422 | An operand is longer than `max_operand_length`. |
 | `INVALID_OPERAND` | 422 | An operand is not a plain decimal number. |

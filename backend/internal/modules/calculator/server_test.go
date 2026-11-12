@@ -287,6 +287,34 @@ func (s *ServerTestSuite) TestCalculateBlankOperationReturns422NamingOperation()
 	s.Equal(map[string]any{fieldOperation: problemText}, body.Fields)
 }
 
+func (s *ServerTestSuite) postOperationOfLength(n int) {
+	s.post(contentTypeJSON, `{"operation":"`+strings.Repeat("a", n)+`","operands":["1","2"]}`)
+}
+
+func (s *ServerTestSuite) TestCalculateOperationOverTheLengthBoundReturns422WithoutCallingCore() {
+	s.postOperationOfLength(testLongOperationLen)
+
+	body := s.requireError(http.StatusUnprocessableEntity, apperror.CodeValidationFailed)
+	s.Equal(map[string]any{fieldOperation: problemTooLong}, body.Fields)
+}
+
+func (s *ServerTestSuite) TestCalculateOneMiBOperationReturns422WithASmallBody() {
+	s.postOperationOfLength(testHugeOperationLen)
+
+	body := s.requireError(http.StatusUnprocessableEntity, apperror.CodeValidationFailed)
+	s.Equal(map[string]any{fieldOperation: problemTooLong}, body.Fields)
+	s.Less(s.recorder.Body.Len(), testSmallBodyLimit)
+}
+
+func (s *ServerTestSuite) TestCalculateOperationAtTheLengthBoundReachesCore() {
+	name := entities.OperationType(strings.Repeat("a", entities.MaxOperationNameLength))
+	s.expectCalculate(name, []decimal.Decimal{decimal.NewFromInt(1), decimal.NewFromInt(2)}, wantResultText)
+
+	s.postOperationOfLength(entities.MaxOperationNameLength)
+
+	s.Equal(http.StatusOK, s.recorder.Code)
+}
+
 func (s *ServerTestSuite) TestCalculateMissingOperandsReturns422NamingOperands() {
 	s.post(contentTypeJSON, bodyNoOperands)
 

@@ -10,7 +10,7 @@ Defaults used in the examples: `max_operand_length = 64`, `max_exponent = 1000`,
 
 | Code | HTTP status | Example input | Message | Fields |
 | --- | --- | --- | --- | --- |
-| `UNKNOWN_OPERATION` | 422 | `operation: "modulo"` | The requested operation is not supported. | `operation` |
+| `UNKNOWN_OPERATION` | 422 | `operation: "modulo"` | The requested operation is not supported. | `operation` (left out when the name is over 32 bytes) |
 | `INVALID_OPERAND_COUNT` | 422 | `add` with `["1"]` | The operation received the wrong number of operands. | `operation`, `expected`, `actual` |
 | `INVALID_OPERAND` | 422 | `add` with `["1", "1e5"]` | An operand is not a valid number. | `operand_index`, `reason` |
 | `OPERAND_TOO_LARGE` | 422 | `add` with `["1", "<65 digits>"]` | An operand is larger than the allowed limit. | `operand_index`, `limit` |
@@ -31,7 +31,7 @@ Examples per reason: `""` is `empty`, `" 1"` is `whitespace`, `"+1"` is `plus_si
 | Code | HTTP status | Example input | Message |
 | --- | --- | --- | --- |
 | `BAD_REQUEST` | 400 | A body that is not valid JSON | The request could not be understood. |
-| `VALIDATION_FAILED` | 422 | A request missing the `operation` or `operands` field | The request failed validation. |
+| `VALIDATION_FAILED` | 422 | A request missing the `operation` or `operands` field, or an `operation` over 32 bytes | The request failed validation. |
 | `UNSUPPORTED_MEDIA_TYPE` | 415 | `Content-Type: text/plain` | The content type is not supported. |
 | `PAYLOAD_TOO_LARGE` | 413 | A body over `max_body_bytes` (1 MiB) | The request body is too large. |
 | `NOT_FOUND` | 404 | `GET /api/v1/missing` | The requested resource was not found. |

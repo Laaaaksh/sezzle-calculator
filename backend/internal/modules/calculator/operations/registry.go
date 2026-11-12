@@ -47,8 +47,14 @@ func NewRegistry(ops ...Operation) *Registry {
 func (r *Registry) Lookup(name entities.OperationType) (Operation, apperror.IError) {
 	op, ok := r.byName[name]
 	if !ok {
-		return nil, apperror.New(apperror.CodeUnknownOperation, ErrUnknownOperation).
-			WithField(entities.FieldOperation, string(name))
+		aerr := apperror.New(apperror.CodeUnknownOperation, ErrUnknownOperation)
+		// Echo the name only when it is short. Fields reach the client and the
+		// warn log, so an unbounded name would flood both. Omitting beats
+		// truncating: a cut name could look like a real one.
+		if len(name) <= entities.MaxOperationNameLength {
+			aerr = aerr.WithField(entities.FieldOperation, string(name))
+		}
+		return nil, aerr
 	}
 	return op, nil
 }

@@ -84,6 +84,11 @@ const (
 	bodyLongOperand    = `{"operation":"add","operands":["1","123456789012345678901234567890123456789012345678901234567890123456"]}`
 	bodyUnknownOp      = `{"operation":"modulo","operands":["1","2"]}`
 
+	testLongOperationLen = 33
+	testHugeOperationLen = 1 << 20
+	testSmallBodyLimit   = 1 << 10
+	problemTooLong       = "is too long"
+
 	testHandlerMaxLen = 64
 	testOversizeLimit = int64(10)
 	testTrailingLimit = int64(60)

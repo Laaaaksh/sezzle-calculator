@@ -2,6 +2,7 @@ package operations_test
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/shopspring/decimal"
@@ -65,6 +66,25 @@ func (s *RegistryTestSuite) TestLookupWhenUnregisteredReturnsUnknownOperation() 
 	s.Equal(apperror.CodeUnknownOperation, err.Code())
 	s.ErrorIs(err, operations.ErrUnknownOperation)
 	s.Equal(testNameMissing, err.Fields()[entities.FieldOperation])
+}
+
+func (s *RegistryTestSuite) TestLookupWhenNameIsAtTheLimitStillEchoesIt() {
+	name := strings.Repeat("a", entities.MaxOperationNameLength)
+
+	_, err := operations.NewRegistry().Lookup(entities.OperationType(name))
+
+	s.Require().NotNil(err)
+	s.Equal(name, err.Fields()[entities.FieldOperation])
+}
+
+func (s *RegistryTestSuite) TestLookupWhenNameIsOverTheLimitOmitsTheOperationField() {
+	name := strings.Repeat("a", entities.MaxOperationNameLength+1)
+
+	_, err := operations.NewRegistry().Lookup(entities.OperationType(name))
+
+	s.Require().NotNil(err)
+	s.Equal(apperror.CodeUnknownOperation, err.Code())
+	s.NotContains(err.Fields(), entities.FieldOperation)
 }
 
 func (s *RegistryTestSuite) TestLookupWhenNameIsEmptyReturnsUnknownOperation() {

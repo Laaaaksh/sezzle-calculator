@@ -53,7 +53,7 @@ func (h *HTTPHandler) Calculate(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteError(ctx, w, aerr)
 		return
 	}
-	if problems := missingFields(req); len(problems) > 0 {
+	if problems := invalidFields(req); len(problems) > 0 {
 		httpx.WriteError(ctx, w, validationFailed(problems))
 		return
 	}
@@ -143,13 +143,17 @@ func decodeFailure(err error) apperror.IError {
 	return apperror.New(apperror.CodeBadRequest, err)
 }
 
-// missingFields names each required field the request leaves out. An empty
-// operands array is not missing: it is present with the wrong count, which the
-// core reports as INVALID_OPERAND_COUNT.
-func missingFields(req entities.CalculateRequest) map[string]string {
+// invalidFields names each required field the request leaves out, and an
+// operation name over the length bound. An empty operands array is not
+// missing: it is present with the wrong count, which the core reports as
+// INVALID_OPERAND_COUNT. The length bound runs before the core so a huge name
+// never reaches an error field or the logs.
+func invalidFields(req entities.CalculateRequest) map[string]string {
 	problems := map[string]string{}
 	if req.Operation == "" {
 		problems[entities.FieldNameOperation] = entities.ProblemRequired
+	} else if len(req.Operation) > entities.MaxOperationNameLength {
+		problems[entities.FieldNameOperation] = entities.ProblemTooLong
 	}
 	if req.Operands == nil {
 		problems[entities.FieldNameOperands] = entities.ProblemRequired
@@ -157,7 +161,7 @@ func missingFields(req entities.CalculateRequest) map[string]string {
 	return problems
 }
 
-// validationFailed builds the error for missing fields. The problems become
+// validationFailed builds the error for invalid fields. The problems become
 // the error fields, which reach both the client and the log.
 func validationFailed(problems map[string]string) apperror.IError {
 	aerr := apperror.New(apperror.CodeValidationFailed, ErrMissingRequestField)

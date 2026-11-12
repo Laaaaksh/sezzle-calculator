@@ -60,7 +60,14 @@ const (
 	FieldNameOperation = "operation"
 	FieldNameOperands  = "operands"
 	ProblemRequired    = "is required"
+	ProblemTooLong     = "is too long"
 )
+
+// MaxOperationNameLength is the longest operation name, in bytes, the API
+// accepts or echoes back. The longest real name is "percentage" (10); this
+// leaves headroom. Without a bound, a client could make every error response
+// and warn log line as large as the request body cap.
+const MaxOperationNameLength = 32
 
 // Error field keys attached to calculator errors, so logs and clients can say
 // which operation or operand failed.
