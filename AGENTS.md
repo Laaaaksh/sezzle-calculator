@@ -1,29 +1,32 @@
 # Agent instructions
 
-- Never use the em dash (Unicode U+2014). Use a plain dash "-" instead.
-- When writing commit messages, NEVER auto-add your agent name as co-author.
-- Never manually modify CHANGELOG.md files or any files that are marked as auto-generated.
-- When making technical decisions, do not give much weight to development cost.
-  Instead, prefer quality, simplicity, robustness, scalability, and long term maintainability.
-- For one-off or infrequent operational work, start with the simplest direct end-to-end path. Do not build wrappers, control planes, policy layers, custom verifiers, or automation unless the direct path exposes a concrete blocker or repeated need that justifies the added machinery.
-- When doing bug fixes, always start with reproducing the bug in an E2E setting as closely aligned with how an end user would experience it as possible.
-  This makes sure you find the real problem so your fix will actually solve it.
-- When end-to-end testing a product, be picky about the UI you see and be obsessed with pixel perfection.
-  If something clearly looks off, even if it is not directly related to what you are doing, try to get it fixed along the way.
-- Apply that same high standard to engineering excellence: lint, test failures, and test flakiness.
-  If you see one, even if it is not caused by what you are working on right now, still get it fixed.
-- Before using "dynamic workflows", "ultra code" or any harness feature that immediately spawns a large swarm of subagents, always explain the tradeoffs and ask the user for explicit approval.
+Calculator take-home: a Go REST API (`backend/`) and a React TypeScript UI (`frontend/`). Operands are strings and all math uses exact decimals on the server. Read `README.md` for the run commands and `docs/` for the contract and decisions.
 
-## Project workflow
+## Layout
 
-- Build step by step. Each prompt from the user is one step: build only that, show the change, then commit it as one Conventional Commit.
-- Log every project prompt word for word in `docs/PROMPTS.md`, with one line on what it produced.
+- `backend/`: Go. Entry points in `cmd/`, feature code in `internal/modules/<name>/` (server, core, entities, operations), shared error type in `pkg/apperror`.
+- `frontend/`: Vite, React, TypeScript. Feature code in `src/features/calculator/`, API client in `src/api/`.
+- `docs/`: `API.md`, `ERROR_CODES.md`, `DECISIONS.md`, `ARCHITECTURE.md`, `ACCESSIBILITY.md`, `REQUIREMENTS.md`, `PROMPTS.md`.
+
+## Checks
+
+Run these before every commit. All must pass.
+
+- Backend: `make -C backend lint` and `make -C backend test`.
+- Frontend, from `frontend/`: `npm run lint -- --max-warnings=0`, `npm run typecheck`, `npm run format:check`, `npm test`.
+- Everything at once: `make lint` and `make test` from the repo root.
+- The gomock mocks in `backend/**/mock/` are committed. After changing an interface that has `//go:generate`, run `make -C backend mock` and commit the result. CI fails on a stale mock.
+
+## Test conventions
+
+- Go: testify suites with gomock. One method per behaviour, named `TestSubjectWhenConditionReturnsOutcome`. No table-driven tests. No `gomock.Any()` or `AnyTimes()`: pass exact arguments and use `.Times(1)`. Use named constants, not magic values.
+- Frontend: Vitest, React Testing Library and MSW. Query by accessible role and name. Every UI state is covered, and axe checks the calculator.
+- Fix lint errors and flaky tests you meet, even when your change did not cause them.
+
+## Commits and writing
+
+- One step per commit, as a Conventional Commit (`feat:`, `fix:`, `docs:`, `test:`, `build:`, `chore:`).
+- Never add an agent as co-author or add any AI attribution line to a commit or pull request.
+- Never use the em dash (Unicode U+2014), in code, docs or commit messages. Use a plain dash "-".
+- Log every user prompt word for word in `docs/PROMPTS.md`, with one line on what it produced.
 - Track the assignment requirements in `docs/REQUIREMENTS.md`.
-- Git hooks in `.githooks/` enforce the no em dash and no agent co-author rules. Enable them once per clone with `make hooks` (runs `git config core.hooksPath .githooks`). Do not bypass them with `--no-verify`.
-
-## Maintaining this file
-
-Keep this file for knowledge useful to almost every future agent session in this project.
-Do not repeat what the codebase already shows; point to the authoritative file or command instead.
-Prefer rewriting or pruning existing entries over appending new ones.
-When updating this file, preserve this bar for all agents and keep entries concise.
