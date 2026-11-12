@@ -42,8 +42,8 @@ Legend: `[ ]` not done, `[x]` done and proven. Optional items are marked (option
 |---|---|---|---|
 | NF1 | Clean, readable, idiomatic frontend code | [x] | strict TS, ESLint strict type-checked + jsx-a11y, 0 warnings in CI |
 | NF2 | Clean, readable, idiomatic backend code | [x] | feature-module layout, golangci-lint (12 linters) 0 issues in CI |
-| NF3 | Unit tests covering key frontend functionality | [x] | Vitest + RTL + MSW, 520 tests, 100% coverage (`npm run test:coverage`) |
-| NF4 | Unit tests covering key backend functionality | [x] | testify suites per package, 94.9% backend coverage (`make test-coverage`) |
+| NF3 | Unit tests covering key frontend functionality | [x] | Vitest + RTL + MSW, current test count and coverage in [README: tests and coverage](../README.md#tests-and-coverage) (`npm run test:coverage`) |
+| NF4 | Unit tests covering key backend functionality | [x] | testify suites per package, current backend coverage in [README: tests and coverage](../README.md#tests-and-coverage) (`make test-coverage`) |
 | NF5 | Documentation: setup instructions | [x] | [README: run separately](../README.md#run-the-backend-and-frontend-separately) |
 | NF6 | Documentation: API usage | [x] | [API.md](API.md), [README: API](../README.md#api) |
 | NF7 | Documentation: design rationale | [x] | [DECISIONS.md](DECISIONS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
@@ -72,7 +72,7 @@ Legend: `[ ]` not done, `[x]` done and proven. Optional items are marked (option
 |---|---|---|---|
 | I1 | AI tooling allowed (used, and disclosed in the README) | [x] | [README: AI usage](../README.md#ai-usage) |
 | I2 | Roughly 2 to 4 hours; correctness, clarity and maintainability over extra features | [x] | scope held to the brief, extras listed under next steps in the README |
-| I3 | Solution pushed to a Git host | [ ] | |
+| I3 | Solution pushed to a Git host | [x] | [github.com/Laaaaksh/sezzle-calculator](https://github.com/Laaaaksh/sezzle-calculator), PRs #1 to #7 each passed the no-mistakes pipeline and CI |
 | I4 | Repository link shared with the reviewers | [ ] | |
 | I5 | Prompts used are shared (docs/PROMPTS.md) | [x] | [PROMPTS.md](PROMPTS.md) |
 | I6 | README includes setup instructions | [x] | [README: quick start](../README.md#quick-start) |
