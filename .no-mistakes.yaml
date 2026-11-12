@@ -1,7 +1,3 @@
-# Pipeline agent for this repo. The Claude CLI is not logged in for headless use
-# on this machine, so review and fix steps run on Codex.
-agent: codex
-
 # Commands the no-mistakes pipeline runs; they call the repo Makefile so local, CI and pipeline agree.
 commands:
   lint: 'make lint'
