@@ -15,7 +15,7 @@ export type CalculatorClient = Pick<ApiClient, 'calculate'>;
 const DEFAULT_CLIENT: CalculatorClient = { calculate };
 
 export interface UseCalculatorOptions {
-  client?: CalculatorClient;
+  client?: CalculatorClient | undefined;
 }
 
 export interface UseCalculatorResult {

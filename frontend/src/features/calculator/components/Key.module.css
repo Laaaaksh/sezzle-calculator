@@ -1,0 +1,43 @@
+.key {
+  min-height: 3.25rem;
+  font: inherit;
+  font-size: 1.25rem;
+  border: 1px solid #c8c8c8;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: inherit;
+  cursor: pointer;
+}
+
+.key:hover:not(:disabled) {
+  background: #f0f0f0;
+}
+
+.key:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.key:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.operator,
+.function {
+  background: #f4f4f5;
+}
+
+.equals {
+  background: #1f2937;
+  border-color: #1f2937;
+  color: #fff;
+}
+
+.equals:hover:not(:disabled) {
+  background: #111827;
+}
+
+.wide {
+  grid-column: span 2;
+}

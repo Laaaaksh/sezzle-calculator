@@ -348,3 +348,19 @@ Add a history list held in memory: each entry shows the expression and the resul
 ```
 
 Produced: frontend/src/features/calculator: useCalculator wires the reducer to an injected API client (default: the real one) with one AbortController per request, so clear and unmount cancel it, a canceled request never shows as an error, a stale response is dropped and double submits are ignored while pending. useCalculatorKeyboard maps digits, dot, operators, Enter or =, Backspace, Escape and r, and stays out of text fields, focused buttons and modified keys so nothing fires twice. An in-memory history keeps the newest 20 entries on top and reuses a result on click. Tests use MSW for the hook, a table for the key mapping and cover the history cap.
+
+---
+
+## 20. Components and error UX
+
+```
+Build the components: Display (expression line and result line), Keypad, Key, HistoryTape and an ErrorBanner.
+- Map every backend error code to friendly copy in one constants file. For example, DIVISION_BY_ZERO becomes "You can't divide by zero."
+- Unknown codes fall back to a generic message that includes the request ID.
+- Network and timeout errors show a Retry button that resends the same request.
+- While a request is pending, show a subtle loading state on the result line and disable equals.
+Use semantic HTML: real buttons, an aria-label on every symbol key, and a display with role="status" and aria-live="polite" so results and errors are announced.
+Write integration tests for the main journeys: 12.5 + 7.25 = 19.75, divide by zero shows the error, a network failure then retry succeeds, a full keyboard-only calculation, and reusing a result from history.
+```
+
+Produced: Calculator components (Display, Keypad, Key, HistoryTape, ErrorBanner, plus a Calculator that wires the hook and keyboard) rendered by App, with CSS modules and semantic buttons. Keys are data-driven from keys.ts with an aria-label on every symbol key; the display is a polite role=status region that also holds error text. All error codes get friendly copy in constants/errorMessages.ts (type-checked Record, generic fallback with the request ID), network and timeout errors offer Retry, and equals is disabled with a loading state while pending. Integration tests run the real hook against MSW for the add, divide by zero, network retry, keyboard-only and history reuse journeys.

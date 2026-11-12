@@ -1,0 +1,47 @@
+.display {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: #f4f4f5;
+  text-align: right;
+}
+
+.expression {
+  min-height: 1.5em;
+  margin: 0;
+  color: #52525b;
+  overflow-wrap: anywhere;
+}
+
+.value {
+  margin: 0;
+  font-size: 2.25rem;
+  line-height: 1.2;
+  /* Long numbers wrap instead of overflowing. The size hints let the design shrink them. */
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.value[data-size='long'] {
+  font-size: 1.5rem;
+}
+
+.value[data-size='very-long'] {
+  font-size: 1rem;
+}
+
+.pending {
+  opacity: 0.5;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pending {
+    animation: none;
+  }
+}
