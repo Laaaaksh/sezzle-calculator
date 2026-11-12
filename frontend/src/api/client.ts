@@ -175,9 +175,7 @@ export function createApiClient(config: ApiClientConfig = {}): ApiClient {
   };
 }
 
-const defaultClient = createApiClient({
-  baseUrl: resolveBaseUrl(import.meta.env.VITE_API_BASE_URL),
-});
+const defaultClient = createApiClient({ baseUrl: import.meta.env.VITE_API_BASE_URL });
 
 /** Runs one operation on the server. Rejects with ApiError, NetworkError, TimeoutError or CanceledError. */
 export const calculate = defaultClient.calculate;

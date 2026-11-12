@@ -1,12 +1,10 @@
 import {
   ERROR_CODES,
-  OPERATION_TYPES,
   type ApiErrorBody,
   type CalculateResponse,
   type ErrorCode,
   type ErrorFields,
   type OperationInfo,
-  type OperationType,
   type OperationsResponse,
 } from './types';
 
@@ -21,8 +19,8 @@ function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === 'string');
 }
 
-export function isOperationType(value: unknown): value is OperationType {
-  return OPERATION_TYPES.some((operation) => operation === value);
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0;
 }
 
 export function isErrorCode(value: unknown): value is ErrorCode {
@@ -39,7 +37,7 @@ function isErrorFields(value: unknown): value is ErrorFields {
 export function isCalculateResponse(value: unknown): value is CalculateResponse {
   return (
     isRecord(value) &&
-    isOperationType(value.operation) &&
+    isNonEmptyString(value.operation) &&
     isStringArray(value.operands) &&
     typeof value.result === 'string'
   );
@@ -48,7 +46,7 @@ export function isCalculateResponse(value: unknown): value is CalculateResponse 
 function isOperationInfo(value: unknown): value is OperationInfo {
   return (
     isRecord(value) &&
-    isOperationType(value.name) &&
+    isNonEmptyString(value.name) &&
     typeof value.arity === 'number' &&
     Number.isInteger(value.arity) &&
     value.arity > 0 &&

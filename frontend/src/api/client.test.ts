@@ -292,8 +292,19 @@ describe('getOperations', () => {
     expect(method).toBe('GET');
   });
 
+  it('accepts an operation this client does not know yet', async () => {
+    const modulo = { name: 'modulo', arity: 2, symbol: 'mod', description: 'Remainder.' };
+    server.use(
+      http.get(OPERATIONS_URL, () => HttpResponse.json({ operations: [ADD_OPERATION, modulo] })),
+    );
+
+    const operations = await client.getOperations();
+
+    expect(operations).toEqual([ADD_OPERATION, modulo]);
+  });
+
   it.each([
-    ['an unknown operation name', { operations: [{ ...ADD_OPERATION, name: 'modulo' }] }],
+    ['an empty operation name', { operations: [{ ...ADD_OPERATION, name: '' }] }],
     ['a missing description', { operations: [{ name: 'add', arity: 2, symbol: '+' }] }],
     ['a fractional arity', { operations: [{ ...ADD_OPERATION, arity: 1.5 }] }],
     ['a bare array', [ADD_OPERATION]],

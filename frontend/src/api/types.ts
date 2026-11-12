@@ -1,7 +1,10 @@
 // Mirrors docs/API.md. When the contract changes, change this file and the test that
 // compares it with the document (types.test.ts) in the same commit.
 
-/** Every operation name returned by GET /api/v1/operations. */
+/**
+ * The operation names docs/API.md lists today. The server owns the real list, so request,
+ * response and OperationInfo fields take any name and a new server operation needs no client change.
+ */
 export const OPERATION_TYPES = [
   'add',
   'subtract',
@@ -48,20 +51,22 @@ export type ClientErrorCode = 'INVALID_RESPONSE' | 'UNKNOWN';
 export type ApiErrorCode = ErrorCode | ClientErrorCode;
 
 export interface CalculateRequest {
-  operation: OperationType;
+  /** One of the names from GET /api/v1/operations. */
+  operation: string;
   /** Decimal strings, never JSON numbers: a float cannot hold what the user typed. */
   operands: string[];
 }
 
 export interface CalculateResponse {
   /** Repeats the request exactly as sent. */
-  operation: OperationType;
+  operation: string;
   operands: string[];
   result: string;
 }
 
 export interface OperationInfo {
-  name: OperationType;
+  /** The value to send as CalculateRequest.operation. */
+  name: string;
   arity: number;
   /** For display only. Clients send the name, never the symbol. */
   symbol: string;
