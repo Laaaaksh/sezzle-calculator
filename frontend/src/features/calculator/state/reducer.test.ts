@@ -636,6 +636,105 @@ describe('reuse from history', () => {
   });
 });
 
+describe('a result longer than an operand may be', () => {
+  const LONG = '9'.repeat(MAX_OPERAND_LENGTH + 1);
+  const FITS = '9'.repeat(MAX_OPERAND_LENGTH);
+  const NOTICE = { code: 'RESULT_TOO_LONG_TO_REUSE', retryable: false };
+
+  it('stays on screen with a notice instead of becoming the next left operand (chain)', () => {
+    const chained = run(typed('12'), op('add'), ...keys('7'), op('multiply'));
+
+    expect(run(chained, { type: 'result_received', requestId: 1, result: LONG })).toMatchObject({
+      status: 'showing_result',
+      result: LONG,
+      request: { operation: 'add', operands: ['12', '7'] },
+      notice: NOTICE,
+    });
+  });
+
+  it('is still chained when it fits exactly', () => {
+    const chained = run(typed('12'), op('add'), ...keys('7'), op('multiply'));
+
+    expect(run(chained, { type: 'result_received', requestId: 1, result: FITS })).toMatchObject({
+      status: 'operator_chosen',
+      left: FITS,
+    });
+  });
+
+  it('refuses an operator pressed on it', () => {
+    const shown = resultState(LONG);
+
+    expect(run(shown, op('add'))).toMatchObject({
+      status: 'showing_result',
+      result: LONG,
+      notice: NOTICE,
+    });
+  });
+
+  it('refuses a square root of it', () => {
+    expect(run(resultState(LONG), SQRT)).toMatchObject({
+      status: 'showing_result',
+      result: LONG,
+      notice: NOTICE,
+    });
+  });
+
+  it('refuses a sign flip of it', () => {
+    expect(run(resultState(LONG), TOGGLE)).toMatchObject({
+      status: 'showing_result',
+      notice: NOTICE,
+    });
+  });
+
+  it('refuses a sign flip when the minus sign would not fit', () => {
+    expect(run(resultState(FITS), TOGGLE)).toMatchObject({
+      status: 'showing_result',
+      result: FITS,
+      notice: NOTICE,
+    });
+  });
+
+  it('flips the sign of a negative result that fits exactly', () => {
+    const negative = `-${'9'.repeat(MAX_OPERAND_LENGTH - 1)}`;
+
+    expect(run(resultState(negative), TOGGLE)).toMatchObject({
+      status: 'entering_first',
+      operand: negative.slice(1),
+    });
+  });
+
+  it('is shown, with a notice, when reused from history', () => {
+    expect(run(initialState, { type: 'reuse', result: LONG })).toMatchObject({
+      status: 'showing_result',
+      result: LONG,
+      request: null,
+      notice: NOTICE,
+    });
+  });
+
+  it('is not pushed into a calculation in progress when reused from history', () => {
+    const second = run(typed('5'), op('add'), ...keys('2'));
+
+    expect(run(second, { type: 'reuse', result: LONG })).toMatchObject({
+      status: 'showing_result',
+      result: LONG,
+      notice: NOTICE,
+    });
+  });
+
+  it('lets digits start a fresh calculation, which drops the notice', () => {
+    expect(run(resultState(LONG), op('add'), ...keys('4'))).toEqual({
+      status: 'entering_first',
+      lastRequestId: 1,
+      operand: '4',
+    });
+  });
+
+  it('has no notice when it fits', () => {
+    expect(resultState(FITS)).not.toHaveProperty('notice');
+  });
+});
+
 describe('createInitialState', () => {
   it('carries the request counter forward', () => {
     expect(createInitialState(7)).toEqual({

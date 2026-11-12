@@ -1,9 +1,11 @@
 package operations_test
 
 import (
+	"context"
 	"strings"
 	"testing"
 
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/entities"
@@ -166,4 +168,20 @@ func (s *SqrtTestSuite) TestSqrtWhenIterationCapIsReachedReturnsInternalInsteadO
 	s.Require().NotNil(err)
 	s.Equal(apperror.CodeInternal, err.Code())
 	s.ErrorIs(err, operations.ErrSqrtDidNotConverge)
+}
+
+func (s *SqrtTestSuite) TestSqrtWhenContextEndedReturnsRequestTimeout() {
+	_, err := s.op.Apply(cancelled(), []decimal.Decimal{mustDecimal("2")})
+
+	s.Require().NotNil(err)
+	s.Equal(apperror.CodeRequestTimeout, err.Code())
+	s.ErrorIs(err, context.Canceled)
+}
+
+func (s *SqrtTestSuite) TestSqrtOfTheLargestOperandPrintsFarBelowThePowerBudget() {
+	largest := strings.Repeat(digitNine, testFullOperandDigits)
+
+	got := s.sqrt(largest)
+
+	s.Less(len(got), testResultBudget)
 }

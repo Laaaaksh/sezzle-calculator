@@ -1,10 +1,12 @@
 import { MAX_OPERAND_LENGTH, type BinaryOperation } from '../../../constants/calculator';
 import type {
   CalculatorAction,
+  CalculatorError,
   CalculatorState,
   EnteringFirstState,
   EnteringSecondState,
   PendingRequest,
+  ShowingResultState,
   WaitingState,
 } from './types';
 
@@ -45,9 +47,17 @@ function appendChar(operand: string, char: string): string {
   return `${operand}${char}`;
 }
 
-/** Flips the sign. A zero stays unsigned, and the limit still counts the added "-". */
+/** True when the operand has no non-zero digit, so "0", "-0" and "0.00" all count. */
+function isZero(operand: string): boolean {
+  return !/[1-9]/.test(operand);
+}
+
+/**
+ * Flips the sign. A zero stays unsigned, and the limit still counts the added "-":
+ * an operand already at the limit comes back unchanged, which callers treat as a refusal.
+ */
 function negate(operand: string): string {
-  if (!/[1-9]/.test(operand)) {
+  if (isZero(operand)) {
     return operand;
   }
   if (operand.startsWith(MINUS)) {
@@ -65,6 +75,27 @@ function finalizeOperand(operand: string): string {
 function removeLastChar(operand: string): string {
   const shorter = operand.slice(0, -1);
   return shorter === MINUS ? EMPTY_OPERAND : shorter;
+}
+
+/** True when a result is longer than the server accepts as an operand (OPERAND_TOO_LARGE). */
+function tooLongToReuse(result: string): boolean {
+  return result.length > MAX_OPERAND_LENGTH;
+}
+
+/**
+ * Keeps the result on screen (it can still be read and copied) and says why it cannot feed
+ * another calculation. Without this guard the server would reject the next request.
+ */
+function refuseLongResult(state: ShowingResultState): ShowingResultState {
+  return {
+    ...state,
+    notice: {
+      code: 'RESULT_TOO_LONG_TO_REUSE',
+      message: 'The result is too long to reuse.',
+      requestId: undefined,
+      retryable: false,
+    } satisfies CalculatorError,
+  };
 }
 
 function startRequest(
@@ -122,12 +153,14 @@ function chooseOperator(state: CalculatorState, operator: BinaryOperation): Calc
         then: operator,
       });
     case 'showing_result':
-      return {
-        status: 'operator_chosen',
-        lastRequestId: state.lastRequestId,
-        left: state.result,
-        operator,
-      };
+      return tooLongToReuse(state.result)
+        ? refuseLongResult(state)
+        : {
+            status: 'operator_chosen',
+            lastRequestId: state.lastRequestId,
+            left: state.result,
+            operator,
+          };
     case 'waiting':
     case 'error':
       return state;
@@ -146,7 +179,9 @@ function applyUnary(state: CalculatorState, operation: 'sqrt'): CalculatorState 
             then: null,
           });
     case 'showing_result':
-      return startRequest(state, { operation, operands: [state.result], then: null });
+      return tooLongToReuse(state.result)
+        ? refuseLongResult(state)
+        : startRequest(state, { operation, operands: [state.result], then: null });
     default:
       // With an operator pending, sqrt is ambiguous (of which operand?), so it is ignored.
       return state;
@@ -205,14 +240,19 @@ function toggleSign(state: CalculatorState): CalculatorState {
       return operand === state.operand ? state : { ...state, operand };
     }
     case 'showing_result': {
+      // The negated result becomes an operand, so the same length rule applies.
+      if (tooLongToReuse(state.result)) {
+        return refuseLongResult(state);
+      }
       const operand = negate(state.result);
-      return operand === state.result
-        ? state
-        : ({
-            status: 'entering_first',
-            lastRequestId: state.lastRequestId,
-            operand,
-          } satisfies EnteringFirstState);
+      if (operand === state.result) {
+        return isZero(state.result) ? state : refuseLongResult(state);
+      }
+      return {
+        status: 'entering_first',
+        lastRequestId: state.lastRequestId,
+        operand,
+      } satisfies EnteringFirstState;
     }
     default:
       return state;
@@ -229,6 +269,16 @@ function resultReceived(
     return state;
   }
   const { operation, operands, then } = state.pending;
+  const shown: ShowingResultState = {
+    status: 'showing_result',
+    lastRequestId: state.lastRequestId,
+    result,
+    request: { operation, operands },
+  };
+  if (then !== null && tooLongToReuse(result)) {
+    // The chained operator would send this result as an operand. Show it instead, with the reason.
+    return refuseLongResult(shown);
+  }
   if (then !== null) {
     return {
       status: 'operator_chosen',
@@ -237,19 +287,25 @@ function resultReceived(
       operator: then,
     };
   }
-  return {
-    status: 'showing_result',
-    lastRequestId: state.lastRequestId,
-    result,
-    request: { operation, operands },
-  };
+  return shown;
 }
 
 function reuse(state: CalculatorState, result: string): CalculatorState {
+  if (state.status === 'waiting') {
+    // A request is in flight; the answer would overwrite whatever was reused.
+    return state;
+  }
+  if (tooLongToReuse(result)) {
+    // Not usable as an operand, so it is shown for reading only. Any calculation in progress
+    // is dropped, which the message makes clear by replacing the expression.
+    return refuseLongResult({
+      status: 'showing_result',
+      lastRequestId: state.lastRequestId,
+      result,
+      request: null,
+    });
+  }
   switch (state.status) {
-    case 'waiting':
-      // A request is in flight; the answer would overwrite whatever was reused.
-      return state;
     case 'operator_chosen':
     case 'entering_second':
       return {

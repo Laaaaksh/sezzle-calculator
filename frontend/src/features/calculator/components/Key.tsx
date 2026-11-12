@@ -5,12 +5,22 @@ import styles from './Key.module.css';
 interface KeyProps {
   definition: KeyDefinition;
   disabled?: boolean;
+  /** The server does not offer this operation. Stays focusable so the reason can be read. */
+  unavailable?: boolean;
   /** This operator is waiting for its second operand. Shown with a ring, not colour alone. */
   active?: boolean;
   onPress: (action: CalculatorAction) => void;
 }
 
-export function Key({ definition, disabled = false, active = false, onPress }: KeyProps) {
+export const UNAVAILABLE_REASON = 'Not available on this server';
+
+export function Key({
+  definition,
+  disabled = false,
+  unavailable = false,
+  active = false,
+  onPress,
+}: KeyProps) {
   const { label, ariaLabel, action, kind, wide = false } = definition;
   const className = [
     styles.key,
@@ -29,13 +39,19 @@ export function Key({ definition, disabled = false, active = false, onPress }: K
       // Only operators can be "on", so only they announce a pressed state.
       aria-pressed={kind === 'operator' ? active : undefined}
       disabled={disabled}
+      // aria-disabled, not disabled: the key stays in the tab order, so a keyboard or screen
+      // reader user can land on it and hear the reason from the title.
+      aria-disabled={unavailable ? true : undefined}
+      title={unavailable ? UNAVAILABLE_REASON : undefined}
       // Keeps focus off the pad after a pointer press. Otherwise Enter would press this key again
       // instead of acting as equals. Keyboard users still reach every key with Tab.
       onMouseDown={(event) => {
         event.preventDefault();
       }}
       onClick={() => {
-        onPress(action);
+        if (!unavailable) {
+          onPress(action);
+        }
       }}
     >
       {label}

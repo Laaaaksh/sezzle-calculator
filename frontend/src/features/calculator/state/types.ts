@@ -2,7 +2,7 @@ import type { ApiErrorCode, OperationType } from '../../../api';
 import type { BinaryOperation, Digit, UnaryOperation } from '../../../constants/calculator';
 
 /** Codes the UI makes up for failures that have no server response. */
-export type ClientFailureCode = 'NETWORK_ERROR' | 'TIMEOUT';
+export type ClientFailureCode = 'NETWORK_ERROR' | 'TIMEOUT' | 'RESULT_TOO_LONG_TO_REUSE';
 
 export interface CalculatorError {
   code: ApiErrorCode | ClientFailureCode;
@@ -63,6 +63,11 @@ export interface ShowingResultState extends StateBase {
   result: string;
   /** Null when the result was reused from history, so there is no expression to show. */
   request: CalculationRequest | null;
+  /**
+   * Why the last key was refused (a result too long to reuse). Cleared by the next transition,
+   * because every other transition builds a fresh state without it.
+   */
+  notice?: CalculatorError | undefined;
 }
 
 export interface ErrorState extends StateBase {

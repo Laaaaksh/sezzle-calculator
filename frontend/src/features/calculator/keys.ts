@@ -1,3 +1,4 @@
+import type { OperationType } from '../../api';
 import { DIGITS } from '../../constants/calculator';
 import type { CalculatorAction } from './state';
 
@@ -58,3 +59,28 @@ export const KEYS: readonly KeyDefinition[] = [
   symbol('decimal', '.', 'Decimal point', { type: 'decimal' }, 'digit'),
   symbol('equals', '=', 'Equals', { type: 'equals' }, 'equals'),
 ];
+
+/** The backend operation an action needs, or null for actions that never call the server. */
+export function operationForAction(action: CalculatorAction): OperationType | null {
+  switch (action.type) {
+    case 'operator':
+      return action.operator;
+    case 'unary':
+      return action.operation;
+    default:
+      return null;
+  }
+}
+
+/**
+ * False only when the server reported its operations and this action's operation is not among
+ * them. `null` means the list is unknown (still loading, or the fetch failed), and then every
+ * key stays usable because the server validates each request anyway.
+ */
+export function isActionAvailable(
+  action: CalculatorAction,
+  supported: ReadonlySet<string> | null,
+): boolean {
+  const operation = operationForAction(action);
+  return supported === null || operation === null || supported.has(operation);
+}

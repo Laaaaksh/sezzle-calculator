@@ -18,15 +18,8 @@ func TestInitTestSuite(t *testing.T) {
 	suite.Run(t, new(InitTestSuite))
 }
 
-// SetupTest and TearDownTest reset the package singleton so no test sees the
-// module another one built.
 func (s *InitTestSuite) SetupTest() {
 	s.ctx = context.Background()
-	health.HealthModule = nil
-}
-
-func (s *InitTestSuite) TearDownTest() {
-	health.HealthModule = nil
 }
 
 func (s *InitTestSuite) TestNewModuleWiresCoreAndHandler() {
@@ -36,16 +29,25 @@ func (s *InitTestSuite) TestNewModuleWiresCoreAndHandler() {
 	s.NotNil(module.GetHandler())
 }
 
-func (s *InitTestSuite) TestNewModuleReturnsSameInstanceOnSecondCall() {
+func (s *InitTestSuite) TestNewModuleReturnsADistinctInstanceOnEachCall() {
 	first := health.NewModule(s.ctx)
 
 	second := health.NewModule(s.ctx)
 
-	s.Same(first, second)
+	s.NotSame(first, second)
 }
 
 func (s *InitTestSuite) TestNewModuleStartsNotReady() {
 	module := health.NewModule(s.ctx)
 
 	s.False(module.GetCore().IsReady(s.ctx))
+}
+
+func (s *InitTestSuite) TestNewModuleDoesNotShareReadinessBetweenInstances() {
+	first := health.NewModule(s.ctx)
+	first.GetCore().SetReady(true)
+
+	second := health.NewModule(s.ctx)
+
+	s.False(second.GetCore().IsReady(s.ctx))
 }

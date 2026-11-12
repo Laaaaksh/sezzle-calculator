@@ -44,11 +44,11 @@ lint: mock lint-tool ## Run golangci-lint (generates mocks first)
 	$(GOLANGCI_LINT) run ./...
 
 .PHONY: test
-test: mock ## Run all tests with the race detector (generates mocks first)
+test: mock ## Run all tests with the race detector (needs mocks: they are gitignored and made by `make mock`, which this target runs first, so use `make test`, not bare `go test ./...`, on a fresh clone)
 	go test -race ./...
 
 .PHONY: test-coverage
-test-coverage: mock ## Run tests with race detector, write coverage.out and coverage.html, print the total
+test-coverage: mock ## Like test, plus coverage.out and coverage.html and the total (also runs `make mock` first)
 	go test -race -covermode=atomic -coverprofile=$(COVERAGE_OUT) ./...
 	grep -v '$(COVERAGE_EXCLUDE)' $(COVERAGE_OUT) > $(COVERAGE_OUT).filtered
 	mv $(COVERAGE_OUT).filtered $(COVERAGE_OUT)

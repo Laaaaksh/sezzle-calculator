@@ -2,6 +2,7 @@ package operations_test
 
 import (
 	"math"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -207,4 +208,12 @@ func (s *DivideTestSuite) TestNewDivideWhenPrecisionExceedsInt32ClampsInsteadOfW
 
 	s.Require().NotNil(err)
 	s.Equal(apperror.CodeDivisionByZero, err.Code())
+}
+
+func (s *DivideTestSuite) TestDivideOfTheLargestByTheSmallestOperandPrintsFarBelowThePowerBudget() {
+	dividend := strings.Repeat(digitNine, testNarrowOperandDigits)
+
+	got := s.divide(dividend, tinyBase(testNarrowFractionZeros))
+
+	s.Less(len(got), testResultBudget)
 }

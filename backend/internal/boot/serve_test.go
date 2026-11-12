@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,8 +16,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/boot"
-	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator"
-	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/health"
 )
 
 const (
@@ -100,16 +99,12 @@ func (s *ServeTestSuite) SetupTest() {
 	s.T().Setenv(envVarEnv, envNameTest)
 	s.T().Setenv(envVarConfigDir, s.dir)
 	s.T().Setenv(envVarPort, envValueEmpty)
-	health.HealthModule = nil
-	calculator.CalculatorModule = nil
 	s.listener = newPipeListener()
 	s.client = &http.Client{Transport: &http.Transport{DialContext: s.listener.dial}}
 }
 
 func (s *ServeTestSuite) TearDownTest() {
 	s.client.CloseIdleConnections()
-	health.HealthModule = nil
-	calculator.CalculatorModule = nil
 }
 
 // writeConfig writes the default file with the given grace period line.
@@ -136,6 +131,14 @@ func (s *ServeTestSuite) status(path string) int {
 	s.Require().NoError(err)
 	defer func() { _ = resp.Body.Close() }()
 	return resp.StatusCode
+}
+
+// readyStatus asks the app's own router for /health/ready, so the test reads
+// readiness through the public contract and needs no package-level module.
+func (s *ServeTestSuite) readyStatus(app *boot.App) int {
+	rec := httptest.NewRecorder()
+	app.Handler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, testReadyPath, nil))
+	return rec.Code
 }
 
 func (s *ServeTestSuite) wait(done <-chan error) error {
@@ -170,7 +173,7 @@ func (s *ServeTestSuite) TestServeFlipsReadinessOffWhenShutdownStarts() {
 	cancel()
 	s.Require().NoError(s.wait(done))
 
-	s.False(health.HealthModule.GetCore().IsReady(context.Background()))
+	s.Equal(http.StatusServiceUnavailable, s.readyStatus(app))
 }
 
 func (s *ServeTestSuite) TestServeKeepsAnsweringNotReadyDuringDrainDelay() {
@@ -194,7 +197,7 @@ func (s *ServeTestSuite) TestServeReturnsErrorAndDrainsWhenListenerFails() {
 	err := s.wait(s.start(context.Background(), app, &failingListener{newPipeListener()}))
 
 	s.ErrorIs(err, errTestAccept)
-	s.False(health.HealthModule.GetCore().IsReady(context.Background()))
+	s.Equal(http.StatusServiceUnavailable, s.readyStatus(app))
 }
 
 func (s *ServeTestSuite) TestServeForcesCloseWhenGracePeriodExpires() {

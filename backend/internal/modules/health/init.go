@@ -3,17 +3,12 @@ package health
 
 import "context"
 
-// HealthModule is the process-wide module instance, built once by NewModule.
-var HealthModule IModule
-
-// NewModule builds the module on first call and returns the same instance
-// afterwards. It is a var so tests can replace it.
-var NewModule = func(_ context.Context) IModule {
-	if HealthModule == nil {
-		core := NewCore()
-		HealthModule = &Module{Core: core, Handler: NewHTTPHandler(core)}
-	}
-	return HealthModule
+// NewModule builds a fresh module on every call. There is deliberately no
+// package-level instance: a cached one would leak readiness state between
+// callers and tests. Boot calls it once and owns the result.
+func NewModule(_ context.Context) IModule {
+	core := NewCore()
+	return &Module{Core: core, Handler: NewHTTPHandler(core)}
 }
 
 // IModule exposes the module's parts to boot.

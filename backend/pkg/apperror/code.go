@@ -23,6 +23,7 @@ const (
 	CodeMethodNotAllowed     Code = "METHOD_NOT_ALLOWED"
 	CodeInternal             Code = "INTERNAL"
 	CodeServiceUnavailable   Code = "SERVICE_UNAVAILABLE"
+	CodeRequestTimeout       Code = "REQUEST_TIMEOUT"
 	CodeUnknownOperation     Code = "UNKNOWN_OPERATION"
 	CodeInvalidOperandCount  Code = "INVALID_OPERAND_COUNT"
 	CodeOperandTooLarge      Code = "OPERAND_TOO_LARGE"
@@ -44,15 +45,21 @@ var httpStatusByCode = map[Code]int{
 	CodeMethodNotAllowed:     http.StatusMethodNotAllowed,
 	CodeInternal:             http.StatusInternalServerError,
 	CodeServiceUnavailable:   http.StatusServiceUnavailable,
-	CodeUnknownOperation:     http.StatusUnprocessableEntity,
-	CodeInvalidOperandCount:  http.StatusUnprocessableEntity,
-	CodeOperandTooLarge:      http.StatusUnprocessableEntity,
-	CodeInvalidOperand:       http.StatusUnprocessableEntity,
-	CodeDivisionByZero:       http.StatusUnprocessableEntity,
-	CodeInvalidExponent:      http.StatusUnprocessableEntity,
-	CodeExponentTooLarge:     http.StatusUnprocessableEntity,
-	CodeResultTooLarge:       http.StatusUnprocessableEntity,
-	CodeNegativeSquareRoot:   http.StatusUnprocessableEntity,
+	// 503, not 408 or 504. 408 means the client was too slow to send its
+	// request, which is not the case here. 504 means a gateway timed out
+	// waiting for an upstream, and this service is not a gateway. The request
+	// was fine and our own deadline ran out, so "temporarily unavailable, try
+	// again" (503) is the honest signal and clients already retry it.
+	CodeRequestTimeout:      http.StatusServiceUnavailable,
+	CodeUnknownOperation:    http.StatusUnprocessableEntity,
+	CodeInvalidOperandCount: http.StatusUnprocessableEntity,
+	CodeOperandTooLarge:     http.StatusUnprocessableEntity,
+	CodeInvalidOperand:      http.StatusUnprocessableEntity,
+	CodeDivisionByZero:      http.StatusUnprocessableEntity,
+	CodeInvalidExponent:     http.StatusUnprocessableEntity,
+	CodeExponentTooLarge:    http.StatusUnprocessableEntity,
+	CodeResultTooLarge:      http.StatusUnprocessableEntity,
+	CodeNegativeSquareRoot:  http.StatusUnprocessableEntity,
 }
 
 // publicMessageByCode holds the default client-facing text per code.
@@ -65,6 +72,7 @@ var publicMessageByCode = map[Code]string{
 	CodeMethodNotAllowed:     MsgMethodNotAllowed,
 	CodeInternal:             MsgInternal,
 	CodeServiceUnavailable:   MsgServiceUnavailable,
+	CodeRequestTimeout:       MsgRequestTimeout,
 	CodeUnknownOperation:     MsgUnknownOperation,
 	CodeInvalidOperandCount:  MsgInvalidOperandCount,
 	CodeOperandTooLarge:      MsgOperandTooLarge,

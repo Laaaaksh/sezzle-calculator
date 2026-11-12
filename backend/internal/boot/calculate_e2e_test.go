@@ -1,11 +1,13 @@
 package boot_test
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/suite"
@@ -161,4 +163,19 @@ func (s *CalculateE2ETestSuite) TestHugeOperationNameIsRejectedWithoutEchoingIt(
 	s.Equal(map[string]any{entities.FieldNameOperation: entities.ProblemTooLong}, body.Fields)
 	s.NotContains(s.recorder.Body.String(), huge[:entities.MaxOperationNameLength+1])
 	s.Less(s.recorder.Body.Len(), e2eSmallErrorBodyBytes)
+}
+
+func (s *CalculateE2ETestSuite) TestExpiredDeadlineReturns503RequestTimeoutAsJSON() {
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
+	defer cancel()
+	req := httptest.NewRequest(http.MethodPost, testCalculatePath, strings.NewReader(e2eBodyDivide)).WithContext(ctx)
+	req.Header.Set(constants.HeaderContentType, wantContentType)
+
+	s.router.ServeHTTP(s.recorder, req)
+
+	body := s.errorBody()
+	s.Equal(http.StatusServiceUnavailable, s.recorder.Code)
+	s.Equal(apperror.CodeRequestTimeout, body.Code)
+	s.Equal(apperror.MsgRequestTimeout, body.Message)
+	s.Equal(wantContentType, s.recorder.Header().Get(constants.HeaderContentType))
 }

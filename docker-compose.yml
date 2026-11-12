@@ -1,0 +1,49 @@
+# One command runs the whole app: `make docker-up`, then open http://localhost:8080.
+# Only the frontend publishes a port; nginx there forwards /api and /health to the backend.
+name: sezzle-calculator
+
+services:
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    # Hardening: immutable root filesystem, no Linux capabilities, no privilege gain via setuid.
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+    environment:
+      # The browser talks to nginx on this origin, so CORS is not exercised, but the value stays correct.
+      APP_CORS_ALLOWED_ORIGINS: http://localhost:8080
+    healthcheck:
+      test: ["CMD", "/app/healthcheck"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    # Same hardening. nginx-unprivileged keeps its pid file and temp dirs under /tmp, hence the tmpfs mounts.
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+    ports:
+      - "8080:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s

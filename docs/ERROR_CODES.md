@@ -38,6 +38,9 @@ Examples per reason: `""` is `empty`, `" 1"` is `whitespace`, `"+1"` is `plus_si
 | `METHOD_NOT_ALLOWED` | 405 | `DELETE /api/v1/calculate` | The method is not allowed for this resource. |
 | `INTERNAL` | 500 | An unexpected server fault, such as a recovered panic | An internal error occurred. |
 | `SERVICE_UNAVAILABLE` | 503 | The readiness probe while the service is not ready | The service is temporarily unavailable. |
+| `REQUEST_TIMEOUT` | 503 | A calculation still running when `request_timeout` expires | The request took too long to process. |
+
+`REQUEST_TIMEOUT` is 503 and not 408 or 504 on purpose. 408 means the client was too slow to send its request, and 504 means a gateway timed out waiting for an upstream; neither is true here. The request was valid and the server's own deadline (`request_timeout`) ran out, which is a temporary condition the client can retry. A client that disconnects mid-calculation also ends the work with this code, though nobody reads that response.
 
 `PAYLOAD_TOO_LARGE` carries one field, `limit`, the body size limit in bytes. It is the same whether the declared `Content-Length` is refused up front or a body of unknown length is cut off while it is read.
 

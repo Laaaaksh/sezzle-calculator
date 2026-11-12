@@ -16,8 +16,27 @@ function renderCalculator() {
   return userEvent.setup();
 }
 
+/** The whole display: expression and value. */
 function display() {
+  return screen.getByRole('group', { name: 'Display' });
+}
+
+/** The live region, which holds the value only. */
+function liveRegion() {
   return screen.getByRole('status');
+}
+
+const OPERATIONS_URL = `${BASE_URL}/api/v1/operations`;
+
+/** Answers the operations lookup with only the named operations. */
+function reportOperations(...names: string[]) {
+  server.use(
+    http.get(OPERATIONS_URL, () =>
+      HttpResponse.json({
+        operations: names.map((name) => ({ name, arity: 2, symbol: name, description: name })),
+      }),
+    ),
+  );
 }
 
 /** Clicks keys by their accessible names, in order. */
@@ -94,12 +113,12 @@ describe('Calculator', () => {
 
     await pressKeys(user, '1', 'Add', '2', 'Equals');
 
-    expect(display()).toHaveAttribute('aria-busy', 'true');
+    expect(liveRegion()).toHaveAttribute('aria-busy', 'true');
     expect(screen.getByRole('button', { name: 'Equals' })).toBeDisabled();
     await waitFor(() => {
       expect(display()).toHaveTextContent('3');
     });
-    expect(display()).toHaveAttribute('aria-busy', 'false');
+    expect(liveRegion()).toHaveAttribute('aria-busy', 'false');
     expect(screen.getByRole('button', { name: 'Equals' })).toBeEnabled();
   });
 
@@ -265,6 +284,137 @@ describe('Calculator', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent("You can't divide by zero.");
     expect(display()).not.toContainElement(screen.getByRole('alert'));
+  });
+
+  it('moves focus to the display after Retry, because the Retry button disappears', async () => {
+    recordCalculate((_body, attempt) =>
+      attempt === 1
+        ? HttpResponse.error()
+        : HttpResponse.json({ operation: 'add', operands: ['1', '2'], result: '3' }),
+    );
+    const user = renderCalculator();
+    await pressKeys(user, '1', 'Add', '2', 'Equals');
+    const retry = await screen.findByRole('button', { name: 'Retry' });
+    retry.focus();
+
+    await user.keyboard('{Enter}');
+
+    expect(display()).toHaveFocus();
+    await waitFor(() => {
+      expect(liveRegion()).toHaveTextContent('3');
+    });
+    expect(display()).toHaveFocus();
+  });
+
+  it('puts only the value in the live region', async () => {
+    const user = renderCalculator();
+
+    await pressKeys(user, '1', 'Add');
+
+    expect(display()).toHaveTextContent('1 +');
+    expect(liveRegion()).not.toHaveTextContent('+');
+  });
+
+  describe('operations reported by the backend', () => {
+    it('disables the key and the shortcut for an operation the server does not report', async () => {
+      reportOperations('add', 'subtract', 'multiply', 'divide', 'percentage', 'sqrt');
+      const user = renderCalculator();
+      const power = screen.getByRole('button', { name: 'Power' });
+      await waitFor(() => {
+        expect(power).toHaveAttribute('aria-disabled', 'true');
+      });
+      expect(power).toHaveAttribute('title', 'Not available on this server');
+      expect(screen.getByRole('button', { name: 'Add' })).not.toHaveAttribute('aria-disabled');
+
+      await user.click(power);
+      await user.keyboard('^');
+
+      expect(power).toHaveAttribute('aria-pressed', 'false');
+      expect(display()).not.toHaveTextContent('^');
+      await user.keyboard('5+');
+      expect(display()).toHaveTextContent('5 +');
+    });
+
+    it('ignores the square root shortcut when sqrt is not reported', async () => {
+      reportOperations('add');
+      const user = renderCalculator();
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Square root' })).toHaveAttribute(
+          'aria-disabled',
+          'true',
+        );
+      });
+      const bodies = recordCalculate(() =>
+        HttpResponse.json({ operation: 'sqrt', operands: ['9'], result: '3' }),
+      );
+
+      await user.keyboard('9r');
+
+      expect(display()).toHaveTextContent('9');
+      expect(bodies).toEqual([]);
+    });
+
+    it('renders every key at once, before the list arrives', () => {
+      server.use(http.get(OPERATIONS_URL, () => delay('infinite')));
+      renderCalculator();
+
+      expect(screen.getByRole('button', { name: 'Power' })).not.toHaveAttribute('aria-disabled');
+      expect(screen.getByRole('button', { name: 'Equals' })).toBeEnabled();
+    });
+
+    it('leaves every key enabled and shows no error when the lookup fails', async () => {
+      server.use(http.get(OPERATIONS_URL, () => HttpResponse.error()));
+      const user = renderCalculator();
+
+      await user.keyboard('2^');
+
+      expect(display()).toHaveTextContent('2 ^');
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(
+        screen.getAllByRole('button').filter((key) => key.getAttribute('aria-disabled') === 'true'),
+      ).toEqual([]);
+    });
+
+    it('leaves every key enabled when the server reports no operations at all', async () => {
+      let asked = false;
+      server.use(
+        http.get(OPERATIONS_URL, () => {
+          asked = true;
+          return HttpResponse.json({ operations: [] });
+        }),
+      );
+      const user = renderCalculator();
+      await waitFor(() => {
+        expect(asked).toBe(true);
+      });
+
+      await user.keyboard('2^');
+
+      expect(display()).toHaveTextContent('2 ^');
+    });
+  });
+
+  it('keeps a result that is too long to reuse readable and says why it is refused', async () => {
+    const long = '9'.repeat(65);
+    const bodies = recordCalculate(() =>
+      HttpResponse.json({ operation: 'add', operands: ['1', '2'], result: long }),
+    );
+    const user = renderCalculator();
+    await pressKeys(user, '1', 'Add', '2', 'Equals');
+    await waitFor(() => {
+      expect(liveRegion()).toHaveTextContent(long);
+    });
+
+    await pressKeys(user, 'Add');
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'This result is too long to use in another calculation.',
+    );
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
+    expect(liveRegion()).toHaveTextContent(long);
+    expect(bodies).toHaveLength(1);
+    await pressKeys(user, '4');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   describe('axe', () => {

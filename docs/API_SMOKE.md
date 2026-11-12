@@ -1,6 +1,6 @@
 # API smoke test
 
-Real requests against a running server (`make -C backend run`), captured by the P14 end-to-end check. Request IDs vary per run.
+Real requests against a running server (`make -C backend run`), captured with curl. Request IDs vary per run.
 
 Two codes are not in this capture because no client request can cause them. `INTERNAL` needs a server fault, such as a recovered panic. `SERVICE_UNAVAILABLE` only comes from `GET /readyz` while the server is shutting down. Both are covered by the handler and router tests instead.
 

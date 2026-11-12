@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, Ref } from 'react';
 import { describeDisplay } from '../display';
 import type { CalculatorState } from '../state';
 import styles from './Display.module.css';
@@ -6,9 +6,11 @@ import styles from './Display.module.css';
 interface DisplayProps {
   state: CalculatorState;
   isPending: boolean;
+  /** Lets the caller move keyboard focus here, for example after Retry removes the button. */
+  ref?: Ref<HTMLDivElement>;
 }
 
-export function Display({ state, isPending }: DisplayProps) {
+export function Display({ state, isPending, ref }: DisplayProps) {
   const { expression, value } = describeDisplay(state);
   const valueClass = [
     styles.value,
@@ -22,12 +24,24 @@ export function Display({ state, isPending }: DisplayProps) {
   // The stylesheet sizes the text from this, so long numbers shrink to fit without any script.
   const valueStyle = { '--value-length': Math.max(value.length, 1) } as CSSProperties;
 
+  // tabIndex -1: not in the tab order, but a script can focus it (see Calculator's retry).
+  // Only the value is a live region. Announcing the expression too would read both on every key.
   return (
-    <div className={styles.display} role="status" aria-live="polite" aria-busy={isPending}>
+    <div ref={ref} className={styles.display} role="group" aria-label="Display" tabIndex={-1}>
       <p className={styles.expression}>{expression}</p>
-      <p key={animationKey} className={valueClass} style={valueStyle}>
-        {value}
-      </p>
+      {/* The live region stays mounted. Only the paragraph inside is replaced, so the change is read. */}
+      <div role="status" aria-live="polite" aria-busy={isPending}>
+        {/* In the error state the alert already says what went wrong, so "Error" is hidden from
+            assistive tech and the failure is announced once. */}
+        <p
+          key={animationKey}
+          className={valueClass}
+          style={valueStyle}
+          aria-hidden={state.status === 'error' ? true : undefined}
+        >
+          {value}
+        </p>
+      </div>
     </div>
   );
 }

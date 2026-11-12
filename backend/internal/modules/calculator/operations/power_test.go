@@ -1,9 +1,13 @@
 package operations_test
 
 import (
+	"context"
+	"errors"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/config"
@@ -288,4 +292,88 @@ func (s *PowerTestSuite) TestPowerWhenTinyBaseHasNegativeExponentReturnsResultTo
 
 func (s *PowerTestSuite) TestPowerWhenSmallBaseHasNegativeExponentThatFitsReturnsTheExactValue() {
 	s.Equal("1"+strings.Repeat("0", 600), s.power("0.1", "-600"))
+}
+
+func (s *PowerTestSuite) TestPowerWhenBaseIsTenToTheMaxExponentReturnsResultTooLarge() {
+	err := s.failure("10", testMaxPowerExponent)
+
+	s.Equal(apperror.CodeResultTooLarge, err.Code())
+	s.Equal(int64(testResultBudget), err.Fields()[entities.FieldLimit])
+}
+
+func (s *PowerTestSuite) TestPowerWhenTenToTheSixHundredFitsTheBudgetReturnsIt() {
+	got := s.power("10", testSixHundred)
+
+	s.Len(got, testTenToTheSixHundredLen)
+}
+
+// Main's reviewed size guard keeps one digit of margin against float rounding,
+// so 10^639 (exactly 640 digits) is refused and 10^638 is the last one allowed.
+func (s *PowerTestSuite) TestPowerWhenTenIsOneDigitUnderTheBudgetReturnsIt() {
+	s.Len(s.power("10", testTenToTheLastAllowed), testResultBudget-1)
+}
+
+func (s *PowerTestSuite) TestPowerWhenTenPrintsOneCharacterOverTheBudgetReturnsResultTooLarge() {
+	s.Equal(apperror.CodeResultTooLarge, s.failure("10", testTenToTheFirstRefused).Code())
+}
+
+func (s *PowerTestSuite) TestPowerWhenBaseIsAOneWithManyZerosReturnsResultTooLarge() {
+	s.Equal(apperror.CodeResultTooLarge, s.failure(roundBase(testRoundBaseZeros), testMaxPowerExponent).Code())
+}
+
+func (s *PowerTestSuite) TestPowerWhenBaseIsTinyAndExponentPositiveReturnsResultTooLarge() {
+	s.Equal(apperror.CodeResultTooLarge, s.failure(tinyBase(testNarrowFractionZeros), testMaxPowerExponent).Code())
+}
+
+func (s *PowerTestSuite) TestPowerWhenBaseIsTinyAndExponentNegativeReturnsResultTooLarge() {
+	s.Equal(apperror.CodeResultTooLarge, s.failure(tinyBase(testNarrowFractionZeros), testNegMaxPowerExponent).Code())
+}
+
+func (s *PowerTestSuite) TestPowerWhenPointOneToTheMaxExponentReturnsResultTooLarge() {
+	s.Equal(apperror.CodeResultTooLarge, s.failure("0.1", testMaxPowerExponent).Code())
+}
+
+func (s *PowerTestSuite) TestPowerWhenPointOneToTheSixHundredFitsTheBudgetReturnsIt() {
+	s.Len(s.power("0.1", testSixHundred), testPointOneToTheSixHundred)
+}
+
+func (s *PowerTestSuite) TestPowerWhenFractionHasManyPlacesButFitsTheBudgetReturnsIt() {
+	s.LessOrEqual(len(s.power("0.5", testHalfToTheFiveHundred)), testResultBudget)
+}
+
+func (s *PowerTestSuite) TestPowerWhenNegativeBaseTenToTheBudgetReturnsResultTooLarge() {
+	err := s.failure(testSignedBoundaryBase, testSignedBoundaryExponent)
+
+	s.Equal(apperror.CodeResultTooLarge, err.Code())
+}
+
+// The reciprocal of a huge round base rounds to zero at the configured precision,
+// so the result is tiny and the reviewed guard lets it through.
+func (s *PowerTestSuite) TestPowerWhenNegativeExponentBaseIsRoundAndHugeReturnsZero() {
+	s.Equal("0", s.power(roundBase(testRoundBaseZeros), testNegMaxPowerExponent))
+}
+
+func (s *PowerTestSuite) TestPowerWhenContextEndedBeforeTheLoopReturnsRequestTimeout() {
+	_, err := s.op.Apply(cancelled(), []decimal.Decimal{mustDecimal("2"), mustDecimal("10")})
+
+	s.Require().NotNil(err)
+	s.Equal(apperror.CodeRequestTimeout, err.Code())
+	s.ErrorIs(err, context.Canceled)
+}
+
+func (s *PowerTestSuite) TestPowerWhenDeadlineHasPassedKeepsTheDeadlineCause() {
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
+	defer cancel()
+
+	_, err := s.op.Apply(ctx, []decimal.Decimal{mustDecimal("2"), mustDecimal("10")})
+
+	s.Require().NotNil(err)
+	s.True(errors.Is(err, context.DeadlineExceeded))
+}
+
+func (s *PowerTestSuite) TestPowerWhenResultIsOneIgnoresAnEndedContext() {
+	got, err := s.op.Apply(cancelled(), []decimal.Decimal{mustDecimal("5"), mustDecimal("0")})
+
+	s.Nil(err)
+	s.Equal("1", got.String())
 }

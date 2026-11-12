@@ -1,6 +1,8 @@
 package operations
 
 import (
+	"context"
+
 	"github.com/shopspring/decimal"
 
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/entities"
@@ -63,8 +65,13 @@ func NewBoundedSqrt(precision, maxIterations int) *Sqrt {
 }
 
 // Apply returns the square root of operands[0], NEGATIVE_SQUARE_ROOT for a
-// negative operand, or INTERNAL if the iteration cap is hit.
-func (s *Sqrt) Apply(operands []decimal.Decimal) (decimal.Decimal, apperror.IError) {
+// negative operand, REQUEST_TIMEOUT if ctx ends mid-loop, or INTERNAL if the
+// iteration cap is hit.
+//
+// The root has at most half the integer digits of the operand plus the
+// configured precision decimals, so its printed length is far below the power
+// result budget (see the sqrt result size test).
+func (s *Sqrt) Apply(ctx context.Context, operands []decimal.Decimal) (decimal.Decimal, apperror.IError) {
 	x := operands[0]
 	if x.IsNegative() {
 		return decimal.Zero, apperror.New(apperror.CodeNegativeSquareRoot, ErrNegativeSquareRoot)
@@ -72,7 +79,7 @@ func (s *Sqrt) Apply(operands []decimal.Decimal) (decimal.Decimal, apperror.IErr
 	if x.IsZero() {
 		return decimal.Zero, nil
 	}
-	root, aerr := s.newton(x)
+	root, aerr := s.newton(ctx, x)
 	if aerr != nil {
 		return decimal.Zero, aerr
 	}
@@ -80,10 +87,13 @@ func (s *Sqrt) Apply(operands []decimal.Decimal) (decimal.Decimal, apperror.IErr
 }
 
 // newton returns floor(sqrt(x)) at the working scale.
-func (s *Sqrt) newton(x decimal.Decimal) (decimal.Decimal, apperror.IError) {
+func (s *Sqrt) newton(ctx context.Context, x decimal.Decimal) (decimal.Decimal, apperror.IError) {
 	scale := s.precision + sqrtGuardDigits
 	guess := initialGuess(x, scale)
 	for range s.maxIterations {
+		if aerr := CheckContext(ctx); aerr != nil {
+			return decimal.Zero, aerr
+		}
 		quotient, _ := x.QuoRem(guess, scale)
 		next, _ := guess.Add(quotient).QuoRem(two, scale)
 		if next.GreaterThanOrEqual(guess) {

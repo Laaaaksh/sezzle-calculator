@@ -1,6 +1,7 @@
 package operations
 
 import (
+	"context"
 	"math"
 
 	"github.com/shopspring/decimal"
@@ -43,7 +44,7 @@ func NewDivide(precision int) *Divide {
 }
 
 // Apply returns operands[0] / operands[1] or DIVISION_BY_ZERO.
-func (d *Divide) Apply(operands []decimal.Decimal) (decimal.Decimal, apperror.IError) {
+func (d *Divide) Apply(_ context.Context, operands []decimal.Decimal) (decimal.Decimal, apperror.IError) {
 	dividend, divisor := operands[0], operands[1]
 	if divisor.IsZero() {
 		return decimal.Zero, apperror.New(apperror.CodeDivisionByZero, ErrDivisionByZero)

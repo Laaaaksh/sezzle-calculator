@@ -1,6 +1,8 @@
 package operations
 
 import (
+	"context"
+
 	"github.com/shopspring/decimal"
 
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/entities"
@@ -36,6 +38,6 @@ func NewPercentage() *Percentage {
 }
 
 // Apply returns operands[0] / 100 * operands[1].
-func (*Percentage) Apply(operands []decimal.Decimal) (decimal.Decimal, apperror.IError) {
+func (*Percentage) Apply(_ context.Context, operands []decimal.Decimal) (decimal.Decimal, apperror.IError) {
 	return operands[0].Shift(percentShift).Mul(operands[1]), nil
 }

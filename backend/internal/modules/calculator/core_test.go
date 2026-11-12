@@ -2,7 +2,9 @@ package calculator_test
 
 import (
 	"context"
+	"errors"
 	"testing"
+	"time"
 
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/suite"
@@ -304,4 +306,51 @@ func (s *CoreTestSuite) TestListOperationsWithNothingRegisteredReturnsAnEmptyLis
 
 	s.NotNil(got)
 	s.Empty(got)
+}
+
+func (s *CoreTestSuite) endedContext() context.Context {
+	ctx, cancel := context.WithCancel(s.ctx)
+	cancel()
+	return ctx
+}
+
+func (s *CoreTestSuite) TestCalculateWhenContextEndedReturnsRequestTimeout() {
+	_, err := s.core.Calculate(s.endedContext(), testOpFake, s.binary("1", "2"))
+
+	s.Require().NotNil(err)
+	s.Equal(apperror.CodeRequestTimeout, err.Code())
+	s.ErrorIs(err, context.Canceled)
+}
+
+func (s *CoreTestSuite) TestCalculateWhenContextEndedDoesNotCallApply() {
+	_, _ = s.core.Calculate(s.endedContext(), testOpFake, s.binary("1", "2"))
+
+	s.Zero(s.fake.calls)
+}
+
+func (s *CoreTestSuite) TestCalculateWhenDeadlinePassedKeepsTheDeadlineCause() {
+	ctx, cancel := context.WithDeadline(s.ctx, time.Now().Add(-time.Second))
+	defer cancel()
+
+	_, err := s.core.Calculate(ctx, testOpFake, s.binary("1", "2"))
+
+	s.Require().NotNil(err)
+	s.True(errors.Is(err, context.DeadlineExceeded))
+}
+
+func (s *CoreTestSuite) TestCalculateWhenContextEndsDuringApplyDropsTheLateResult() {
+	ctx, cancel := context.WithCancel(s.ctx)
+	s.fake.onApply = cancel
+
+	result, err := s.core.Calculate(ctx, testOpFake, s.binary("1", "2"))
+
+	s.Require().NotNil(err)
+	s.Equal(apperror.CodeRequestTimeout, err.Code())
+	s.Empty(result.Text)
+}
+
+func (s *CoreTestSuite) TestCalculatePassesItsContextToApply() {
+	_, _ = s.core.Calculate(s.ctx, testOpFake, s.binary("1", "2"))
+
+	s.Equal(s.ctx, s.fake.seenCtx)
 }

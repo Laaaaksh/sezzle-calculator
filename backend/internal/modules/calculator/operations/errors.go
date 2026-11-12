@@ -18,7 +18,11 @@ var (
 	ErrFractionalExponent  = errors.New("exponent is not a whole number")
 	ErrExponentBeyondLimit = errors.New("exponent is outside the configured range")
 	ErrZeroToNegativePower = errors.New("zero raised to a negative power")
-	ErrResultBeyondBudget  = errors.New("estimated result digits exceed the budget")
+	ErrResultBeyondBudget  = errors.New("printed result length exceeds the budget")
 	ErrNegativeSquareRoot  = errors.New("square root of a negative number")
 	ErrSqrtDidNotConverge  = errors.New("square root iteration hit its bound")
 )
+
+// ErrContextDone is the internal cause behind REQUEST_TIMEOUT when an
+// operation notices that its context ended mid-calculation.
+var ErrContextDone = errors.New("request context ended during the calculation")

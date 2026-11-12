@@ -410,3 +410,49 @@ Run the backend and frontend together and check the UI in a real browser at 320p
 ```
 
 Produced: a real-browser check at 320, 375, 768, 1280 and 1440 px in light and dark, keyboard-only flows, no horizontal overflow, exact results (0.1+0.2, 1/3, 987654321 squared, 2^200, sqrt 2). Found and fixed two issues: the error state read like "9 / 0 = 0", and the drawer repeated its heading. Screenshots in docs/screenshots.
+
+---
+
+## 24. Docker
+
+```
+Add Docker.
+- backend/Dockerfile: a multi-stage build that compiles a static binary and runs it in a distroless image as a non-root user, with a healthcheck command available.
+- frontend/Dockerfile: builds with Node, then serves the static files with nginx. Nginx proxies /api to the backend service, sets sensible caching headers for the static assets, and falls back to index.html.
+- docker-compose.yml at the root: both services with healthchecks, and the frontend waits until the backend is healthy. One port is exposed: http://localhost:8080.
+- make docker-up and make docker-down.
+- A .dockerignore for each part.
+Build it from scratch with no cache and prove it works end to end with curl and a browser screenshot.
+```
+
+Produced: Dockerfiles for both parts (static Go binary on distroless nonroot with a cmd/healthcheck probe binary; Node build served by unprivileged nginx with /api proxy, immutable asset caching, SPA fallback and a CSP), docker-compose.yml with healthchecks and one port (8080), per-part .dockerignore files, and make docker-up, docker-down and docker-logs.
+
+---
+
+## 25. README and docs
+
+```
+Write the README for a reviewer who has five minutes. Sections, in order:
+1. What it is, in two sentences, with a screenshot.
+2. Quick start: docker compose up, then open the URL.
+3. Running the backend and frontend separately, with the exact Go and Node versions.
+4. API: every endpoint with a curl example and its real response, including every error case.
+5. Tests and coverage: the commands, current numbers for each layer, and where the HTML reports are.
+6. Design decisions and assumptions: decimal not float, string operands, half-even rounding and precision, the percentage meaning, input limits, one endpoint with an operation field, the 400 versus 422 split, no database, and the operation registry.
+7. What I'd do next with more time.
+8. AI usage: say I used AI tools, and link docs/PROMPTS.md.
+
+Also write docs/ARCHITECTURE.md, with a Mermaid diagram of the request flow from the browser through nginx, the middleware, the handler and core to the operation, and docs/DECISIONS.md, with one short entry per decision covering context, decision and trade-off. Plain, direct language, written as me.
+```
+
+Produced: README for a five-minute reader (screenshot, quick start, run separately with exact versions, real curl output for every endpoint and error code, test and coverage numbers, design decisions, next steps, AI usage), docs/ARCHITECTURE.md with a Mermaid request flow, and docs/DECISIONS.md with 14 decisions.
+
+---
+
+## 26. Final review
+
+```
+Go through docs/REQUIREMENTS.md line by line and show me the proof for each item: a file, a test or an output. Then review the whole codebase the way a senior payments engineer would on a hiring panel: correctness, edge cases, naming, structure, test quality, docs and anything that would make them doubt me. Rank the findings by severity. Fix the ones worth fixing within the time box, and put the rest under next steps in the README.
+```
+
+Produced: an independent review raised 12 findings. Fixed: the power result budget was bypassed by round-number bases such as 10^1000, the request timeout was never observed, docs claimed the keypad used `/operations` when it did not, over-long results could be chained into a rejected request, nginx returned an HTML 413, module singletons ignored config, focus was lost after Retry, the live region announced every keystroke, and Docker had no CI coverage. Remaining low items (rate limiting, OpenAPI) are under next steps in the README.
