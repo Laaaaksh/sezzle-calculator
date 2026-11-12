@@ -1,0 +1,6 @@
+# Production overrides.
+
+[cors]
+# Placeholder only. Set the real frontend origin through
+# APP_CORS_ALLOWED_ORIGINS at deploy time; never ship a localhost origin here.
+allowed_origins = ["https://calculator.example.com"]

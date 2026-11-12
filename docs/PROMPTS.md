@@ -103,3 +103,17 @@ Both jobs should fail loudly on any warning that matters. Upload both coverage r
 ```
 
 Produced: `.github/workflows/ci.yml` with backend and frontend jobs, actions pinned to commit SHAs, golangci-lint pinned, zero-warning lint, and coverage artifacts. Validated with actionlint.
+
+---
+
+## 4. Go module, config and constants
+
+```
+Start the Go service in backend/. Use the latest stable Go. Use this layout, which I use for all my services:
+- cmd/api/main.go: a thin entry point. All it does is build the app and run it.
+- internal/config: a typed Config struct, loaded with viper from config/default.toml, with per-environment files (dev, test, prod) layered on top and env var overrides with an APP_ prefix. Put everything in config: server port, read/write/idle timeouts, the shutdown grace period, max request body size, CORS allowed origins, and the calculator limits (max operand length, max exponent, decimal precision for division and sqrt).
+- internal/constants: every string and number the code uses, including header names, log messages, log keys and the API version. No magic strings or numbers anywhere in the code.
+Validate the config at startup and fail fast with a clear message when a value is missing or invalid. Add unit tests for config loading and validation, using testify suites with one test method per behaviour and camelCase names. No table-driven tests.
+```
+
+Produced: Go module in `backend/`, layered TOML config (default plus dev, test, prod) with `APP_` env overrides and fail-fast validation, `internal/constants`, a thin `cmd/api/main.go`, and config tests at 100% coverage.

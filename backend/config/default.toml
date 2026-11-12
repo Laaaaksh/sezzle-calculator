@@ -1,0 +1,21 @@
+# Base configuration. Every key must be present here; dev, test and prod files
+# only override what differs. Any key can also be overridden by an environment
+# variable: APP_ plus the key with dots as underscores (server.port becomes
+# APP_SERVER_PORT).
+
+[server]
+port = 8080
+read_timeout = "5s"
+write_timeout = "10s"
+idle_timeout = "60s"
+shutdown_grace_period = "10s"
+max_body_bytes = 1048576 # 1 MiB
+
+[cors]
+# Override with a comma-separated list: APP_CORS_ALLOWED_ORIGINS=https://a.com,https://b.com
+allowed_origins = ["http://localhost:5173"]
+
+[calculator]
+max_operand_length = 64
+max_exponent = 1000
+decimal_precision = 20
