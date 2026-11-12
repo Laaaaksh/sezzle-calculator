@@ -76,3 +76,10 @@ func (s *CalculatorCodesTestSuite) TestNegativeSquareRootIs422WithItsMessage() {
 	s.Equal(http.StatusUnprocessableEntity, err.HTTPStatus())
 	s.Equal(apperror.MsgNegativeSquareRoot, err.PublicMessage())
 }
+
+func (s *CalculatorCodesTestSuite) TestInvalidOperandIs422WithItsMessage() {
+	err := apperror.New(apperror.CodeInvalidOperand, nil)
+
+	s.Equal(http.StatusUnprocessableEntity, err.HTTPStatus())
+	s.Equal(apperror.MsgInvalidOperand, err.PublicMessage())
+}

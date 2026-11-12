@@ -22,6 +22,7 @@ const (
 	CodeUnknownOperation     Code = "UNKNOWN_OPERATION"
 	CodeInvalidOperandCount  Code = "INVALID_OPERAND_COUNT"
 	CodeOperandTooLarge      Code = "OPERAND_TOO_LARGE"
+	CodeInvalidOperand       Code = "INVALID_OPERAND"
 	CodeDivisionByZero       Code = "DIVISION_BY_ZERO"
 	CodeInvalidExponent      Code = "INVALID_EXPONENT"
 	CodeExponentTooLarge     Code = "EXPONENT_TOO_LARGE"
@@ -42,6 +43,7 @@ var httpStatusByCode = map[Code]int{
 	CodeUnknownOperation:     http.StatusUnprocessableEntity,
 	CodeInvalidOperandCount:  http.StatusUnprocessableEntity,
 	CodeOperandTooLarge:      http.StatusUnprocessableEntity,
+	CodeInvalidOperand:       http.StatusUnprocessableEntity,
 	CodeDivisionByZero:       http.StatusUnprocessableEntity,
 	CodeInvalidExponent:      http.StatusUnprocessableEntity,
 	CodeExponentTooLarge:     http.StatusUnprocessableEntity,
@@ -62,6 +64,7 @@ var publicMessageByCode = map[Code]string{
 	CodeUnknownOperation:     MsgUnknownOperation,
 	CodeInvalidOperandCount:  MsgInvalidOperandCount,
 	CodeOperandTooLarge:      MsgOperandTooLarge,
+	CodeInvalidOperand:       MsgInvalidOperand,
 	CodeDivisionByZero:       MsgDivisionByZero,
 	CodeInvalidExponent:      MsgInvalidExponent,
 	CodeExponentTooLarge:     MsgExponentTooLarge,

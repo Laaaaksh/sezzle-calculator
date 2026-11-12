@@ -29,3 +29,11 @@ const (
 	testIndexSecond = 1
 	testIndexFirst  = 0
 )
+
+const (
+	testParseMaxLen   = 8
+	testParseLongText = "this is not a number but it is far longer than the limit allows"
+	testFullwidth     = "１２３"
+	testNoLeakText    = "secret99"
+	testWordsText     = "abc"
+)

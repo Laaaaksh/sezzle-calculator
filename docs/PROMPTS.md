@@ -213,3 +213,18 @@ Test every rule above, plus results that are large and results that are tiny.
 ```
 
 Produced: Power (integer exponents within the configured range, digit-budget guard, exact squaring), sqrt (bounded decimal Newton's method with guard digits and half-even rounding) and percentage (x / 100 * y, exact), each in its own file and registered. Adds INVALID_EXPONENT, EXPONENT_TOO_LARGE, RESULT_TOO_LARGE and NEGATIVE_SQUARE_ROOT (422).
+
+---
+
+## 11. Input limits and parsing
+
+```
+Add a parser that turns operand strings into decimals, with strict rules:
+- Accept an optional leading minus, digits, and one optional decimal point.
+- Reject an empty string, whitespace, a plus sign, exponent notation, hex, NaN, Infinity, thousands separators and more than one decimal point. Each fails with INVALID_OPERAND, and the error fields say which operand index failed and why.
+- Reject operands longer than the configured max length with OPERAND_TOO_LARGE, before parsing, so a huge string can't eat CPU.
+Explain why we take strings and not JSON numbers: JSON numbers get parsed as float64 by most clients and lose precision.
+Test every accepted and rejected form.
+```
+
+Produced: A strict operand parser in the calculator module: optional minus, digits and one optional point, a precompiled regexp, a reason for every rejected form (empty, whitespace, plus_sign, exponent, hex, nan, infinity, separator, multiple_points, invalid_format) and a byte-length check before parsing. Adds INVALID_OPERAND (422). The package comment explains why operands are strings and not JSON numbers.

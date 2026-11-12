@@ -1,5 +1,13 @@
 // Package calculator is the calculator domain: operations, the registry that
-// resolves them and the core service that validates and normalises results.
+// resolves them, the parser for operand strings and the core service that
+// validates and normalises results.
+//
+// Operands cross the API as strings ("0.1"), never as JSON numbers (0.1).
+// Most JSON clients, JavaScript included, parse a JSON number into a float64
+// before the service sees it, and a float64 cannot hold 0.1 or a 20-digit
+// integer exactly: the digits are already lost on the client. A string reaches
+// the service untouched, so ParseOperands can turn exactly what the user typed
+// into a decimal and 0.1 + 0.2 can be exactly 0.3.
 package calculator
 
 import (

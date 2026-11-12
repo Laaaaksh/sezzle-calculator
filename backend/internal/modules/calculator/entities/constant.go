@@ -32,4 +32,20 @@ const (
 	FieldExpected     = "expected"
 	FieldActual       = "actual"
 	FieldLimit        = "limit"
+	FieldReason       = "reason"
+)
+
+// Reasons an operand string is rejected, reported in the "reason" field of
+// INVALID_OPERAND so a client can tell the user what to fix.
+const (
+	ReasonEmpty          = "empty"
+	ReasonWhitespace     = "whitespace"
+	ReasonPlusSign       = "plus_sign"
+	ReasonExponent       = "exponent"
+	ReasonHex            = "hex"
+	ReasonNaN            = "nan"
+	ReasonInfinity       = "infinity"
+	ReasonSeparator      = "separator"
+	ReasonMultiplePoints = "multiple_points"
+	ReasonInvalidFormat  = "invalid_format"
 )
