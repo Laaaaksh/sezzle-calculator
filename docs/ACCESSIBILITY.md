@@ -42,7 +42,7 @@ This is the result of the accessibility pass. Each section names the check, what
 
 - Check: zoom is not blocked and the layout holds at 200 percent.
 - Change: `index.html` keeps `width=device-width, initial-scale=1.0` with no `user-scalable` or `maximum-scale`. `index.html.test.ts` fails if either is added. Sizes use rem, so text zoom scales the layout. The grid collapses to one column below 900px, so 200 percent zoom on a laptop gives the narrow layout. Long results shrink with the card width and wrap as a last resort, so nothing scrolls sideways down to 320px.
-- Not automated: layout at zoom needs a real browser. Prompt 22 covers it.
+- Not automated: layout at zoom needs a real browser. The browser check (prompt 23 in [PROMPTS.md](PROMPTS.md)) covers it.
 
 ## axe in the component tests
 

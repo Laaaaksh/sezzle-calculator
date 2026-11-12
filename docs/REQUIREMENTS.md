@@ -42,7 +42,7 @@ Legend: `[ ]` not done, `[x]` done and proven. Optional items are marked (option
 |---|---|---|---|
 | NF1 | Clean, readable, idiomatic frontend code | [ ] | |
 | NF2 | Clean, readable, idiomatic backend code | [ ] | |
-| NF3 | Unit tests covering key frontend functionality | [x] | Vitest + RTL + MSW, 485 tests, 100% coverage (`npm run test:coverage`) |
+| NF3 | Unit tests covering key frontend functionality | [x] | Vitest + RTL + MSW, 100% coverage (`npm run test:coverage`) |
 | NF4 | Unit tests covering key backend functionality | [x] | testify suites per package, 95.7% backend coverage (`make test-coverage`) |
 | NF5 | Documentation: setup instructions | [ ] | |
 | NF6 | Documentation: API usage | [ ] | |
