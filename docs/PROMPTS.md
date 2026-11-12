@@ -446,3 +446,13 @@ Also write docs/ARCHITECTURE.md, with a Mermaid diagram of the request flow from
 ```
 
 Produced: README for a five-minute reader (screenshot, quick start, run separately with exact versions, real curl output for every endpoint and error code, test and coverage numbers, design decisions, next steps, AI usage), docs/ARCHITECTURE.md with a Mermaid request flow, and docs/DECISIONS.md with 14 decisions.
+
+---
+
+## 26. Final review
+
+```
+Go through docs/REQUIREMENTS.md line by line and show me the proof for each item: a file, a test or an output. Then review the whole codebase the way a senior payments engineer would on a hiring panel: correctness, edge cases, naming, structure, test quality, docs and anything that would make them doubt me. Rank the findings by severity. Fix the ones worth fixing within the time box, and put the rest under next steps in the README.
+```
+
+Produced: an independent review raised 12 findings. Fixed: the power result budget was bypassed by round-number bases such as 10^1000, the request timeout was never observed, docs claimed the keypad used `/operations` when it did not, over-long results could be chained into a rejected request, nginx returned an HTML 413, module singletons ignored config, focus was lost after Retry, the live region announced every keystroke, and Docker had no CI coverage. Remaining low items (rate limiting, OpenAPI) are under next steps in the README.

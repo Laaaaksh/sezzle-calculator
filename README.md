@@ -147,6 +147,7 @@ Every error has the same shape: `code`, `message`, `requestId` and an optional `
 | `METHOD_NOT_ALLOWED` | 405 | Wrong method for the path |
 | `INTERNAL` | 500 | Unexpected server fault. The cause is logged and never sent. |
 | `SERVICE_UNAVAILABLE` | 503 | `/health/ready` before startup ends or after shutdown starts |
+| `REQUEST_TIMEOUT` | 503 | A calculation runs past the server's request deadline (5s by default) |
 | `UNKNOWN_OPERATION` | 422 | `operation` is not in the operations list |
 | `INVALID_OPERAND_COUNT` | 422 | Operand count does not match the operation's arity |
 | `OPERAND_TOO_LARGE` | 422 | Operand longer than 64 characters |
@@ -154,13 +155,13 @@ Every error has the same shape: `code`, `message`, `requestId` and an optional `
 | `DIVISION_BY_ZERO` | 422 | Divide by zero, or zero to a negative power |
 | `INVALID_EXPONENT` | 422 | Exponent in `power` is not a whole number |
 | `EXPONENT_TOO_LARGE` | 422 | Exponent outside -1000 to 1000 |
-| `RESULT_TOO_LARGE` | 422 | A `power` result would pass 640 digits |
+| `RESULT_TOO_LARGE` | 422 | A `power` result would print more than 640 characters, for example `10^1000` |
 | `NEGATIVE_SQUARE_ROOT` | 422 | `sqrt` of a negative number |
 
 <details>
 <summary>Real curl output for the remaining error cases</summary>
 
-All bodies are sent with `Content-Type: application/json` unless noted. The full commands are in [docs/API_SMOKE.md](docs/API_SMOKE.md). `INTERNAL` and `SERVICE_UNAVAILABLE` have no curl example here because a normal request does not trigger them. Tests cover both.
+All bodies are sent with `Content-Type: application/json` unless noted. The full commands are in [docs/API_SMOKE.md](docs/API_SMOKE.md). `INTERNAL`, `SERVICE_UNAVAILABLE` and `REQUEST_TIMEOUT` have no curl example here because a normal request does not trigger them. Tests cover all three.
 
 `NEGATIVE_SQUARE_ROOT`, body `{"operation":"sqrt","operands":["-4"]}`, HTTP 422:
 
@@ -240,10 +241,12 @@ cd frontend && npm run test:coverage
 
 | Layer | Result | HTML report |
 | --- | --- | --- |
-| Backend (Go) | 95.7% total coverage, race detector on, mocks excluded | `backend/coverage.html` |
-| Frontend (React) | 485 tests, 100% statements, branches, functions and lines | `frontend/coverage/index.html` |
+| Backend (Go) | 95.8% total coverage, race detector on, mocks excluded | `backend/coverage.html` |
+| Frontend (React) | 514 tests, 100% statements, branches, functions and lines | `frontend/coverage/index.html` |
 
-CI runs both suites on every push and pull request and uploads both reports as build artifacts.
+CI runs both suites on every push and pull request and uploads both reports as build artifacts. A third CI job builds the Docker stack and smoke tests it through nginx.
+
+Mocks are generated, not committed. On a fresh clone run `make test` (or `make mock` first), because a bare `go test ./...` fails until they exist.
 
 Quality gates:
 
@@ -263,11 +266,11 @@ Each decision has a longer entry in [docs/DECISIONS.md](docs/DECISIONS.md). The 
 - Operands are strings. JavaScript turns a JSON number into a float before the server sees the value, so the digits are already lost. A string arrives untouched. A JSON number in `operands` returns `400`.
 - Half-even rounding, 20 places. Divide, square root and negative powers have results with no end, so they round to 20 decimal places. An exact tie goes to the even digit, so `0.125` becomes `0.12`. Add, subtract, multiply and percentage are exact.
 - Percentage means x percent of y. `percentage(15, 200)` is `30`. The other common readings, such as "what percent is x of y", are not supported.
-- Input limits. An operand has at most 64 characters. A `power` exponent stays within 1000 either way. A `power` result has at most 640 digits. The request body is at most 1 MiB. All of these are config values.
+- Input limits. An operand has at most 64 characters. A `power` exponent stays within 1000 either way. A `power` result prints at most 640 characters, so `10^1000` is refused even though its exponent is allowed. Calculations stop at the 5 second request deadline. The request body is at most 1 MiB. All of these are config values.
 - One endpoint with an `operation` field. Validation, limits and the error shape live in one handler. A new operation needs no new route. The cost: logs and rate limits keyed on the path cannot tell operations apart.
 - 400 versus 422. `400` means the server cannot read the request, so the client code is wrong. `422` means the server read the request but the content breaks a rule, so the user types something else.
 - No database. A calculation is a pure function of its input, so the server keeps no state. The history in the UI lives in memory and is gone on reload.
-- Operation registry. Each operation is one type with a name, arity, symbol and `Apply`. The registry looks operations up by name and lists them for the frontend. A new operation is one file and one line of wiring.
+- Operation registry. Each operation is one type with a name, arity, symbol and `Apply`. The registry looks operations up by name and lists them at `GET /api/v1/operations`. The keypad renders at once from a built-in key list. When the list arrives, keys for operations the server does not report are disabled. If the request fails, every key stays enabled and the server still validates each calculation. A new operation is one file and one line of wiring.
 - The frontend never computes. The keypad builds an expression, and the API returns the answer.
 
 ## What I'd do next with more time

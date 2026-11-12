@@ -47,7 +47,7 @@ Legend: `[ ]` not done, `[x]` done and proven. Optional items are marked (option
 | NF5 | Documentation: setup instructions | [x] | [README: run separately](../README.md#run-the-backend-and-frontend-separately) |
 | NF6 | Documentation: API usage | [x] | [API.md](API.md), [README: API](../README.md#api) |
 | NF7 | Documentation: design rationale | [x] | [DECISIONS.md](DECISIONS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
-| NF8 | Dockerfile for full-stack deployment (optional) | [ ] | |
+| NF8 | Dockerfile for full-stack deployment (optional) | [x] | `backend/Dockerfile`, `frontend/Dockerfile` (multi-stage, non-root), verified with `docker compose up --build --wait` |
 
 ## Constraints
 
@@ -64,7 +64,7 @@ Legend: `[ ]` not done, `[x]` done and proven. Optional items are marked (option
 | D2 | README with setup instructions, API examples and design decisions | [x] | [README.md](../README.md) |
 | D3 | Unit tests | [x] | Go testify suites and Vitest suites, run in CI |
 | D4 | Coverage report | [x] | `make test-coverage` (backend/coverage.html), `npm run test:coverage` (frontend/coverage/), CI artifacts |
-| D5 | Dockerfile to run frontend and backend together (optional) | [ ] | |
+| D5 | Dockerfile to run frontend and backend together (optional) | [x] | `docker-compose.yml`: one port, healthchecks, read-only containers; smoke-tested in CI |
 
 ## Instructions
 
