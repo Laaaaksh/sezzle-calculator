@@ -263,7 +263,7 @@ The split is about what the client should do next.
 - `400` means the server could not read the request as a calculate request at all. The client has a bug or sent garbage, and sending the same request again will never work. The fix is in the code that builds the request.
 - `422` means the request was understood and had the right shape, but its content fails a rule: a missing value, an operand that is not a number, a division by zero. This is usually something the user typed. The fix is a different input, and the `message` is written to be shown to that user.
 
-So the frontend can follow one rule. On `422`, show `message` next to the input. On `400`, `413`, `415` and `5xx`, show a generic failure and log `requestId`.
+So the frontend can follow one rule. On `422`, show `message` next to the input. On `400`, `413` and `415`, show a failure and log `requestId`, since sending the same request again will not help. On `5xx`, the fault may be temporary, so the frontend offers a retry of the same request.
 
 `VALIDATION_FAILED` is a judgement call and is `422`, not `400`. The JSON parsed and had the right shape, the value is just absent, and the user can fix it by filling in a field. `400` is kept for requests that fail before the server knows what they say.
 

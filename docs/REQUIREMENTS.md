@@ -15,7 +15,7 @@ Legend: `[ ]` not done, `[x]` done and proven. Optional items are marked (option
 | F5 | Exponentiation (optional) | [x] | `operations/power.go`, tests, [smoke](API_SMOKE.md) |
 | F6 | Square root (optional) | [x] | `operations/sqrt.go`, tests, [smoke](API_SMOKE.md) |
 | F7 | Percentage (optional) | [x] | `operations/percentage.go` (x percent of y), tests, [smoke](API_SMOKE.md) |
-| F8 | Frontend consumes the backend API for every calculation | [ ] | |
+| F8 | Frontend consumes the backend API for every calculation | [x] | `useCalculator.ts` sends every calculation through the API client `calculate`, `Calculator.test.tsx` journeys |
 
 ## Frontend (React)
 
@@ -23,7 +23,7 @@ Legend: `[ ]` not done, `[x]` done and proven. Optional items are marked (option
 |---|---|---|---|
 | FE1 | Intuitive UI for entering input and displaying results | [ ] | |
 | FE2 | Input validation | [ ] | |
-| FE3 | Error handling | [ ] | |
+| FE3 | Error handling | [x] | `constants/errorMessages.ts` copy per code, `ErrorBanner` with Retry, `Calculator.test.tsx` divide by zero and network retry journeys |
 | FE4 | Responsive design (basic mobile support) | [ ] | |
 
 ## Backend (REST API)
