@@ -426,3 +426,23 @@ Build it from scratch with no cache and prove it works end to end with curl and 
 ```
 
 Produced: Dockerfiles for both parts (static Go binary on distroless nonroot with a cmd/healthcheck probe binary; Node build served by unprivileged nginx with /api proxy, immutable asset caching, SPA fallback and a CSP), docker-compose.yml with healthchecks and one port (8080), per-part .dockerignore files, and make docker-up, docker-down and docker-logs.
+
+---
+
+## 25. README and docs
+
+```
+Write the README for a reviewer who has five minutes. Sections, in order:
+1. What it is, in two sentences, with a screenshot.
+2. Quick start: docker compose up, then open the URL.
+3. Running the backend and frontend separately, with the exact Go and Node versions.
+4. API: every endpoint with a curl example and its real response, including every error case.
+5. Tests and coverage: the commands, current numbers for each layer, and where the HTML reports are.
+6. Design decisions and assumptions: decimal not float, string operands, half-even rounding and precision, the percentage meaning, input limits, one endpoint with an operation field, the 400 versus 422 split, no database, and the operation registry.
+7. What I'd do next with more time.
+8. AI usage: say I used AI tools, and link docs/PROMPTS.md.
+
+Also write docs/ARCHITECTURE.md, with a Mermaid diagram of the request flow from the browser through nginx, the middleware, the handler and core to the operation, and docs/DECISIONS.md, with one short entry per decision covering context, decision and trade-off. Plain, direct language, written as me.
+```
+
+Produced: README for a five-minute reader (screenshot, quick start, run separately with exact versions, real curl output for every endpoint and error code, test and coverage numbers, design decisions, next steps, AI usage), docs/ARCHITECTURE.md with a Mermaid request flow, and docs/DECISIONS.md with 14 decisions.
