@@ -410,3 +410,19 @@ Run the backend and frontend together and check the UI in a real browser at 320p
 ```
 
 Produced: a real-browser check at 320, 375, 768, 1280 and 1440 px in light and dark, keyboard-only flows, no horizontal overflow, exact results (0.1+0.2, 1/3, 987654321 squared, 2^200, sqrt 2). Found and fixed two issues: the error state read like "9 / 0 = 0", and the drawer repeated its heading. Screenshots in docs/screenshots.
+
+---
+
+## 24. Docker
+
+```
+Add Docker.
+- backend/Dockerfile: a multi-stage build that compiles a static binary and runs it in a distroless image as a non-root user, with a healthcheck command available.
+- frontend/Dockerfile: builds with Node, then serves the static files with nginx. Nginx proxies /api to the backend service, sets sensible caching headers for the static assets, and falls back to index.html.
+- docker-compose.yml at the root: both services with healthchecks, and the frontend waits until the backend is healthy. One port is exposed: http://localhost:8080.
+- make docker-up and make docker-down.
+- A .dockerignore for each part.
+Build it from scratch with no cache and prove it works end to end with curl and a browser screenshot.
+```
+
+Produced: Dockerfiles for both parts (static Go binary on distroless nonroot with a cmd/healthcheck probe binary; Node build served by unprivileged nginx with /api proxy, immutable asset caching, SPA fallback and a CSP), docker-compose.yml with healthchecks and one port (8080), per-part .dockerignore files, and make docker-up, docker-down and docker-logs.
