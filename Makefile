@@ -55,19 +55,26 @@ backend-clean: ## Backend: remove build and coverage output
 frontend-install: ## Frontend: install dependencies from package-lock.json
 	npm --prefix frontend ci
 
-frontend-lint: ## Frontend: run ESLint with zero warnings allowed
+# Every npm-script target depends on installed dependencies, so a fresh clone or worktree
+# runs `make test` without a manual install step. The touch keeps the directory newer than
+# the lockfile, so npm ci only reruns when package-lock.json changes.
+frontend/node_modules: frontend/package-lock.json
+	npm --prefix frontend ci
+	touch $@
+
+frontend-lint: frontend/node_modules ## Frontend: run ESLint with zero warnings allowed
 	npm --prefix frontend run lint -- --max-warnings=0
 
-frontend-typecheck: ## Frontend: run the TypeScript compiler without emitting
+frontend-typecheck: frontend/node_modules ## Frontend: run the TypeScript compiler without emitting
 	npm --prefix frontend run typecheck
 
-frontend-test: ## Frontend: run tests once
+frontend-test: frontend/node_modules ## Frontend: run tests once
 	npm --prefix frontend test
 
-frontend-test-coverage: ## Frontend: run tests and write coverage reports
+frontend-test-coverage: frontend/node_modules ## Frontend: run tests and write coverage reports
 	npm --prefix frontend run test:coverage
 
-frontend-build: ## Frontend: build the production bundle
+frontend-build: frontend/node_modules ## Frontend: build the production bundle
 	npm --prefix frontend run build
 
 frontend-clean: ## Frontend: remove build and coverage output
