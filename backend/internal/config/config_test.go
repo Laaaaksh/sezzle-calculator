@@ -57,6 +57,7 @@ func (s *LoadTestSuite) TestLoadKeepsDefaultsNotOverriddenByEnvFile() {
 	s.Equal(wantDefaultReadTimeout, cfg.Server.ReadTimeout)
 	s.Equal(wantDefaultWriteTimeout, cfg.Server.WriteTimeout)
 	s.Equal(wantDefaultIdleTimeout, cfg.Server.IdleTimeout)
+	s.Equal(wantDefaultRequestTimeout, cfg.Server.RequestTimeout)
 	s.Equal(wantDefaultGracePeriod, cfg.Server.ShutdownGracePeriod)
 	s.Equal(wantDefaultMaxBody, cfg.Server.MaxBodyBytes)
 	s.Equal([]string{wantDefaultOrigin}, cfg.CORS.AllowedOrigins)

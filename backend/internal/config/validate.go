@@ -27,6 +27,11 @@ func (s ServerConfig) validate() []error {
 	errs = appendIfNotPositive(errs, s.ReadTimeout, ErrReadTimeoutNotPositive)
 	errs = appendIfNotPositive(errs, s.WriteTimeout, ErrWriteTimeoutNotPositive)
 	errs = appendIfNotPositive(errs, s.IdleTimeout, ErrIdleTimeoutNotPositive)
+	errs = appendIfNotPositive(errs, s.RequestTimeout, ErrRequestTimeoutNotPositive)
+	// Only compare when both are valid, so one typo is not reported twice.
+	if s.RequestTimeout > 0 && s.WriteTimeout > 0 && s.RequestTimeout >= s.WriteTimeout {
+		errs = append(errs, withValue(ErrRequestTimeoutNotBelowWrite, s.RequestTimeout))
+	}
 	errs = appendIfNotPositive(errs, s.ShutdownGracePeriod, ErrShutdownGraceNotPositive)
 	if s.MaxBodyBytes <= 0 {
 		errs = append(errs, withValue(ErrMaxBodyNotPositive, s.MaxBodyBytes))

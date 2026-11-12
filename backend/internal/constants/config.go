@@ -15,6 +15,7 @@ const (
 	KeyServerReadTimeout         = "server.read_timeout"
 	KeyServerWriteTimeout        = "server.write_timeout"
 	KeyServerIdleTimeout         = "server.idle_timeout"
+	KeyServerRequestTimeout      = "server.request_timeout"
 	KeyServerShutdownGracePeriod = "server.shutdown_grace_period"
 	KeyServerMaxBodyBytes        = "server.max_body_bytes"
 	KeyCORSAllowedOrigins        = "cors.allowed_origins"
@@ -53,6 +54,7 @@ const (
 const (
 	ErrFmtRange      = "%s must be between %d and %d"
 	ErrFmtPositive   = "%s must be greater than zero"
+	ErrFmtBelow      = "%s must be less than %s"
 	ErrFmtRequired   = "%s must contain at least one origin"
 	ErrFmtWildcard   = "%s must not contain the wildcard origin"
 	ErrFmtOrigin     = "%s entry must be an absolute http(s) origin without path"
@@ -62,4 +64,11 @@ const (
 	ErrFmtUnmarshal  = "decode config: %w"
 	ErrFmtInvalid    = "invalid config: %w"
 	ErrMsgUnknownEnv = "unknown environment"
+)
+
+// Error message formats for running the server.
+const (
+	ErrFmtListen   = "listen on %s: %w"
+	ErrFmtServe    = "serve http: %w"
+	ErrFmtShutdown = "graceful shutdown: %w"
 )

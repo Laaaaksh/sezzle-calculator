@@ -58,6 +58,11 @@ func (s *ErrorTestSuite) TestStatusMethodNotAllowedIs405() {
 	s.Equal(http.StatusMethodNotAllowed, apperror.New(apperror.CodeMethodNotAllowed, nil).HTTPStatus())
 }
 
+func (s *ErrorTestSuite) TestStatusServiceUnavailableIs503() {
+	s.Equal(http.StatusServiceUnavailable, apperror.New(apperror.CodeServiceUnavailable, nil).HTTPStatus())
+	s.Equal(apperror.MsgServiceUnavailable, apperror.New(apperror.CodeServiceUnavailable, nil).PublicMessage())
+}
+
 func (s *ErrorTestSuite) TestStatusInternalIs500() {
 	s.Equal(http.StatusInternalServerError, apperror.New(apperror.CodeInternal, nil).HTTPStatus())
 }

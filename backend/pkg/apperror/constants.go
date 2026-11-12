@@ -10,6 +10,7 @@ const (
 	MsgNotFound             = "The requested resource was not found."
 	MsgMethodNotAllowed     = "The method is not allowed for this resource."
 	MsgInternal             = "An internal error occurred."
+	MsgServiceUnavailable   = "The service is temporarily unavailable."
 )
 
 // Formats for the internal Error() string, which is for logs only.

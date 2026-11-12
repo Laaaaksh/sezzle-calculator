@@ -21,6 +21,12 @@ var (
 		constants.KeyServerWriteTimeout)
 	ErrIdleTimeoutNotPositive = fmt.Errorf(constants.ErrFmtPositive,
 		constants.KeyServerIdleTimeout)
+	ErrRequestTimeoutNotPositive = fmt.Errorf(constants.ErrFmtPositive,
+		constants.KeyServerRequestTimeout)
+	// A request deadline at or past the write timeout would let the server cut
+	// the connection before the handler can answer with its JSON timeout error.
+	ErrRequestTimeoutNotBelowWrite = fmt.Errorf(constants.ErrFmtBelow,
+		constants.KeyServerRequestTimeout, constants.KeyServerWriteTimeout)
 	ErrShutdownGraceNotPositive = fmt.Errorf(constants.ErrFmtPositive,
 		constants.KeyServerShutdownGracePeriod)
 	ErrMaxBodyNotPositive = fmt.Errorf(constants.ErrFmtPositive,

@@ -17,6 +17,7 @@ const (
 	CodeNotFound             Code = "NOT_FOUND"
 	CodeMethodNotAllowed     Code = "METHOD_NOT_ALLOWED"
 	CodeInternal             Code = "INTERNAL"
+	CodeServiceUnavailable   Code = "SERVICE_UNAVAILABLE"
 )
 
 // httpStatusByCode is the only place a code is tied to a status.
@@ -28,6 +29,7 @@ var httpStatusByCode = map[Code]int{
 	CodeNotFound:             http.StatusNotFound,
 	CodeMethodNotAllowed:     http.StatusMethodNotAllowed,
 	CodeInternal:             http.StatusInternalServerError,
+	CodeServiceUnavailable:   http.StatusServiceUnavailable,
 }
 
 // publicMessageByCode holds the default client-facing text per code.
@@ -39,6 +41,7 @@ var publicMessageByCode = map[Code]string{
 	CodeNotFound:             MsgNotFound,
 	CodeMethodNotAllowed:     MsgMethodNotAllowed,
 	CodeInternal:             MsgInternal,
+	CodeServiceUnavailable:   MsgServiceUnavailable,
 }
 
 // HTTPStatus returns the status for c. An unknown code maps to 500 so a

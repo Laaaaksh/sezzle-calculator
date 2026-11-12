@@ -12,6 +12,7 @@ port = 8080
 read_timeout = "5s"
 write_timeout = "10s"
 idle_timeout = "60s"
+request_timeout = "5s"
 shutdown_grace_period = "10s"
 max_body_bytes = 1048576
 
@@ -84,6 +85,7 @@ const (
 	wantProdPort              = 8083
 	wantDefaultWriteTimeout   = 10 * time.Second
 	wantDefaultIdleTimeout    = 60 * time.Second
+	wantDefaultRequestTimeout = 5 * time.Second
 	wantDefaultGracePeriod    = 10 * time.Second
 	wantDefaultReadTimeout    = 5 * time.Second
 	wantTestReadTimeout       = 2 * time.Second
@@ -111,6 +113,7 @@ const (
 const (
 	validPort             = 8080
 	validTimeout          = 5 * time.Second
+	validRequestTimeout   = 2 * time.Second
 	validMaxBody          = int64(1024)
 	validOrigin           = "https://calculator.example.com"
 	validOriginWithPort   = "http://localhost:5173"

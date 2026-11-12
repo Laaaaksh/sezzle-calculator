@@ -139,3 +139,25 @@ Test the status mapping, the field handling and that unwrap works with errors.Is
 Produced: `internal/logger` (zap, JSON in prod and test, console in dev, request-scoped `Ctx`), `internal/contextkeys` for a typed request ID key, and `pkg/apperror` with typed codes, one status map, copy-on-write fields and errors.Is/As support. Coverage 97.6 to 100% per package.
 
 > Note: from entry 6 on, I queued the remaining prompts in advance (written before the build started) and let the assistant run them back to back while I was away, committing each step and shipping each phase through the no-mistakes pipeline. The prompts below are exactly what was queued.
+
+---
+
+## 6. Boot, router, middleware and health
+
+```
+Wire the service together.
+- internal/boot builds the app in a fixed order: config, then logger, then modules, then router. It runs the HTTP server and shuts it down gracefully on SIGINT or SIGTERM within the configured grace period.
+- Use chi for the router. Mount the API under /api/v1.
+- Middleware, each in its own file under internal/interceptors:
+  - Request ID: read X-Request-ID, or generate one, put it in the context and echo it on the response.
+  - Structured access log: method, path, status, duration and request ID.
+  - Panic recovery that logs the stack and returns our JSON INTERNAL error.
+  - CORS, with origins from config.
+  - Max body size.
+  - A per-request timeout.
+- JSON 404 and 405 responses in our error shape.
+- A health module with GET /health/live and GET /health/ready, following the same module layout we'll use for features: init.go wires it, server.go has the handler and RegisterRoutes, core.go has the interface and logic, and entities/ holds request and response types and constants.
+Test every middleware in isolation, plus the health endpoints. Then run the server and show me curl output for health, a 404, a 405, and a response with the X-Request-ID header.
+```
+
+Produced: `internal/boot` with ordered startup and graceful shutdown, chi router under `/api/v1`, six middleware in `internal/interceptors`, a JSON error writer in `internal/httpx`, JSON 404 and 405, and a health module with live and ready probes. Verified with a real server and curl.

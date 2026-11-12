@@ -23,12 +23,13 @@ type AppConfig struct {
 }
 
 // ServerConfig holds HTTP server limits. Timeouts guard against slow clients
-// holding connections open; MaxBodyBytes caps what a single request can cost.
+// holding connections open; RequestTimeout bounds one handler via its context; MaxBodyBytes caps what a single request can cost.
 type ServerConfig struct {
 	Port                int           `mapstructure:"port"`
 	ReadTimeout         time.Duration `mapstructure:"read_timeout"`
 	WriteTimeout        time.Duration `mapstructure:"write_timeout"`
 	IdleTimeout         time.Duration `mapstructure:"idle_timeout"`
+	RequestTimeout      time.Duration `mapstructure:"request_timeout"`
 	ShutdownGracePeriod time.Duration `mapstructure:"shutdown_grace_period"`
 	MaxBodyBytes        int64         `mapstructure:"max_body_bytes"`
 }

@@ -27,7 +27,9 @@ func Initialize(env constants.Environment) error {
 	if err != nil {
 		return err
 	}
-	built, err := cfg.Build()
+	// Stack traces from Error up only: every client 404 is a Warn, and a trace
+	// per mistyped URL buries the real problems (zap dev mode defaults to Warn).
+	built, err := cfg.Build(zap.AddStacktrace(zapcore.ErrorLevel))
 	if err != nil {
 		return fmt.Errorf("logger: build: %w", err)
 	}
@@ -61,6 +63,7 @@ func consoleConfig(level zapcore.Level) zap.Config {
 	cfg.Level = zap.NewAtomicLevelAt(level)
 	// Colours corrupt output when it is piped to a file or CI log.
 	cfg.EncoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+	cfg.DisableStacktrace = true
 	return cfg
 }
 

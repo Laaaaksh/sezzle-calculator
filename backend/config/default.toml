@@ -8,6 +8,9 @@ port = 8080
 read_timeout = "5s"
 write_timeout = "10s"
 idle_timeout = "60s"
+# Per-request deadline carried on the request context. Must stay below write_timeout
+# so the handler can answer before the server cuts the connection.
+request_timeout = "5s"
 shutdown_grace_period = "10s"
 max_body_bytes = 1048576 # 1 MiB
 

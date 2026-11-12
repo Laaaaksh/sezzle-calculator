@@ -27,6 +27,7 @@ func (s *ValidateTestSuite) SetupTest() {
 			ReadTimeout:         validTimeout,
 			WriteTimeout:        validTimeout,
 			IdleTimeout:         validTimeout,
+			RequestTimeout:      validRequestTimeout,
 			ShutdownGracePeriod: validTimeout,
 			MaxBodyBytes:        validMaxBody,
 		},
@@ -80,6 +81,30 @@ func (s *ValidateTestSuite) TestValidateWhenIdleTimeoutZeroReturnsError() {
 	s.cfg.Server.IdleTimeout = invalidDuration
 
 	s.ErrorIs(s.cfg.Validate(), config.ErrIdleTimeoutNotPositive)
+}
+
+func (s *ValidateTestSuite) TestValidateWhenRequestTimeoutZeroReturnsError() {
+	s.cfg.Server.RequestTimeout = invalidDuration
+
+	s.ErrorIs(s.cfg.Validate(), config.ErrRequestTimeoutNotPositive)
+}
+
+func (s *ValidateTestSuite) TestValidateWhenRequestTimeoutEqualsWriteTimeoutReturnsError() {
+	s.cfg.Server.RequestTimeout = s.cfg.Server.WriteTimeout
+
+	s.ErrorIs(s.cfg.Validate(), config.ErrRequestTimeoutNotBelowWrite)
+}
+
+func (s *ValidateTestSuite) TestValidateWhenRequestTimeoutAboveWriteTimeoutReturnsError() {
+	s.cfg.Server.RequestTimeout = s.cfg.Server.WriteTimeout + validTimeout
+
+	s.ErrorIs(s.cfg.Validate(), config.ErrRequestTimeoutNotBelowWrite)
+}
+
+func (s *ValidateTestSuite) TestValidateWhenRequestTimeoutZeroDoesNotAlsoReportOrdering() {
+	s.cfg.Server.RequestTimeout = invalidDuration
+
+	s.NotErrorIs(s.cfg.Validate(), config.ErrRequestTimeoutNotBelowWrite)
 }
 
 func (s *ValidateTestSuite) TestValidateWhenShutdownGraceZeroReturnsError() {

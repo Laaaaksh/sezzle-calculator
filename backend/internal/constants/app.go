@@ -8,6 +8,7 @@ const APIVersion = "v1"
 // configuration (do not restart-loop) apart from a runtime crash.
 const (
 	ExitCodeOK            = 0
+	ExitCodeRuntime       = 1
 	ExitCodeConfigInvalid = 2
 )
 
@@ -23,4 +24,5 @@ const (
 
 	MsgLoggerInitFailed = "failed to initialise logger: %v\n"
 	MsgLoggerSyncFailed = "failed to flush logger: %v\n"
+	MsgRunFailed        = "server failed: %v\n"
 )

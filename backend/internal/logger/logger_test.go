@@ -3,9 +3,12 @@ package logger_test
 import (
 	"context"
 	"errors"
+	"io"
+	"os"
 	"syscall"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -21,6 +24,10 @@ const (
 	testUnknownEnv   = "staging"
 	testPortValue    = 8080
 	testFieldMissing = "field absent"
+	testWarnMessage  = "stack trace probe"
+	// testStackMarker is a frame present in every stack trace taken inside a test
+	// (the caller field alone names only the file).
+	testStackMarker = "testing.tRunner"
 )
 
 var errTestSync = errors.New("disk on fire")
@@ -190,4 +197,43 @@ func (s *InitializeTestSuite) TestInitializeUnknownEnvKeepsPreviousLogger() {
 	s.Error(logger.Initialize(testUnknownEnv))
 
 	s.True(logger.Ctx(s.ctx).Desugar().Core().Enabled(zapcore.DebugLevel))
+}
+
+// captureStderr runs fn with os.Stderr redirected to a pipe and returns what
+// was written. zap resolves "stderr" at build time, so Initialize must be
+// called inside fn.
+func captureStderr(t *testing.T, fn func()) string {
+	t.Helper()
+	reader, writer, err := os.Pipe()
+	require.NoError(t, err)
+	original := os.Stderr
+	os.Stderr = writer
+	fn()
+	os.Stderr = original
+	require.NoError(t, writer.Close())
+	out, err := io.ReadAll(reader)
+	require.NoError(t, err)
+	require.NoError(t, reader.Close())
+	return string(out)
+}
+
+// Stack traces are reserved for Error and above: a Warn per client 404 with a
+// trace attached drowns real failures (zap's dev mode defaults to Warn).
+func (s *InitializeTestSuite) TestDevWarnCarriesNoStackTrace() {
+	out := captureStderr(s.T(), func() {
+		s.Require().NoError(logger.Initialize(constants.EnvDev))
+		logger.Ctx(s.ctx).Warnw(testWarnMessage)
+	})
+
+	s.Contains(out, testWarnMessage)
+	s.NotContains(out, testStackMarker)
+}
+
+func (s *InitializeTestSuite) TestDevErrorCarriesStackTrace() {
+	out := captureStderr(s.T(), func() {
+		s.Require().NoError(logger.Initialize(constants.EnvDev))
+		logger.Ctx(s.ctx).Errorw(testWarnMessage)
+	})
+
+	s.Contains(out, testStackMarker)
 }
