@@ -141,3 +141,24 @@ func (s *CalculateE2ETestSuite) TestGetOnCalculateReturns405() {
 	s.Equal(http.StatusMethodNotAllowed, s.recorder.Code)
 	s.Equal(apperror.CodeMethodNotAllowed, s.errorBody().Code)
 }
+
+func (s *CalculateE2ETestSuite) TestShortUnknownOperationIsEchoedInFields() {
+	s.postJSON(wantContentType, e2eBodyUnknownOperation)
+
+	body := s.errorBody()
+	s.Equal(http.StatusUnprocessableEntity, s.recorder.Code)
+	s.Equal(apperror.CodeUnknownOperation, body.Code)
+	s.Equal(map[string]any{entities.FieldOperation: e2eUnknownOperationName}, body.Fields)
+}
+
+func (s *CalculateE2ETestSuite) TestHugeOperationNameIsRejectedWithoutEchoingIt() {
+	huge := strings.Repeat("x", e2eHugeOperationLength)
+	s.postJSON(wantContentType, `{"operation":"`+huge+`","operands":["1","2"]}`)
+
+	body := s.errorBody()
+	s.Equal(http.StatusUnprocessableEntity, s.recorder.Code)
+	s.Equal(apperror.CodeValidationFailed, body.Code)
+	s.Equal(map[string]any{entities.FieldNameOperation: entities.ProblemTooLong}, body.Fields)
+	s.NotContains(s.recorder.Body.String(), huge[:entities.MaxOperationNameLength+1])
+	s.Less(s.recorder.Body.Len(), e2eSmallErrorBodyBytes)
+}

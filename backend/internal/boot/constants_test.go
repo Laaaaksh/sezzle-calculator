@@ -101,5 +101,9 @@ const (
 	e2eWantDivide               = `{"operation":"divide","operands":["10","4"],"result":"2.5"}`
 	e2eBodyDivideByZero         = `{"operation":"divide","operands":["10","0"]}`
 	e2eBodyUnknownField         = `{"operation":"add","operands":["1","2"],"extra":1}`
+	e2eBodyUnknownOperation     = `{"operation":"modulo","operands":["1","2"]}`
+	e2eUnknownOperationName     = "modulo"
+	e2eHugeOperationLength      = 1 << 19
+	e2eSmallErrorBodyBytes      = 1 << 10
 	e2eBodyEmptyObject          = `{}`
 )
