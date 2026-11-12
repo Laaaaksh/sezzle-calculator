@@ -20,9 +20,12 @@ describe('messageForError', () => {
     expect(messageForError(errorWith('DIVISION_BY_ZERO'))).toBe("You can't divide by zero.");
   });
 
-  it.each(['NETWORK_ERROR', 'TIMEOUT', 'INVALID_RESPONSE'])('has copy for %s', (code) => {
-    expect(messageForError(errorWith(code))).not.toBe(GENERIC_ERROR_MESSAGE);
-  });
+  it.each(['NETWORK_ERROR', 'TIMEOUT', 'INVALID_RESPONSE', 'RESULT_TOO_LONG_TO_REUSE'])(
+    'has copy for %s',
+    (code) => {
+      expect(messageForError(errorWith(code))).not.toBe(GENERIC_ERROR_MESSAGE);
+    },
+  );
 
   it('falls back to a generic message with the request ID for UNKNOWN', () => {
     expect(messageForError(errorWith('UNKNOWN', 'req-77'))).toBe(

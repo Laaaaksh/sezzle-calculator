@@ -6,7 +6,7 @@ const TIMEOUT_MESSAGE = 'The request took too long.';
 const UNKNOWN_MESSAGE = 'Something went wrong.';
 
 /** Server-side failures that may clear up on their own, so sending the same request again can work. */
-const TRANSIENT_API_CODES: ReadonlySet<string> = new Set(['INTERNAL', 'SERVICE_UNAVAILABLE']);
+const TRANSIENT_API_CODES: ReadonlySet<string> = new Set(['INTERNAL', 'SERVICE_UNAVAILABLE', 'REQUEST_TIMEOUT']);
 
 /**
  * Turns whatever the API client threw into the one error shape the reducer stores.

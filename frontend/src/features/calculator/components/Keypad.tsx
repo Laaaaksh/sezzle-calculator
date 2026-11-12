@@ -1,5 +1,6 @@
+import type { OperationType } from '../../../api';
 import type { BinaryOperation } from '../../../constants/calculator';
-import { KEYS } from '../keys';
+import { isActionAvailable, KEYS } from '../keys';
 import type { CalculatorAction } from '../state';
 import { Key } from './Key';
 import styles from './Keypad.module.css';
@@ -9,10 +10,17 @@ interface KeypadProps {
   isPending: boolean;
   /** The operator waiting for its second operand, if any. */
   activeOperator?: BinaryOperation | null | undefined;
+  /** Operations the server reports. Keys for any other operation are unavailable. Null = unknown. */
+  supportedOperations?: ReadonlySet<OperationType> | null | undefined;
   onPress: (action: CalculatorAction) => void;
 }
 
-export function Keypad({ isPending, activeOperator = null, onPress }: KeypadProps) {
+export function Keypad({
+  isPending,
+  activeOperator = null,
+  supportedOperations = null,
+  onPress,
+}: KeypadProps) {
   return (
     <div className={styles.keypad} role="group" aria-label="Calculator keys">
       {KEYS.map((definition) => (
@@ -20,6 +28,7 @@ export function Keypad({ isPending, activeOperator = null, onPress }: KeypadProp
           key={definition.id}
           definition={definition}
           disabled={isPending && definition.action.type === 'equals'}
+          unavailable={!isActionAvailable(definition.action, supportedOperations)}
           active={
             definition.action.type === 'operator' && definition.action.operator === activeOperator
           }

@@ -3,6 +3,17 @@ import { ApiError, CanceledError, NetworkError, TimeoutError } from '../../../ap
 import { toCalculatorError } from './failure';
 
 describe('toCalculatorError', () => {
+  it('offers a retry for REQUEST_TIMEOUT, which the server says is temporary', () => {
+    const error = new ApiError({
+      code: 'REQUEST_TIMEOUT',
+      message: 'Too slow.',
+      status: 503,
+      requestId: 'req-t',
+    });
+
+    expect(toCalculatorError(error)).toMatchObject({ code: 'REQUEST_TIMEOUT', retryable: true });
+  });
+
   it('keeps the code, message and request ID of an API error', () => {
     const error = new ApiError({
       code: 'DIVISION_BY_ZERO',

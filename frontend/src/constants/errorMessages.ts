@@ -20,6 +20,7 @@ export const ERROR_MESSAGES: Record<
   METHOD_NOT_ALLOWED: 'The server did not accept that request. Please reload the page.',
   INTERNAL: 'The server had a problem. Please try again in a moment.',
   SERVICE_UNAVAILABLE: 'The calculator is temporarily unavailable. Please try again soon.',
+  REQUEST_TIMEOUT: 'The calculation took too long. Please try again.',
   UNKNOWN_OPERATION: "The server doesn't support that operation.",
   INVALID_OPERAND_COUNT: 'That operation needs a different number of values.',
   OPERAND_TOO_LARGE: 'That number is too long.',
@@ -32,6 +33,7 @@ export const ERROR_MESSAGES: Record<
   INVALID_RESPONSE: "The server sent a reply this app can't read.",
   NETWORK_ERROR: "Couldn't reach the server. Check your connection and try again.",
   TIMEOUT: 'The server took too long to answer. Please try again.',
+  RESULT_TOO_LONG_TO_REUSE: 'This result is too long to use in another calculation.',
 };
 
 function hasOwnMessage(code: string): code is keyof typeof ERROR_MESSAGES {

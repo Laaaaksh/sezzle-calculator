@@ -14,10 +14,32 @@ describe('Display', () => {
     expect(screen.getByRole('status')).toHaveAttribute('aria-live', 'polite');
   });
 
-  it('shows the value', () => {
+  it('shows the value in the live region', () => {
     render(<Display state={entering('5')} isPending={false} />);
 
     expect(screen.getByRole('status')).toHaveTextContent('5');
+  });
+
+  it('keeps the expression outside the live region so a keystroke announces only the value', () => {
+    render(
+      <Display
+        state={{ status: 'operator_chosen', left: '12', operator: 'add', lastRequestId: 0 }}
+        isPending={false}
+      />,
+    );
+
+    expect(screen.getByRole('group', { name: 'Display' })).toHaveTextContent('12 +');
+    expect(screen.getByRole('status')).toHaveTextContent(/^12$/);
+  });
+
+  it('can take focus from a script but is not in the tab order', () => {
+    render(<Display state={entering('5')} isPending={false} />);
+    const region = screen.getByRole('group', { name: 'Display' });
+
+    region.focus();
+
+    expect(region).toHaveFocus();
+    expect(region).toHaveAttribute('tabindex', '-1');
   });
 
   it('marks the region busy while a request is pending', () => {
@@ -93,8 +115,8 @@ describe('Display', () => {
       />,
     );
 
-    expect(screen.getByRole('status')).toHaveTextContent('9 ÷ 0');
-    expect(screen.getByRole('status')).not.toHaveTextContent('=');
+    expect(screen.getByRole('group', { name: 'Display' })).toHaveTextContent('9 ÷ 0');
+    expect(screen.getByRole('group', { name: 'Display' })).not.toHaveTextContent('=');
     expect(screen.getByText('Error')).toBeInTheDocument();
   });
 });

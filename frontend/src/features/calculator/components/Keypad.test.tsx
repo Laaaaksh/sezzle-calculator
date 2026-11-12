@@ -68,4 +68,25 @@ describe('Keypad', () => {
 
     expect(screen.getByRole('button', { name: 'Add' })).toHaveAttribute('aria-pressed', 'false');
   });
+
+  it('marks keys for operations the server did not report as unavailable, with a reason', () => {
+    render(<Keypad isPending={false} supportedOperations={new Set(['add'])} onPress={vi.fn()} />);
+
+    const power = screen.getByRole('button', { name: 'Power' });
+    expect(power).toHaveAttribute('aria-disabled', 'true');
+    expect(power).toHaveAttribute('title', 'Not available on this server');
+    expect(screen.getByRole('button', { name: 'Add' })).not.toHaveAttribute('aria-disabled');
+    expect(screen.getByRole('button', { name: '7' })).not.toHaveAttribute('aria-disabled');
+  });
+
+  it('does not press an unavailable key, but leaves it focusable', async () => {
+    const onPress = vi.fn();
+    render(<Keypad isPending={false} supportedOperations={new Set(['add'])} onPress={onPress} />);
+    const sqrt = screen.getByRole('button', { name: 'Square root' });
+
+    await userEvent.click(sqrt);
+
+    expect(onPress).not.toHaveBeenCalled();
+    expect(sqrt).toBeEnabled();
+  });
 });
