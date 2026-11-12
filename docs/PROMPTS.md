@@ -138,7 +138,7 @@ Test the status mapping, the field handling and that unwrap works with errors.Is
 
 Produced: `internal/logger` (zap, JSON in prod and test, console in dev, request-scoped `Ctx`), `internal/contextkeys` for a typed request ID key, and `pkg/apperror` with typed codes, one status map, copy-on-write fields and errors.Is/As support. Coverage 97.6 to 100% per package.
 
-> Note: from entry 6 on, I queued the remaining prompts in advance (written before the build started) and let the assistant run them back to back while I was away, committing each step and shipping each phase through the no-mistakes pipeline. The prompts below are exactly what was queued.
+> Note: from entry 6 on, I queued the remaining prompts in advance (written before the build started) and let the assistant run them back to back while I was away, committing each step and shipping each phase through an automated review pipeline. The prompts below are exactly what was queued.
 
 ---
 
@@ -170,7 +170,7 @@ Produced: `internal/boot` with ordered startup and graceful shutdown, chi router
 Add backend/Makefile with these targets: help, deps, fmt, lint, mock, test (with the race detector), test-coverage (writes coverage.out and coverage.html and prints the total percentage), build, run and clean. Make mock run before lint and test, because test files import the generated mocks. Add backend/.golangci.yml with errcheck, govet, staticcheck, revive, gosec, gocyclo, dupl, goconst, gofumpt, goimports, misspell and unparam, and justify any setting that isn't a default. The root Makefile should call these. Run make lint and make test and show me that both are clean.
 ```
 
-Produced: `backend/Makefile` with pinned tool versions, `backend/.golangci.yml` (12 linters, every non-default setting justified), root Makefile delegation and `.no-mistakes.yaml`. Lint 0 issues, total coverage 92.9%.
+Produced: `backend/Makefile` with pinned tool versions, `backend/.golangci.yml` (12 linters, every non-default setting justified), root Makefile delegation and the review pipeline config. Lint 0 issues, total coverage 92.9%.
 
 ---
 
@@ -456,3 +456,37 @@ Go through docs/REQUIREMENTS.md line by line and show me the proof for each item
 ```
 
 Produced: an independent review raised 12 findings. Fixed: the power result budget was bypassed by round-number bases such as 10^1000, the request timeout was never observed, docs claimed the keypad used `/operations` when it did not, over-long results could be chained into a rejected request, nginx returned an HTML 413, module singletons ignored config, focus was lost after Retry, the live region announced every keystroke, and Docker had no CI coverage. Remaining low items (rate limiting, OpenAPI) are under next steps in the README.
+
+---
+
+## 27. Ship every phase through the pipeline
+
+```
+Could you keep feeding the prompt to yourself commiting it and then running the no mistakes as well. I have to be away from screen sometime! guess until then you will be done. There would be issues in no mistakes which you could take up as fix and keep commiting the fixes as well! right does it makes sense?
+```
+
+```
+Can you keep merging the relevant prs as well please via chrome! I am away.
+```
+
+Produced: each phase shipped as its own pull request through an automated review pipeline (review, tests, docs, lint, push, CI), PRs #1 to #8. The pipeline's review found and fixed issues in every phase, listed in each PR description. Green PRs were merged in order.
+
+---
+
+## 28. Independent code quality audit
+
+```
+Want I want is in an entire new subagent tell to to check the code quality standards way of coding everything and tell it to find all the flaws and let it come back with the report please do that. Let it check the entire code each and every thing.
+```
+
+Produced: a fresh, read-only review of every file against the Go and frontend coding standards. No critical defects. Main findings: docs that contradicted the code (a keypad described as server driven, stale example output), untested entry points, domain error codes in a generic package, magic values and dead code, and missing CI gates.
+
+---
+
+## 29. Fix every audit finding
+
+```
+Guess fix all please through no mistakes right and render the app for me as well locally want to see and use myself.
+```
+
+Produced: PR #9 through the same review pipeline. Docs now match the code, duplicate or wrong-case JSON keys are rejected, `/operations` publishes limits that the UI uses, calculator error codes live in the calculator module, entry points are tested, dead code and magic values are gone, and CI pins Node and images and runs format, `npm audit` and `govulncheck` checks. Backend coverage 98.2%, frontend 547 tests at 100%.

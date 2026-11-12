@@ -1,4 +1,0 @@
-# Commands the no-mistakes pipeline runs; they call the repo Makefile so local, CI and pipeline agree.
-commands:
-  lint: 'make lint'
-  test: 'make test'

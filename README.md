@@ -266,7 +266,7 @@ Quality gates:
 - ESLint in strict type-checked mode with jsx-a11y.
 - axe-core checks on the calculator in every state, plus a token test for WCAG contrast. See [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md).
 - Git hooks in `.githooks/` block em dashes and AI co-author lines. Enable them with `make hooks`.
-- The no-mistakes pipeline runs `make lint` and `make test` before a push.
+- An automated review pipeline runs `make lint` and `make test` before a push.
 
 Known audit note: `npm audit` reports 7 moderate advisories in `minimatch`, inside `typescript-eslint`. This is dev tooling and does not ship. The production bundle has 0. I did not run `npm audit fix --force` because the fix downgrades the linter.
 
@@ -294,7 +294,7 @@ The brief asked for a working calculator, clear code and tests. These items go b
 - Docker hardening. Read-only root filesystem, no Linux capabilities, a non-root user and image digests. A container should hold no more rights than the app needs.
 - nginx Content-Security-Policy. The page loads no outside scripts, so the policy blocks them all. The cost is a few lines of config.
 - CI Docker smoke test. Unit tests do not show nginx forwarding `/api` to the backend. The smoke test checks the full path.
-- no-mistakes pipeline. It runs `make lint` and `make test` before every push, so the local check and the CI check match.
+- Review pipeline. Each change got an automated review plus `make lint` and `make test` before every push, so the local check and the CI check match.
 - Vulnerability and format checks. `govulncheck`, `npm audit` and Prettier run in CI to catch known flaws and style drift early.
 
 ## What I'd do next with more time
@@ -312,4 +312,4 @@ The brief asked for a working calculator, clear code and tests. These items go b
 
 I used AI tools, mainly Claude Code, to write most of the code. I set the rules, gave one prompt per step and reviewed each result before the next. Every prompt is in [docs/PROMPTS.md](docs/PROMPTS.md), in order, with a line on what each produced.
 
-`AGENTS.md`, `CLAUDE.md` and `.no-mistakes.yaml` are in the repo for the same reason. `AGENTS.md` and `CLAUDE.md` hold the working rules I gave the AI tools while building this. `.no-mistakes.yaml` configures the review pipeline that checked each change. They are not part of the app.
+`AGENTS.md` and `CLAUDE.md` are in the repo for the same reason. They hold the working rules I gave the AI tools while building this. They are not part of the app.
