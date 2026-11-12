@@ -246,7 +246,8 @@ func (s *ServerTestSuite) TestCalculateBodyOverTheLimitInsideTheObjectReturns413
 
 	s.postReader(contentTypeJSON, limited)
 
-	s.requireError(http.StatusRequestEntityTooLarge, apperror.CodePayloadTooLarge)
+	body := s.requireError(http.StatusRequestEntityTooLarge, apperror.CodePayloadTooLarge)
+	s.Equal(map[string]any{entities.FieldLimit: float64(testOversizeLimit)}, body.Fields)
 }
 
 func (s *ServerTestSuite) TestCalculateBodyOverTheLimitAfterTheObjectReturns413() {

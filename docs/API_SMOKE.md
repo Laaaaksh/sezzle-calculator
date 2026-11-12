@@ -2,6 +2,10 @@
 
 Real requests against a running server (`make -C backend run`), captured by the P14 end-to-end check. Request IDs vary per run.
 
+Two codes are not in this capture because no client request can cause them. `INTERNAL` needs a server fault, such as a recovered panic. `SERVICE_UNAVAILABLE` only comes from `GET /readyz` while the server is shutting down. Both are covered by the handler and router tests instead.
+
+The `PAYLOAD_TOO_LARGE` body below shows the current `fields` shape (`limit`, the body cap in bytes). The router test `TestOversizedBodyIsRejectedBeforeRouting` checks the same body.
+
 ```text
 ### operations
 $ curl localhost:8080/api/v1/operations
@@ -135,7 +139,7 @@ $ curl -X POST localhost:8080/api/v1/calculate -H "Content-Type: text/plain" -d 
 
 ### PAYLOAD_TOO_LARGE
 $ curl -X POST localhost:8080/api/v1/calculate -H "Content-Type: application/json" --data-binary @1.1MB-body.json
-{"error":{"code":"PAYLOAD_TOO_LARGE","message":"The request body is too large.","requestId":"838bf0e4-2942-47a1-a7eb-eaab52de325f","fields":{"content_length":1100039}}}
+{"error":{"code":"PAYLOAD_TOO_LARGE","message":"The request body is too large.","requestId":"838bf0e4-2942-47a1-a7eb-eaab52de325f","fields":{"limit":1048576}}}
 [HTTP 413]
 
 ### METHOD_NOT_ALLOWED

@@ -17,7 +17,7 @@ func BodyLimit(limit int64) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.ContentLength > limit {
 				httpx.WriteError(r.Context(), w, apperror.New(apperror.CodePayloadTooLarge, nil).
-					WithField(constants.LogKeyContentLength, r.ContentLength))
+					WithField(constants.LogKeyLimit, limit))
 				return
 			}
 			r.Body = http.MaxBytesReader(innermostWriter(w), r.Body, limit)

@@ -39,6 +39,8 @@ Examples per reason: `""` is `empty`, `" 1"` is `whitespace`, `"+1"` is `plus_si
 | `INTERNAL` | 500 | An unexpected server fault, such as a recovered panic | An internal error occurred. |
 | `SERVICE_UNAVAILABLE` | 503 | The readiness probe while the service is not ready | The service is temporarily unavailable. |
 
+`PAYLOAD_TOO_LARGE` carries one field, `limit`, the body size limit in bytes. It is the same whether the declared `Content-Length` is refused up front or a body of unknown length is cut off while it is read.
+
 `BAD_REQUEST`, `VALIDATION_FAILED`, `UNSUPPORTED_MEDIA_TYPE` and `PAYLOAD_TOO_LARGE` are raised by the calculate handler as well as by the router. [API.md](API.md) describes the request cases and the order of the checks.
 
 `INTERNAL` can also come from the core in one case: the square root iteration hits its fixed cap. The cap is far above what any accepted input needs, so this is a safety net and not an expected result.

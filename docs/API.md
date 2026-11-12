@@ -240,7 +240,7 @@ An operand over the length limit says which one and what the limit is:
 | `BAD_REQUEST` | 400 | The body cannot be read as the request in this contract: empty, invalid JSON, an unknown field, a wrong field type or data after the JSON object. |
 | `VALIDATION_FAILED` | 422 | The JSON is fine, but `operation` or `operands` is missing or empty. |
 | `UNSUPPORTED_MEDIA_TYPE` | 415 | `Content-Type` is missing, is not `application/json` or has a charset other than UTF-8. |
-| `PAYLOAD_TOO_LARGE` | 413 | The body is larger than `max_body_bytes`. |
+| `PAYLOAD_TOO_LARGE` | 413 | The body is larger than `max_body_bytes`. `fields.limit` is that limit in bytes. |
 | `NOT_FOUND` | 404 | No route matches the path. |
 | `METHOD_NOT_ALLOWED` | 405 | The path exists but not for this method. |
 | `INTERNAL` | 500 | An unexpected server fault. The cause is logged and never sent. |

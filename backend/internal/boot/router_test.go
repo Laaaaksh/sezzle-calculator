@@ -200,6 +200,7 @@ func (s *RouterTestSuite) TestOversizedBodyIsRejectedBeforeRouting() {
 
 	s.Equal(http.StatusRequestEntityTooLarge, s.recorder.Code)
 	s.Equal(wantTooLargeCode, string(s.errorBody().Code))
+	s.Equal(map[string]any{constants.LogKeyLimit: float64(testBodyLimit)}, s.errorBody().Fields)
 }
 
 func (s *RouterTestSuite) TestCalculateRouteIsMountedUnderVersionedPrefix() {

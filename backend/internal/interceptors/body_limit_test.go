@@ -11,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/Laaaaksh/sezzle-calculator/backend/internal/constants"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/httpx"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/interceptors"
 	"github.com/Laaaaksh/sezzle-calculator/backend/pkg/apperror"
@@ -49,6 +50,7 @@ func (s *BodyLimitTestSuite) TestDeclaredLengthOverLimitGetsJSON413() {
 	s.Require().NoError(json.Unmarshal(s.recorder.Body.Bytes(), &got))
 	s.Equal(http.StatusRequestEntityTooLarge, s.recorder.Code)
 	s.Equal(apperror.CodePayloadTooLarge, got.Error.Code)
+	s.Equal(map[string]any{constants.LogKeyLimit: float64(testBodyLimit)}, got.Error.Fields)
 }
 
 func (s *BodyLimitTestSuite) TestDeclaredLengthOverLimitNeverReachesHandler() {
