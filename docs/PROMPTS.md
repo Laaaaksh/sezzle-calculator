@@ -298,3 +298,20 @@ Remove the Vite demo content. Run typecheck, lint and test and show me they pass
 ```
 
 Produced: frontend/ scaffolded with Vite, React and TypeScript in strict mode (noUncheckedIndexedAccess included). ESLint (typescript-eslint strict, react-hooks, jsx-a11y) with Prettier, Vitest with jsdom, Testing Library, user-event and MSW (unhandled requests fail tests), v8 coverage with an 80% gate, a /api dev proxy to the Go backend, the agreed folder layout, frontend-* Makefile targets, and the Vite demo content removed. Typecheck, lint, tests and build pass.
+
+---
+
+## 17. Typed API client
+
+```
+Build src/api.
+- types.ts mirrors docs/API.md exactly: OperationType as a string union, CalculateRequest, CalculateResponse, OperationInfo and ApiErrorBody.
+- client.ts has calculate(request, { signal }) and getOperations().
+  - The base URL comes from import.meta.env with a sensible default.
+  - Every request has a timeout through AbortController.
+  - Failures are thrown as typed errors: an ApiError carrying the code, message, status and request ID; a NetworkError; and a TimeoutError.
+- No any types.
+Test with MSW: success, each error kind, a non-JSON error body, a timeout, and an aborted request.
+```
+
+Produced: frontend/src/api with types.ts mirroring docs/API.md, a fetch client (calculate, getOperations) with an env-driven base URL, a per-request timeout via AbortController, runtime response guards, and typed ApiError, NetworkError, TimeoutError and CanceledError. MSW tests cover success, each error kind, a non-JSON error body, a timeout and an aborted request, plus a test that fails when a code or operation in docs/API.md is missing from the types. Coverage is 100%.

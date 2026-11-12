@@ -15,6 +15,9 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     server: {
+      // types.test.ts imports ../docs/API.md to check the API types against the contract.
+      // Only that folder is opened up; the rest of the repo stays outside the dev server.
+      fs: { allow: ['.', '../docs'] },
       // Proxying keeps the browser on one origin in dev, so there are no CORS issues.
       proxy: {
         '/api': { target, changeOrigin: true },
