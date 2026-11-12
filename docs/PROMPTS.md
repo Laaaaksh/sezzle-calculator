@@ -364,3 +364,21 @@ Write integration tests for the main journeys: 12.5 + 7.25 = 19.75, divide by ze
 ```
 
 Produced: Calculator components (Display, Keypad, Key, HistoryTape, ErrorBanner, plus a Calculator that wires the hook and keyboard) rendered by App, with CSS modules and semantic buttons. Keys are data-driven from keys.ts with an aria-label on every symbol key; the display is a polite role=status region that also holds error text. All error codes get friendly copy in constants/errorMessages.ts (type-checked Record, generic fallback with the request ID), network, timeout, `INTERNAL` (500) and `SERVICE_UNAVAILABLE` (503) errors offer Retry, and equals is disabled with a loading state while pending. Integration tests run the real hook against MSW for the add, divide by zero, network retry, keyboard-only and history reuse journeys.
+
+---
+
+## 21. Visual design
+
+```
+Style the app. I want a calm, minimal fintech look. My inspiration is the finance category on awwwards.com: restrained, confident, lots of whitespace. Don't copy any one site.
+- Design tokens as CSS variables in src/styles/tokens.css.
+  - Light theme: off-white background #F7F6F3, white keys, near-black text #111827, borders #E5E7EB, and a single purple accent #5B3DF5 for equals and the active operator.
+  - Dark theme: background #0B0F14, keys #151B23, text #E6EDF3 and a teal accent #2DD4A7.
+- Fonts: Inter for the UI, and JetBrains Mono with tabular numbers for the display.
+- Layout: a centered card, a large right-aligned result with the expression above it in a muted tone, and a 4 by 5 keypad. On desktop the history tape sits beside the keypad; on mobile it's a drawer. Long results shrink to fit and never overflow.
+- Theme follows the system, with a toggle, and the choice is saved.
+- Motion: keys press down 1px, and the result fades and slides up slightly. Everything is under 200ms, and it's all off when the user prefers reduced motion.
+Keep it CSS modules or plain CSS, with no UI framework.
+```
+
+Produced: frontend/src/styles/tokens.css holds the design tokens (colour, spacing, radius, shadow, type scale, motion) with a light theme, a dark theme under [data-theme] and the same dark values under prefers-color-scheme. Inter and JetBrains Mono load from the self-hosted @fontsource-variable packages. The calculator is a centered card with a muted expression line over a large right-aligned result that shrinks to fit from its length, tinted operator keys, an accent equals key and an accent-filled, ringed active operator. At 900px and wider the history tape sits beside the card; below that it is a drawer opened by a History button (aria-expanded, aria-controls, Escape closes, focus returns to the button). A System/Light/Dark toggle saves the choice in localStorage (safe when storage is blocked) and public/theme-init.js applies it before first paint without an inline script. Motion is a 1px key press and a 4px result fade, all under 200ms and only when reduced motion is not requested. Tests cover the toggle, the drawer, the init script and the token files.

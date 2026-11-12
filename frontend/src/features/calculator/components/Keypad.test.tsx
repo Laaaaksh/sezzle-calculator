@@ -45,4 +45,27 @@ describe('Keypad', () => {
 
     expect(screen.getByRole('button', { name: '7' })).not.toHaveFocus();
   });
+
+  it('marks only the active operator as pressed', () => {
+    render(<Keypad isPending={false} activeOperator="add" onPress={vi.fn()} />);
+
+    expect(screen.getByRole('button', { name: 'Add' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Subtract' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+  });
+
+  it('leaves digits and functions without a pressed state', () => {
+    render(<Keypad isPending={false} activeOperator="add" onPress={vi.fn()} />);
+
+    expect(screen.getByRole('button', { name: '7' })).not.toHaveAttribute('aria-pressed');
+    expect(screen.getByRole('button', { name: 'Clear' })).not.toHaveAttribute('aria-pressed');
+  });
+
+  it('presses no operator when none is active', () => {
+    render(<Keypad isPending={false} onPress={vi.fn()} />);
+
+    expect(screen.getByRole('button', { name: 'Add' })).toHaveAttribute('aria-pressed', 'false');
+  });
 });

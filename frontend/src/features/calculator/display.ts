@@ -1,4 +1,4 @@
-import { OPERATION_SYMBOLS } from '../../constants/calculator';
+import { OPERATION_SYMBOLS, type BinaryOperation } from '../../constants/calculator';
 import { formatExpression } from './expression';
 import type { CalculatorState } from './state';
 
@@ -40,4 +40,11 @@ export function describeDisplay(state: CalculatorState): DisplayLines {
         value: state.result,
       };
   }
+}
+
+/** The operator waiting for its second operand, so its key can show it is the active one. */
+export function activeOperatorOf(state: CalculatorState): BinaryOperation | null {
+  return state.status === 'operator_chosen' || state.status === 'entering_second'
+    ? state.operator
+    : null;
 }

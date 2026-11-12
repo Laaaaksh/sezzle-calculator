@@ -1,20 +1,21 @@
 .key {
-  min-height: 3.25rem;
-  font: inherit;
-  font-size: 1.25rem;
-  border: 1px solid #c8c8c8;
-  border-radius: 0.5rem;
-  background: #fff;
-  color: inherit;
+  min-height: var(--size-key);
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-key);
+  color: var(--color-text);
+  font-size: var(--text-lg);
+  font-weight: 500;
   cursor: pointer;
 }
 
 .key:hover:not(:disabled) {
-  background: #f0f0f0;
+  background: var(--color-key-hover);
 }
 
 .key:focus-visible {
-  outline: 3px solid #2563eb;
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 
@@ -23,21 +24,61 @@
   opacity: 0.5;
 }
 
-.operator,
 .function {
-  background: #f4f4f5;
+  background: var(--color-key-fn);
+}
+
+.function:hover:not(:disabled) {
+  background: var(--color-key-fn-hover);
+}
+
+.operator {
+  background: var(--color-key-op);
+  color: var(--color-accent);
+}
+
+.operator:hover:not(:disabled) {
+  background: var(--color-key-op-hover);
 }
 
 .equals {
-  background: #1f2937;
-  border-color: #1f2937;
-  color: #fff;
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
 .equals:hover:not(:disabled) {
-  background: #111827;
+  background: var(--color-accent-hover);
+}
+
+/* A filled key plus a ring set off by a gap: the shape says "active" even without the colour. */
+.active,
+.active:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  box-shadow:
+    0 0 0 2px var(--color-card),
+    0 0 0 4px var(--color-accent);
+}
+
+/* Sits outside the active ring instead of on top of it, so both stay visible together. */
+.active:focus-visible {
+  outline-offset: 5px;
 }
 
 .wide {
   grid-column: span 2;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .key {
+    transition:
+      background-color var(--duration-press) var(--ease-out),
+      transform var(--duration-press) var(--ease-out);
+  }
+
+  .key:active:not(:disabled) {
+    transform: translateY(1px);
+  }
 }

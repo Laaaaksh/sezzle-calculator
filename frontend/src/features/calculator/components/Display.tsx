@@ -1,11 +1,7 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { describeDisplay } from '../display';
 import type { CalculatorState } from '../state';
 import styles from './Display.module.css';
-
-/** Values longer than this get a size hint, so the stylesheet can shrink the text to fit. */
-const LONG_VALUE_LENGTH = 12;
-const VERY_LONG_VALUE_LENGTH = 24;
 
 interface DisplayProps {
   state: CalculatorState;
@@ -14,23 +10,20 @@ interface DisplayProps {
   children?: ReactNode;
 }
 
-function sizeOf(value: string): 'normal' | 'long' | 'very-long' {
-  if (value.length > VERY_LONG_VALUE_LENGTH) {
-    return 'very-long';
-  }
-  return value.length > LONG_VALUE_LENGTH ? 'long' : 'normal';
-}
-
 export function Display({ state, isPending, children }: DisplayProps) {
   const { expression, value } = describeDisplay(state);
   const valueClass = [styles.value, isPending ? styles.pending : undefined]
     .filter(Boolean)
     .join(' ');
+  // A new key restarts the entrance animation when a result arrives, but not on every keystroke.
+  const animationKey = state.status === 'showing_result' ? `result-${value}` : 'input';
+  // The stylesheet sizes the text from this, so long numbers shrink to fit without any script.
+  const valueStyle = { '--value-length': Math.max(value.length, 1) } as CSSProperties;
 
   return (
     <div className={styles.display} role="status" aria-live="polite" aria-busy={isPending}>
       <p className={styles.expression}>{expression}</p>
-      <p className={valueClass} data-size={sizeOf(value)}>
+      <p key={animationKey} className={valueClass} style={valueStyle}>
         {value}
       </p>
       {children}

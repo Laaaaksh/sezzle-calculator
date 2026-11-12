@@ -1,15 +1,16 @@
-.tape {
-  margin-top: 1rem;
-}
-
 .heading {
-  margin: 0 0 0.5rem;
-  font-size: 1rem;
+  margin: 0 0 var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .empty {
   margin: 0;
-  color: #52525b;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
 }
 
 .list {
@@ -23,28 +24,35 @@
 .entry {
   display: block;
   width: 100%;
-  padding: 0.4rem 0.5rem;
-  font: inherit;
-  text-align: right;
+  min-height: var(--size-touch);
+  padding: var(--space-2);
   border: 0;
-  border-bottom: 1px solid #e4e4e7;
+  border-bottom: 1px solid var(--color-border);
   background: none;
-  color: inherit;
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
   cursor: pointer;
   overflow-wrap: anywhere;
 }
 
 .entry:hover {
-  background: #f4f4f5;
+  background: var(--color-key-hover);
 }
 
 .entry:focus-visible {
-  outline: 3px solid #2563eb;
-  outline-offset: -3px;
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.expression {
+  color: var(--color-text-muted);
 }
 
 .result {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .hidden {

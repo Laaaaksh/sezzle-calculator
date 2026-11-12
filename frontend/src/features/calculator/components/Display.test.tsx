@@ -37,12 +37,56 @@ describe('Display', () => {
   });
 
   it.each([
-    ['12345', 'normal'],
-    ['1'.repeat(13), 'long'],
-    ['1'.repeat(25), 'very-long'],
-  ])('sets a size hint for %s', (value, size) => {
+    ['5', '1'],
+    ['12345', '5'],
+    ['1'.repeat(25), '25'],
+  ])('passes the length of %s to the stylesheet so it can size the text', (value, length) => {
     render(<Display state={entering(value)} isPending={false} />);
 
-    expect(screen.getByText(value)).toHaveAttribute('data-size', size);
+    expect(screen.getByText(value).style.getPropertyValue('--value-length')).toBe(length);
+  });
+
+  it('never reports a zero length, which would divide by zero in the stylesheet', () => {
+    render(
+      <Display
+        state={{
+          status: 'entering_second',
+          left: '1',
+          operator: 'add',
+          operand: '',
+          lastRequestId: 0,
+        }}
+        isPending={false}
+      />,
+    );
+
+    expect(
+      screen.getAllByText('', { selector: 'p' }).at(-1)?.style.getPropertyValue('--value-length'),
+    ).toBe('1');
+  });
+
+  it('restarts the entrance animation when a result arrives', () => {
+    const { rerender } = render(<Display state={entering('2')} isPending={false} />);
+    const typed = screen.getByText('2', { selector: 'p:last-of-type' });
+
+    rerender(
+      <Display
+        state={{ status: 'showing_result', result: '4', request: null, lastRequestId: 1 }}
+        isPending={false}
+      />,
+    );
+
+    expect(typed).not.toBeInTheDocument();
+    expect(screen.getByText('4')).toBeInTheDocument();
+  });
+
+  it('keeps the same element while digits are typed, so typing does not animate', () => {
+    const { rerender } = render(<Display state={entering('2')} isPending={false} />);
+    const typed = screen.getByText('2', { selector: 'p:last-of-type' });
+
+    rerender(<Display state={entering('23')} isPending={false} />);
+
+    expect(typed).toBeInTheDocument();
+    expect(typed).toHaveTextContent('23');
   });
 });

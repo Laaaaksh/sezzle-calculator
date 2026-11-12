@@ -231,4 +231,26 @@ describe('Calculator', () => {
     });
     expect(bodies.at(-1)).toEqual({ operation: 'add', operands: ['5', '1'] });
   });
+
+  it('shows which operator is waiting for its second operand', async () => {
+    const user = renderCalculator();
+
+    await pressKeys(user, '5', 'Add');
+    expect(screen.getByRole('button', { name: 'Add' })).toHaveAttribute('aria-pressed', 'true');
+
+    await pressKeys(user, 'Clear');
+    expect(screen.getByRole('button', { name: 'Add' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('keeps Escape inside the open history drawer from clearing the display', async () => {
+    const user = renderCalculator();
+    await pressKeys(user, '7');
+    const toggle = screen.getByRole('button', { name: 'History' });
+    await user.click(toggle);
+
+    await user.keyboard('{Escape}');
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(display()).toHaveTextContent('7');
+  });
 });

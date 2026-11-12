@@ -26,6 +26,9 @@ export default defineConfig(({ mode }) => {
     },
     test: {
       environment: 'jsdom',
+      // Vitest blanks CSS by default, even with ?raw. tokens.test.ts needs the real file to check the
+      // two dark theme copies and the contrast ratios.
+      css: { include: [/tokens\.css/] },
       setupFiles: ['src/test/setup.ts'],
       coverage: {
         provider: 'v8',

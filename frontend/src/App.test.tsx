@@ -8,4 +8,10 @@ describe('App', () => {
 
     expect(screen.getByRole('heading', { name: 'Calculator' })).toBeInTheDocument();
   });
+
+  it('offers the theme toggle', () => {
+    render(<App />);
+
+    expect(screen.getByRole('group', { name: 'Theme' })).toBeInTheDocument();
+  });
 });

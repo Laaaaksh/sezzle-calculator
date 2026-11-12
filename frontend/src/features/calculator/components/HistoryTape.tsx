@@ -10,7 +10,7 @@ interface HistoryTapeProps {
 
 export function HistoryTape({ entries, onReuse }: HistoryTapeProps) {
   return (
-    <section className={styles.tape} aria-labelledby="history-heading">
+    <section aria-labelledby="history-heading">
       <h2 id="history-heading" className={styles.heading}>
         History
       </h2>

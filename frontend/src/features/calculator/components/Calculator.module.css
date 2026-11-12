@@ -1,6 +1,27 @@
-.calculator {
+.layout {
   display: grid;
-  gap: 0.75rem;
-  max-width: 22rem;
-  margin: 0 auto;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 26.25rem;
+  margin-inline: auto;
+}
+
+.card {
+  display: grid;
+  gap: var(--space-4);
+  /* Grid items default to min-content width, which lets a long number push the card wider. */
+  min-width: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+}
+
+@media (min-width: 900px) {
+  .layout {
+    max-width: 48rem;
+    grid-template-columns: minmax(0, 26.25rem) minmax(0, 1fr);
+    align-items: start;
+  }
 }
