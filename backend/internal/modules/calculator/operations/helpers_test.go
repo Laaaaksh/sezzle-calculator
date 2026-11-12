@@ -17,3 +17,9 @@ func applyText(op operations.Operation, left, right string) (string, apperror.IE
 	result, err := op.Apply([]decimal.Decimal{mustDecimal(left), mustDecimal(right)})
 	return result.String(), err
 }
+
+// applyUnary runs a one-operand op and returns the result text.
+func applyUnary(op operations.Operation, operand string) (string, apperror.IError) {
+	result, err := op.Apply([]decimal.Decimal{mustDecimal(operand)})
+	return result.String(), err
+}

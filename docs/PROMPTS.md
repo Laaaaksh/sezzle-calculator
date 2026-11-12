@@ -199,3 +199,17 @@ Write one test suite per operation, with one method per behaviour. Cover at leas
 ```
 
 Produced: Add, subtract, multiply and divide, one file and one registry line each. Divide uses QuoRem for exact half-even rounding at the configured precision and returns DIVISION_BY_ZERO ("Cannot divide by zero."). One suite per operation. Calculator coverage 100% (core) and 97.8% (operations).
+
+---
+
+## 10. Advanced operations
+
+```
+Add power, sqrt and percentage, each in its own file.
+- power(base, exponent): integer exponents only, between -max and +max from config. Reject a fractional exponent with INVALID_EXPONENT, because decimal maths can't do it exactly and we don't want a silent float. Zero to a negative power returns DIVISION_BY_ZERO. Any number to the power 0 is 1.
+- sqrt(x): one operand. A negative x returns NEGATIVE_SQUARE_ROOT. Compute it with a decimal Newton's method to the configured precision, and stop after a bounded number of iterations so it can never hang. sqrt(0) is 0. Perfect squares are exact.
+- percentage(x, y): x percent of y, so x / 100 * y. Write the meaning down in a code comment and in the API docs, because "percentage" is ambiguous.
+Test every rule above, plus results that are large and results that are tiny.
+```
+
+Produced: Power (integer exponents within the configured range, digit-budget guard, exact squaring), sqrt (bounded decimal Newton's method with guard digits and half-even rounding) and percentage (x / 100 * y, exact), each in its own file and registered. Adds INVALID_EXPONENT, EXPONENT_TOO_LARGE, RESULT_TOO_LARGE and NEGATIVE_SQUARE_ROOT (422).

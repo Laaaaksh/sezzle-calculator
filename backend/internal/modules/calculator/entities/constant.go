@@ -11,6 +11,11 @@ const (
 	OpSubtract OperationType = "subtract"
 	OpMultiply OperationType = "multiply"
 	OpDivide   OperationType = "divide"
+	OpPower    OperationType = "power"
+	OpSqrt     OperationType = "sqrt"
+
+	// OpPercentage means "x percent of y": x / 100 * y.
+	OpPercentage OperationType = "percentage"
 )
 
 // Arity values: how many operands an operation consumes.

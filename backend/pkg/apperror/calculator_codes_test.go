@@ -48,3 +48,31 @@ func (s *CalculatorCodesTestSuite) TestDivisionByZeroIs422WithItsMessage() {
 func (s *CalculatorCodesTestSuite) TestDivisionByZeroMessageIsTheDocumentedText() {
 	s.Equal("Cannot divide by zero.", apperror.MsgDivisionByZero)
 }
+
+func (s *CalculatorCodesTestSuite) TestInvalidExponentIs422WithItsMessage() {
+	err := apperror.New(apperror.CodeInvalidExponent, nil)
+
+	s.Equal(http.StatusUnprocessableEntity, err.HTTPStatus())
+	s.Equal(apperror.MsgInvalidExponent, err.PublicMessage())
+}
+
+func (s *CalculatorCodesTestSuite) TestExponentTooLargeIs422WithItsMessage() {
+	err := apperror.New(apperror.CodeExponentTooLarge, nil)
+
+	s.Equal(http.StatusUnprocessableEntity, err.HTTPStatus())
+	s.Equal(apperror.MsgExponentTooLarge, err.PublicMessage())
+}
+
+func (s *CalculatorCodesTestSuite) TestResultTooLargeIs422WithItsMessage() {
+	err := apperror.New(apperror.CodeResultTooLarge, nil)
+
+	s.Equal(http.StatusUnprocessableEntity, err.HTTPStatus())
+	s.Equal(apperror.MsgResultTooLarge, err.PublicMessage())
+}
+
+func (s *CalculatorCodesTestSuite) TestNegativeSquareRootIs422WithItsMessage() {
+	err := apperror.New(apperror.CodeNegativeSquareRoot, nil)
+
+	s.Equal(http.StatusUnprocessableEntity, err.HTTPStatus())
+	s.Equal(apperror.MsgNegativeSquareRoot, err.PublicMessage())
+}

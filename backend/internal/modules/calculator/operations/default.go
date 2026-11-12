@@ -10,5 +10,8 @@ func NewDefaultRegistry(cfg config.CalculatorConfig) *Registry {
 		NewSubtract(),
 		NewMultiply(),
 		NewDivide(cfg.DecimalPrecision),
+		NewPower(cfg),
+		NewSqrt(cfg.DecimalPrecision),
+		NewPercentage(),
 	)
 }

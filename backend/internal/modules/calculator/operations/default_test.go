@@ -8,6 +8,7 @@ import (
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/config"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/entities"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/operations"
+	"github.com/Laaaaksh/sezzle-calculator/backend/pkg/apperror"
 )
 
 type DefaultRegistryTestSuite struct {
@@ -20,7 +21,11 @@ func TestDefaultRegistryTestSuite(t *testing.T) {
 }
 
 func (s *DefaultRegistryTestSuite) SetupTest() {
-	s.registry = operations.NewDefaultRegistry(config.CalculatorConfig{DecimalPrecision: testConfiguredPrecision})
+	s.registry = operations.NewDefaultRegistry(config.CalculatorConfig{
+		MaxOperandLength: testMaxOperandLength,
+		MaxExponent:      testMaxExponent,
+		DecimalPrecision: testConfiguredPrecision,
+	})
 }
 
 func (s *DefaultRegistryTestSuite) lookupName(name entities.OperationType) entities.OperationType {
@@ -53,4 +58,36 @@ func (s *DefaultRegistryTestSuite) TestDividePicksUpThePrecisionFromConfig() {
 
 	s.Nil(applyErr)
 	s.Equal("0.33333333333333333333", got)
+}
+
+func (s *DefaultRegistryTestSuite) TestRegistersPower() {
+	s.Equal(entities.OpPower, s.lookupName(entities.OpPower))
+}
+
+func (s *DefaultRegistryTestSuite) TestRegistersSqrt() {
+	s.Equal(entities.OpSqrt, s.lookupName(entities.OpSqrt))
+}
+
+func (s *DefaultRegistryTestSuite) TestRegistersPercentage() {
+	s.Equal(entities.OpPercentage, s.lookupName(entities.OpPercentage))
+}
+
+func (s *DefaultRegistryTestSuite) TestPowerPicksUpTheExponentLimitFromConfig() {
+	op, err := s.registry.Lookup(entities.OpPower)
+	s.Require().Nil(err)
+
+	_, applyErr := applyText(op, "1", "1001")
+
+	s.Require().NotNil(applyErr)
+	s.Equal(apperror.CodeExponentTooLarge, applyErr.Code())
+}
+
+func (s *DefaultRegistryTestSuite) TestSqrtPicksUpThePrecisionFromConfig() {
+	op, err := s.registry.Lookup(entities.OpSqrt)
+	s.Require().Nil(err)
+
+	got, applyErr := applyUnary(op, "2")
+
+	s.Nil(applyErr)
+	s.Equal(testSqrtTwoAt20, got)
 }

@@ -23,6 +23,10 @@ const (
 	CodeInvalidOperandCount  Code = "INVALID_OPERAND_COUNT"
 	CodeOperandTooLarge      Code = "OPERAND_TOO_LARGE"
 	CodeDivisionByZero       Code = "DIVISION_BY_ZERO"
+	CodeInvalidExponent      Code = "INVALID_EXPONENT"
+	CodeExponentTooLarge     Code = "EXPONENT_TOO_LARGE"
+	CodeResultTooLarge       Code = "RESULT_TOO_LARGE"
+	CodeNegativeSquareRoot   Code = "NEGATIVE_SQUARE_ROOT"
 )
 
 // httpStatusByCode is the only place a code is tied to a status.
@@ -39,6 +43,10 @@ var httpStatusByCode = map[Code]int{
 	CodeInvalidOperandCount:  http.StatusUnprocessableEntity,
 	CodeOperandTooLarge:      http.StatusUnprocessableEntity,
 	CodeDivisionByZero:       http.StatusUnprocessableEntity,
+	CodeInvalidExponent:      http.StatusUnprocessableEntity,
+	CodeExponentTooLarge:     http.StatusUnprocessableEntity,
+	CodeResultTooLarge:       http.StatusUnprocessableEntity,
+	CodeNegativeSquareRoot:   http.StatusUnprocessableEntity,
 }
 
 // publicMessageByCode holds the default client-facing text per code.
@@ -55,6 +63,10 @@ var publicMessageByCode = map[Code]string{
 	CodeInvalidOperandCount:  MsgInvalidOperandCount,
 	CodeOperandTooLarge:      MsgOperandTooLarge,
 	CodeDivisionByZero:       MsgDivisionByZero,
+	CodeInvalidExponent:      MsgInvalidExponent,
+	CodeExponentTooLarge:     MsgExponentTooLarge,
+	CodeResultTooLarge:       MsgResultTooLarge,
+	CodeNegativeSquareRoot:   MsgNegativeSquareRoot,
 }
 
 // HTTPStatus returns the status for c. An unknown code maps to 500 so a
