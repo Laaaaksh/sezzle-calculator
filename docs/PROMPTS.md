@@ -315,3 +315,24 @@ Test with MSW: success, each error kind, a non-JSON error body, a timeout, and a
 ```
 
 Produced: frontend/src/api with types.ts mirroring docs/API.md, a fetch client (calculate, getOperations) with an env-driven base URL, a per-request timeout via AbortController, runtime response guards, and typed ApiError, NetworkError, TimeoutError and CanceledError. MSW tests cover success, each error kind, a non-JSON error body, a timeout and an aborted request, plus a test that fails when a code or operation in docs/API.md is missing from the types. Coverage is 100%.
+
+---
+
+## 18. State machine
+
+```
+Model the calculator state as a pure reducer in src/features/calculator/state.
+- States: entering the first operand, operator chosen, entering the second operand, waiting for the result, showing the result, and error.
+- Actions: digit, decimal point, operator, unary operator (sqrt), equals, backspace, clear, toggle sign, result received, request failed, and reuse from history.
+- Rules:
+  - Only one decimal point per operand.
+  - A max length per operand, matching the backend limit.
+  - Leading zeros collapse.
+  - Pressing an operator after a result chains from that result.
+  - Pressing an operator twice replaces it.
+  - Equals with nothing to compute does nothing.
+- The result is kept as the backend's string and never parsed into a JS number.
+Test each rule as its own test, and include the edge cases.
+```
+
+Produced: frontend/src/features/calculator/state: a pure reducer over a status-tagged union (entering the first operand, operator chosen, entering the second operand, waiting, showing the result, error) with actions for digits, decimal point, operators, sqrt, equals, backspace, clear, sign, result, failure, retry and history reuse. Operands stay strings (max 64 characters, one decimal point, collapsing leading zeros, chained and replaced operators), each waiting state carries a request id so stale responses are ignored, and every rule has its own test. Also adds toCalculatorError, which maps client errors into the reducer's error shape.
