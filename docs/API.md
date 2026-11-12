@@ -255,7 +255,7 @@ An operand over the length limit says which one and what the limit is:
 | `DIVISION_BY_ZERO` | 422 | `divide` by zero, or zero to a negative power. |
 | `INVALID_EXPONENT` | 422 | The exponent in `power` is not a whole number. |
 | `EXPONENT_TOO_LARGE` | 422 | The exponent in `power` is outside `-max_exponent` to `max_exponent`. |
-| `RESULT_TOO_LARGE` | 422 | A `power` result would print more characters than the digit budget allows. |
+| `RESULT_TOO_LARGE` | 422 | A `power` result would have more digits than the result digit budget allows. |
 | `NEGATIVE_SQUARE_ROOT` | 422 | `sqrt` of a negative number. |
 
 ### Why 400 for malformed and 422 for domain errors

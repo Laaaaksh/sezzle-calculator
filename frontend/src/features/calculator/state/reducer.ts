@@ -47,11 +47,15 @@ function appendChar(operand: string, char: string): string {
   return `${operand}${char}`;
 }
 
-/** Flips the sign. A zero stays unsigned, and the limit still counts the added "-". */
+/** True when the operand has no non-zero digit, so "0", "-0" and "0.00" all count. */
 function isZero(operand: string): boolean {
   return !/[1-9]/.test(operand);
 }
 
+/**
+ * Flips the sign. A zero stays unsigned, and the limit still counts the added "-":
+ * an operand already at the limit comes back unchanged, which callers treat as a refusal.
+ */
 function negate(operand: string): string {
   if (isZero(operand)) {
     return operand;
