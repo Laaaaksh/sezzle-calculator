@@ -24,3 +24,14 @@ export function isBinaryOperation(operation: OperationType): operation is Binary
 
 export const BINARY_OPERATIONS: readonly BinaryOperation[] =
   OPERATION_TYPES.filter(isBinaryOperation);
+
+/** Symbols for showing an expression. Display only: requests carry the operation name. */
+export const OPERATION_SYMBOLS: Record<OperationType, string> = {
+  add: '+',
+  subtract: '-',
+  multiply: '×',
+  divide: '÷',
+  power: '^',
+  sqrt: '√',
+  percentage: '%',
+};

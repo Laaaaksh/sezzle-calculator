@@ -336,3 +336,15 @@ Test each rule as its own test, and include the edge cases.
 ```
 
 Produced: frontend/src/features/calculator/state: a pure reducer over a status-tagged union (entering the first operand, operator chosen, entering the second operand, waiting, showing the result, error) with actions for digits, decimal point, operators, sqrt, equals, backspace, clear, sign, result, failure, retry and history reuse. Operands stay strings (max 64 characters, one decimal point, collapsing leading zeros, chained and replaced operators), each waiting state carries a request id so stale responses are ignored, and every rule has its own test. Also adds toCalculatorError, which maps client errors into the reducer's error shape.
+
+---
+
+## 19. Hook, keyboard and history
+
+```
+Add a useCalculator hook. It wires the reducer to the API client, cancels an in-flight request if the user clears, ignores a stale response, and blocks double submits while a request is pending.
+Add keyboard support in its own hook: digits, the dot, + - * / ^ %, Enter or = for equals, Backspace, Escape to clear, and r for sqrt. Typing inside the input should not trigger the shortcuts twice.
+Add a history list held in memory: each entry shows the expression and the result, the newest goes on top, it's capped at 20, and clicking one reuses its result. Test the hook with MSW, the keyboard mapping, and the history behaviour.
+```
+
+Produced: frontend/src/features/calculator: useCalculator wires the reducer to an injected API client (default: the real one) with one AbortController per request, so clear and unmount cancel it, a canceled request never shows as an error, a stale response is dropped and double submits are ignored while pending. useCalculatorKeyboard maps digits, dot, operators, Enter or =, Backspace, Escape and r, and stays out of text fields, focused buttons and modified keys so nothing fires twice. An in-memory history keeps the newest 20 entries on top and reuses a result on click. Tests use MSW for the hook, a table for the key mapping and cover the history cap.
