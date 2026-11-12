@@ -9,14 +9,15 @@ const (
 )
 
 const (
-	testMaxOperandLength = 64
-	testMaxExponent      = 1000
-	testResultBudget     = 640
-	testSmallOperandLen  = 2
-	testSmallBudget      = 20
-	testPowerPrecision   = 20
-	testExponentIndex    = 1
-	testSqrtIterations   = 1
+	testTwoToTheThousandPrefix = "10715086071862673209484250490600018105614048117055336074437503883703510511249361224931983788156958581275946729175531468251871452856923140435984577574698574803934567774824230985421074605062371141877954182153046474983581941267398767559165543946077062914571196477686542167660429831652624386837205668069376"
+	testMaxOperandLength       = 64
+	testMaxExponent            = 1000
+	testResultBudget           = 640
+	testSmallOperandLen        = 2
+	testSmallBudget            = 20
+	testPowerPrecision         = 20
+	testExponentIndex          = 1
+	testSqrtIterations         = 1
 
 	testSqrtTwoAt20       = "1.4142135623730950488"
 	testSqrtTwoAt30       = "1.41421356237309504880168872421"

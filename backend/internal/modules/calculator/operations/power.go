@@ -1,6 +1,8 @@
 package operations
 
 import (
+	"math"
+	"strconv"
 	"strings"
 
 	"github.com/shopspring/decimal"
@@ -18,6 +20,12 @@ const (
 	// exponentOperandIndex is where the exponent sits in the operand list; it
 	// is reported in INVALID_EXPONENT so a client knows which operand failed.
 	exponentOperandIndex = 1
+	// digitMargin is added to the digit bound so float rounding in log10 can
+	// never make it an under-estimate.
+	digitMargin = 1
+	// leadingDigits is how many leading digits of the coefficient are read
+	// as a float64 (it holds 15 decimal digits exactly).
+	leadingDigits = 15
 )
 
 var one = decimal.NewFromInt(1)
@@ -34,9 +42,10 @@ var one = decimal.NewFromInt(1)
 // power is a division by zero. A negative exponent is 1 / base^|exponent| using
 // the same half-even division as Divide, at the configured precision.
 //
-// Cost guard: base^e has at most e times as many significant digits as the
-// base, so that product is checked against a digit budget before any multiply
-// happens. A request like 99999999999999999999^1000 fails fast with
+// Cost guard: base^e has at most floor(e*log10(base))+1 digits, so that bound
+// is checked against a digit budget before any multiply happens (2^1000 has 302
+// digits and fits the default budget of 640). A request like 9^1000 or
+// 99999999999999999999^1000 fails fast with
 // RESULT_TOO_LARGE instead of allocating a number with thousands of digits.
 type Power struct {
 	precision       int32
@@ -104,16 +113,34 @@ func (p *Power) wholeExponent(exponent decimal.Decimal) (int64, apperror.IError)
 }
 
 // checkResultSize rejects a power whose coefficient could exceed the digit
-// budget. Trailing zeros are ignored (10 counts as 1 digit) because decimal
-// stores them in the exponent, so they cost no memory. The estimate is an
-// upper bound, so it can refuse a result that would have fitted, never the
-// reverse.
+// budget. base^e has at most floor(e * log10(c)) + 1 digits, where c is the
+// base coefficient without trailing zeros (decimal keeps those, and the scale,
+// in the exponent, so they add no coefficient digits). One extra digit of
+// margin covers float rounding, so the bound can only over-estimate.
+//
+// The log10 is a float64 on purpose: it only sizes this guard and never
+// produces part of a result, so a float error cannot change any answer, and
+// the margin keeps it from letting an oversized result through.
 func (p *Power) checkResultSize(base decimal.Decimal, exponent int64) apperror.IError {
-	if significantDigits(base)*exponent <= p.maxResultDigits {
+	bound := int64(math.Floor(float64(exponent)*log10Coefficient(base))) + 1 + digitMargin
+	if bound <= p.maxResultDigits {
 		return nil
 	}
 	return apperror.New(apperror.CodeResultTooLarge, ErrResultBeyondBudget).
 		WithField(entities.FieldLimit, p.maxResultDigits)
+}
+
+// log10Coefficient is log10 of |base| with trailing zeros of the coefficient
+// removed. Only the leading leadingDigits digits go through float64, so a
+// coefficient far beyond float64's range cannot overflow.
+func log10Coefficient(d decimal.Decimal) float64 {
+	digits := strings.TrimRight(d.Abs().Coefficient().String(), "0")
+	head := digits
+	if len(head) > leadingDigits {
+		head = head[:leadingDigits]
+	}
+	leading, _ := strconv.ParseFloat(head, 64)
+	return math.Log10(leading) + float64(len(digits)-len(head))
 }
 
 // zeroToPower handles a zero base with a non-zero exponent: 0^n is 0 and
@@ -150,12 +177,6 @@ func integerPower(base decimal.Decimal, exponent int64) decimal.Decimal {
 		}
 	}
 	return result
-}
-
-// significantDigits counts the coefficient digits of d without trailing zeros.
-func significantDigits(d decimal.Decimal) int64 {
-	digits := strings.TrimRight(d.Abs().Coefficient().String(), "0")
-	return int64(len(digits))
 }
 
 func abs64(n int64) int64 {

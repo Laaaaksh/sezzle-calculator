@@ -1,6 +1,7 @@
 package operations_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -200,28 +201,35 @@ func (s *PowerTestSuite) TestPowerWhenExponentIsAHugeNumberReturnsExponentTooLar
 }
 
 func (s *PowerTestSuite) TestPowerWhenResultWouldExceedTheDigitBudgetReturnsResultTooLarge() {
-	err := s.failure("2", "1000")
+	err := s.failure("9", "1000")
 
 	s.Equal(apperror.CodeResultTooLarge, err.Code())
 	s.Equal(int64(testResultBudget), err.Fields()[entities.FieldLimit])
 }
 
 func (s *PowerTestSuite) TestPowerWhenNegativeExponentWouldExceedTheDigitBudgetReturnsResultTooLarge() {
-	s.Equal(apperror.CodeResultTooLarge, s.failure("2", "-1000").Code())
+	s.Equal(apperror.CodeResultTooLarge, s.failure("9", "-1000").Code())
 }
 
 func (s *PowerTestSuite) TestPowerWhenBaseIsLongAndExponentModestReturnsResultTooLarge() {
 	s.Equal(apperror.CodeResultTooLarge, s.failure("99999999999999999999", "50").Code())
 }
 
-func (s *PowerTestSuite) TestPowerWhenEstimateEqualsTheBudgetComputesTheResult() {
-	got := s.power("2", "640")
+func (s *PowerTestSuite) TestPowerWhenTwoToTheThousandFitsTheBudgetReturnsTheExactValue() {
+	got := s.power("2", "1000")
 
-	s.Len(got, 193)
+	s.Len(got, 302)
+	s.True(strings.HasPrefix(got, testTwoToTheThousandPrefix))
 }
 
-func (s *PowerTestSuite) TestPowerWhenEstimateIsOneOverTheBudgetReturnsResultTooLarge() {
-	s.Equal(apperror.CodeResultTooLarge, s.failure("2", "641").Code())
+func (s *PowerTestSuite) TestPowerWhenBoundEqualsTheBudgetComputesTheResult() {
+	got := s.power("99", "320")
+
+	s.Len(got, 639)
+}
+
+func (s *PowerTestSuite) TestPowerWhenBoundIsOneOverTheBudgetReturnsResultTooLarge() {
+	s.Equal(apperror.CodeResultTooLarge, s.failure("99", "321").Code())
 }
 
 func (s *PowerTestSuite) TestPowerDigitBudgetScalesWithTheConfiguredOperandLength() {
@@ -231,11 +239,11 @@ func (s *PowerTestSuite) TestPowerDigitBudgetScalesWithTheConfiguredOperandLengt
 		DecimalPrecision: testPowerPrecision,
 	})
 
-	allowed, errAllowed := applyText(small, "2", "20")
-	_, errRefused := applyText(small, "2", "21")
+	allowed, errAllowed := applyText(small, "2", "63")
+	_, errRefused := applyText(small, "2", "64")
 
 	s.Nil(errAllowed)
-	s.Equal("1048576", allowed)
+	s.Equal("9223372036854775808", allowed)
 	s.Require().NotNil(errRefused)
 	s.Equal(int64(testSmallBudget), errRefused.Fields()[entities.FieldLimit])
 }

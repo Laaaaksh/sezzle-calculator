@@ -17,14 +17,14 @@ Defaults used in the examples: `max_operand_length = 64`, `max_exponent = 1000`,
 | `DIVISION_BY_ZERO` | 422 | `divide` with `["10", "0"]`, or `power` with `["0", "-1"]` | Cannot divide by zero. | none |
 | `INVALID_EXPONENT` | 422 | `power` with `["2", "0.5"]` | The exponent must be a whole number. | `operand_index` |
 | `EXPONENT_TOO_LARGE` | 422 | `power` with `["2", "1001"]` | The exponent is outside the allowed range. | `operand_index`, `limit` |
-| `RESULT_TOO_LARGE` | 422 | `power` with `["2", "1000"]` | The result would be too large to calculate. | `limit` |
+| `RESULT_TOO_LARGE` | 422 | `power` with `["9", "1000"]` | The result would be too large to calculate. | `limit` |
 | `NEGATIVE_SQUARE_ROOT` | 422 | `sqrt` with `["-4"]` | Cannot take the square root of a negative number. | none |
 
 `INVALID_OPERAND` reasons: `empty`, `whitespace`, `plus_sign`, `exponent`, `hex`, `nan`, `infinity`, `separator`, `multiple_points`, `invalid_format`.
 
 Examples per reason: `""` is `empty`, `" 1"` is `whitespace`, `"+1"` is `plus_sign`, `"1e5"` is `exponent`, `"0x1F"` is `hex`, `"NaN"` is `nan`, `"Infinity"` is `infinity`, `"1,000"` is `separator`, `"1.2.3"` is `multiple_points`, `"abc"` is `invalid_format`.
 
-`RESULT_TOO_LARGE` limit: a power result may have at most `max_operand_length * 10` digits (640 by default). The check is an upper-bound estimate made before any multiplication.
+`RESULT_TOO_LARGE` limit: a power result may have at most `max_operand_length * 10` digits (640 by default). The check is an upper bound, floor(exponent * log10(base)) + 1 digits plus a margin of one, made before any multiplication. So `power 2 1000` (302 digits) is computed and `power 9 1000` (955 digits) is refused.
 
 ## Generic errors
 
