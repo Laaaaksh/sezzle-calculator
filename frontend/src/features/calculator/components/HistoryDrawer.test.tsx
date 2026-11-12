@@ -98,14 +98,15 @@ describe('HistoryDrawer', () => {
     expect(toggle()).toHaveFocus();
   });
 
-  it('reuses an entry without touching focus when the drawer was never opened (wide layout)', async () => {
+  it('reuses an entry without giving it focus when the drawer was never opened (wide layout)', async () => {
     const user = userEvent.setup();
     render(<HistoryDrawer entries={ENTRIES} onReuse={vi.fn()} />);
     const entry = screen.getByRole('button', { name: /12\.5 \+ 7\.25/ });
 
     await user.click(entry);
 
-    expect(entry).toHaveFocus();
+    // Entries never take focus on mousedown, so Enter still means equals.
+    expect(entry).not.toHaveFocus();
   });
 
   it('keeps the History heading for screen readers inside the panel', () => {
