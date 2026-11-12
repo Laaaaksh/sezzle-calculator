@@ -228,3 +228,13 @@ Test every accepted and rejected form.
 ```
 
 Produced: A strict operand parser in the calculator module: optional minus, digits and one optional point, a precompiled regexp, a reason for every rejected form (empty, whitespace, plus_sign, exponent, hex, nan, infinity, separator, multiple_points, invalid_format) and a byte-length check before parsing. Adds INVALID_OPERAND (422). The package comment explains why operands are strings and not JSON numbers.
+
+---
+
+## 12. Core coverage check
+
+```
+Run the calculator tests with coverage. Show me the per-file numbers. Anything in the calculator module under 90 percent needs either a test or a reason why not. Then list every error code the core can return, with the input that triggers each one, as a table I can reuse in the README.
+```
+
+Produced: Per-file coverage for the calculator module (99.5% overall, every file 96.9% or higher) and docs/ERROR_CODES.md, a table of every error code with its HTTP status, an example input and its message, ready for the README. A test keeps that table in sync with pkg/apperror.

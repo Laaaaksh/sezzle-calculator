@@ -2,7 +2,11 @@
 // safe public message, an HTTP status and structured fields for logs.
 package apperror
 
-import "net/http"
+import (
+	"maps"
+	"net/http"
+	"slices"
+)
 
 // Code identifies a class of failure. A named type stops arbitrary strings
 // being passed where a known code is expected.
@@ -88,4 +92,10 @@ func (c Code) DefaultMessage() string {
 		return msg
 	}
 	return MsgInternal
+}
+
+// Codes lists every known code in alphabetical order. docs/ERROR_CODES.md is
+// checked against it in a test, so a new code cannot ship undocumented.
+func Codes() []Code {
+	return slices.Sorted(maps.Keys(httpStatusByCode))
 }

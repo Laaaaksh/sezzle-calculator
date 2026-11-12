@@ -1,6 +1,7 @@
 package operations_test
 
 import (
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -11,11 +12,12 @@ import (
 )
 
 const (
-	testConfiguredPrecision = 20
-	testTwoPlaces           = 2
-	testZeroPlaces          = 0
-	testNegativePlaces      = -3
-	testDivideByZeroText    = "Cannot divide by zero."
+	testConfiguredPrecision  = 20
+	testTwoPlaces            = 2
+	testZeroPlaces           = 0
+	testNegativePlaces       = -3
+	testPrecisionBeyondInt32 = math.MaxInt32 + 1
+	testDivideByZeroText     = "Cannot divide by zero."
 )
 
 type DivideTestSuite struct {
@@ -193,4 +195,16 @@ func (s *DivideTestSuite) TestNewDivideWhenPrecisionIsNegativeRoundsToWholeNumbe
 
 	s.Nil(err)
 	s.Equal("2", got)
+}
+
+func (s *DivideTestSuite) TestNewDivideWhenPrecisionExceedsInt32ClampsInsteadOfWrapping() {
+	// A wrapped int32 would turn this precision negative and silently round to
+	// whole numbers. Dividing by zero returns before any rounding, so the test
+	// proves construction and Apply stay safe without allocating 2^31 digits.
+	clamped := operations.NewDivide(testPrecisionBeyondInt32)
+
+	_, err := applyText(clamped, "1", "0")
+
+	s.Require().NotNil(err)
+	s.Equal(apperror.CodeDivisionByZero, err.Code())
 }
