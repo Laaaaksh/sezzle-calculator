@@ -71,3 +71,22 @@ Instructions
 ```
 
 Produced: `docs/REQUIREMENTS.md`, a 41-item checklist with IDs and a proof column, and this prompt log.
+
+---
+
+## 2. Repo skeleton
+
+```
+Create the repo skeleton, with no app logic yet:
+- backend/ for the Go service, and frontend/ for the React app
+- docs/ (already started)
+- A root Makefile that will delegate to backend and frontend. For now it only has a help target that lists the targets.
+- A .gitignore covering Go builds, coverage output, generated mocks, node_modules, dist, .env files and OS files
+- An .editorconfig: LF line endings, a final newline, tabs for Go, 2 spaces for TS, JSON, YAML and Markdown
+- An MIT LICENSE in my name
+- A minimal README stub with the project name and one line describing it
+
+Show me the tree when you're done.
+```
+
+Produced: `backend/` and `frontend/` placeholders, a self-documenting root `Makefile` with `help`, `.gitignore`, `.editorconfig`, MIT `LICENSE` and a README stub.

@@ -1,2 +1,35 @@
-# Reference docs shared privately. Never commit.
+# Private reference docs. Never commit.
 .private/
+
+# Go builds
+backend/bin/
+*.exe
+*.test
+*.out
+
+# Coverage output
+coverage/
+coverage.html
+coverage.out
+*.lcov
+
+# Generated mocks (regenerated with make mock)
+**/mock/
+
+# Node
+node_modules/
+dist/
+*.tsbuildinfo
+npm-debug.log*
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
