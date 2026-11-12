@@ -73,19 +73,23 @@ func validateOrigin(origin string) error {
 		return withValue(ErrCORSWildcard, origin)
 	}
 	parsed, err := url.Parse(origin)
-	if err != nil {
-		return withValue(ErrCORSOriginInvalid, origin)
-	}
-	if parsed.Scheme != constants.SchemeHTTP && parsed.Scheme != constants.SchemeHTTPS {
-		return withValue(ErrCORSOriginInvalid, origin)
-	}
-	if parsed.Host == "" || parsed.User != nil || parsed.RawQuery != "" || parsed.Fragment != "" {
-		return withValue(ErrCORSOriginInvalid, origin)
-	}
-	if parsed.Path != "" && parsed.Path != constants.OriginPathRoot {
+	if err != nil || !isPlainOrigin(parsed) {
 		return withValue(ErrCORSOriginInvalid, origin)
 	}
 	return nil
+}
+
+// isPlainOrigin reports whether u is exactly scheme://host[:port]: http(s)
+// only, no credentials, query, fragment or path beyond the root. Split out of
+// validateOrigin to keep its cyclomatic complexity under the gocyclo limit.
+func isPlainOrigin(u *url.URL) bool {
+	if u.Scheme != constants.SchemeHTTP && u.Scheme != constants.SchemeHTTPS {
+		return false
+	}
+	if u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
+		return false
+	}
+	return u.Path == "" || u.Path == constants.OriginPathRoot
 }
 
 func appendIfNotPositive(errs []error, value time.Duration, rule error) []error {

@@ -41,6 +41,6 @@ const (
 	ListenAddrFmt = ":%d"
 )
 
-// Duration reporting for the access log: milliseconds as a float so
+// MillisecondsPerDuration converts a duration for the access log: milliseconds as a float so
 // sub-millisecond requests do not all read as zero.
 const MillisecondsPerDuration = float64(1e6)

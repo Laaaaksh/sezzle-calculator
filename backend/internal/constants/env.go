@@ -4,6 +4,7 @@ package constants
 // string being passed where a validated environment is expected.
 type Environment string
 
+// The supported deployment environments.
 const (
 	EnvDev  Environment = "dev"
 	EnvTest Environment = "test"

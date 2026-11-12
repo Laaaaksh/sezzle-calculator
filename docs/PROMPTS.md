@@ -161,3 +161,13 @@ Test every middleware in isolation, plus the health endpoints. Then run the serv
 ```
 
 Produced: `internal/boot` with ordered startup and graceful shutdown, chi router under `/api/v1`, six middleware in `internal/interceptors`, a JSON error writer in `internal/httpx`, JSON 404 and 405, and a health module with live and ready probes. Verified with a real server and curl.
+
+---
+
+## 7. Makefile and lint
+
+```
+Add backend/Makefile with these targets: help, deps, fmt, lint, mock, test (with the race detector), test-coverage (writes coverage.out and coverage.html and prints the total percentage), build, run and clean. Make mock run before lint and test, because test files import the generated mocks. Add backend/.golangci.yml with errcheck, govet, staticcheck, revive, gosec, gocyclo, dupl, goconst, gofumpt, goimports, misspell and unparam, and justify any setting that isn't a default. The root Makefile should call these. Run make lint and make test and show me that both are clean.
+```
+
+Produced: `backend/Makefile` with pinned tool versions, `backend/.golangci.yml` (12 linters, every non-default setting justified), root Makefile delegation and `.no-mistakes.yaml`. Lint 0 issues, total coverage 92.9%.

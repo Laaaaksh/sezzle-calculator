@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 )
 
-//go:generate mockgen -source=core.go -destination=mock/mock_core.go -package=mock
+//go:generate go tool mockgen -source=core.go -destination=mock/mock_core.go -package=mock
 
 // ErrNotReady is the internal cause behind a 503 from the readiness probe. It
 // stays in the logs; clients only see the generic unavailable message.
