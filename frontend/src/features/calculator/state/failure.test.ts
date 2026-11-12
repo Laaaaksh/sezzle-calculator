@@ -19,6 +19,15 @@ describe('toCalculatorError', () => {
     });
   });
 
+  it.each([
+    ['INTERNAL', 500],
+    ['SERVICE_UNAVAILABLE', 503],
+  ] as const)('marks a %s API error as retryable', (code, status) => {
+    const error = new ApiError({ code, message: 'Server trouble.', status, requestId: 'req-5' });
+
+    expect(toCalculatorError(error)).toMatchObject({ code, retryable: true });
+  });
+
   it('marks a network error as retryable', () => {
     expect(toCalculatorError(new NetworkError())).toMatchObject({
       code: 'NETWORK_ERROR',

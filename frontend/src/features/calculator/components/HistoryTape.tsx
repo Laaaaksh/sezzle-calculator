@@ -23,6 +23,9 @@ export function HistoryTape({ entries, onReuse }: HistoryTapeProps) {
               <button
                 type="button"
                 className={styles.entry}
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                }}
                 onClick={() => {
                   onReuse(entry);
                 }}

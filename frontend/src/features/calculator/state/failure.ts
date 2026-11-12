@@ -5,6 +5,9 @@ const NETWORK_MESSAGE = 'Could not reach the server.';
 const TIMEOUT_MESSAGE = 'The request took too long.';
 const UNKNOWN_MESSAGE = 'Something went wrong.';
 
+/** Server-side failures that may clear up on their own, so sending the same request again can work. */
+const TRANSIENT_API_CODES: ReadonlySet<string> = new Set(['INTERNAL', 'SERVICE_UNAVAILABLE']);
+
 /**
  * Turns whatever the API client threw into the one error shape the reducer stores.
  * Anything unrecognised becomes UNKNOWN, so the reducer never holds a raw Error.
@@ -16,7 +19,7 @@ export function toCalculatorError(error: unknown): CalculatorError {
       code: error.code,
       message: error.message,
       requestId: error.requestId,
-      retryable: false,
+      retryable: TRANSIENT_API_CODES.has(error.code),
     };
   }
   if (error instanceof NetworkError) {

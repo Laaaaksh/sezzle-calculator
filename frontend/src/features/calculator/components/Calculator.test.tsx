@@ -209,4 +209,26 @@ describe('Calculator', () => {
     });
     expect(bodies.at(-1)).toEqual({ operation: 'multiply', operands: ['19.75', '2'] });
   });
+
+  it('runs equals with Enter after reusing a history entry with the mouse', async () => {
+    const bodies = recordCalculate((body) =>
+      body.operation === 'add' && body.operands[0] === '2'
+        ? HttpResponse.json({ operation: 'add', operands: ['2', '3'], result: '5' })
+        : HttpResponse.json({ operation: 'add', operands: body.operands, result: '6' }),
+    );
+    const user = renderCalculator();
+    await user.keyboard('2+3{Enter}');
+    await waitFor(() => {
+      expect(within(screen.getByRole('list')).getAllByRole('listitem')).toHaveLength(1);
+    });
+    await user.keyboard('{Escape}');
+
+    await user.click(screen.getByRole('button', { name: /2 \+ 3/ }));
+    await user.keyboard('+1{Enter}');
+
+    await waitFor(() => {
+      expect(display()).toHaveTextContent('6');
+    });
+    expect(bodies.at(-1)).toEqual({ operation: 'add', operands: ['5', '1'] });
+  });
 });
