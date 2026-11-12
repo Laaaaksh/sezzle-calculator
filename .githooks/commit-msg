@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Rejects commit messages that credit an AI agent as co-author or contain an
+# em dash. Both are hard project rules (see AGENTS.md); this hook exists so
+# they cannot slip through when an agent writes the message.
+set -euo pipefail
+msg_file="$1"
+emdash=$'\xe2\x80\x94'
+if grep -v '^#' "$msg_file" | grep -qiE '^co-authored-by:.*(claude|anthropic|copilot|cursor|codex|gemini|openai|noreply@anthropic)'; then
+  echo "commit-msg: agent co-author trailer found. Remove it (AGENTS.md rule)." >&2
+  exit 1
+fi
+if grep -v '^#' "$msg_file" | grep -q "$emdash"; then
+  echo "commit-msg: em dash found in commit message. Use '-' instead (AGENTS.md rule)." >&2
+  exit 1
+fi
