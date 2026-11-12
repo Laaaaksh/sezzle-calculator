@@ -93,3 +93,22 @@ func (s *BodyLimitTestSuite) TestRequestWithoutBodyPasses() {
 	s.True(s.reached)
 	s.NoError(s.readErr)
 }
+
+func (s *BodyLimitTestSuite) TestUnknownLengthOverLimitBehindWrapperClosesConnection() {
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.ReadAll(r.Body)
+		httpx.WriteError(r.Context(), w, apperror.New(apperror.CodePayloadTooLarge, nil))
+	})
+	client, stop := startPipeServer(interceptors.AccessLog(interceptors.BodyLimit(testBodyLimit)(next)))
+	defer stop()
+	req, err := http.NewRequest(http.MethodPost, testPipeURL, io.NopCloser(strings.NewReader(testOverLimit)))
+	s.Require().NoError(err)
+	req.ContentLength = -1
+
+	resp, err := client.Do(req)
+	s.Require().NoError(err)
+	defer func() { _ = resp.Body.Close() }()
+
+	s.Equal(http.StatusRequestEntityTooLarge, resp.StatusCode)
+	s.True(resp.Close)
+}

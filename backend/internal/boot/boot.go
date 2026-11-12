@@ -74,6 +74,9 @@ func (a *App) Handler() http.Handler { return a.server.Handler }
 func (a *App) Run(ctx context.Context) error {
 	ctx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+	// Restore default signal handling as soon as shutdown begins, so a second
+	// SIGINT/SIGTERM during the drain or grace period exits immediately.
+	context.AfterFunc(ctx, stop)
 
 	// Binding first, separately from serving, makes "port already in use" a
 	// synchronous startup error instead of a goroutine failure.

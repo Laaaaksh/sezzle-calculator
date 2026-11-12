@@ -17,9 +17,10 @@ func AccessLog(next http.Handler) http.Handler {
 		rw := wrapWriter(w)
 		// A panic skips the normal return, so it is caught here only to record
 		// status 500 and is then re-raised for Recovery, which sits outside.
+		// If the header already went out, the client got that status instead.
 		defer func() {
 			rec := recover()
-			if rec != nil {
+			if rec != nil && !rw.wroteHeader {
 				rw.status = http.StatusInternalServerError
 			}
 			logRequest(r, rw.status, time.Since(start))

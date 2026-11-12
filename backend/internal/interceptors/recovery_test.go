@@ -84,11 +84,13 @@ func (s *RecoveryTestSuite) TestPanicLogCarriesRequestID() {
 	s.Equal(s.recorder.Header().Get(constants.HeaderRequestID), entries[0].ContextMap()[constants.LogKeyRequestID])
 }
 
-func (s *RecoveryTestSuite) TestPanicAfterHeaderWrittenKeepsOriginalResponse() {
-	s.serve(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(testPartialBody))
-		panic(testPanicValue)
+func (s *RecoveryTestSuite) TestPanicAfterHeaderWrittenAbortsTheResponse() {
+	s.PanicsWithValue(http.ErrAbortHandler, func() {
+		s.serve(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(testPartialBody))
+			panic(testPanicValue)
+		})
 	})
 
 	s.Equal(http.StatusOK, s.recorder.Code)

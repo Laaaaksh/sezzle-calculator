@@ -97,6 +97,18 @@ func (s *AccessLogTestSuite) TestPanicIsLoggedAs500AndRaisedAgain() {
 	s.Equal(int64(http.StatusInternalServerError), s.entry()[constants.LogKeyStatus])
 }
 
+func (s *AccessLogTestSuite) TestPanicAfterHeaderLogsTheStatusAlreadySent() {
+	handler := interceptors.RequestID(interceptors.AccessLog(http.HandlerFunc(
+		func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusCreated)
+			panic(testPanicValue)
+		})))
+
+	s.PanicsWithValue(testPanicValue, func() { handler.ServeHTTP(s.recorder, s.request) })
+
+	s.Equal(int64(http.StatusCreated), s.entry()[constants.LogKeyStatus])
+}
+
 func (s *AccessLogTestSuite) TestWrapperStillAllowsResponseController() {
 	var flushErr error
 	s.serve(func(w http.ResponseWriter, _ *http.Request) {

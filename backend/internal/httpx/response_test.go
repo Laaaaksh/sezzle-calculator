@@ -132,6 +132,15 @@ func (s *ResponseTestSuite) TestWriteErrorLogsClientFaultAtWarnLevel() {
 	s.Equal(zapcore.WarnLevel, entries[0].Level)
 }
 
+func (s *ResponseTestSuite) TestWriteErrorLogsServiceUnavailableAtWarnLevel() {
+	httpx.WriteError(context.Background(), s.recorder, apperror.New(apperror.CodeServiceUnavailable, nil))
+
+	s.Equal(http.StatusServiceUnavailable, s.recorder.Code)
+	entries := s.observed.FilterMessage(constants.LogMsgErrorResponse).All()
+	s.Require().Len(entries, 1)
+	s.Equal(zapcore.WarnLevel, entries[0].Level)
+}
+
 func (s *ResponseTestSuite) TestErrorBodyIncludesFieldsWhenSet() {
 	body := httpx.ErrorBody{
 		Code:    apperror.CodeValidationFailed,

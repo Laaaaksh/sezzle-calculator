@@ -70,6 +70,8 @@ func WriteError(ctx context.Context, w http.ResponseWriter, err apperror.IError)
 
 // logError records server faults at error level and client faults at warn, so
 // alerting on error-level logs is not triggered by someone mistyping a URL.
+// SERVICE_UNAVAILABLE is a deliberate refusal (for example readiness during a
+// planned drain), not a fault, so it is logged at warn as well.
 func logError(ctx context.Context, err apperror.IError) {
 	log := logger.Ctx(ctx)
 	args := []any{
@@ -78,9 +80,14 @@ func logError(ctx context.Context, err apperror.IError) {
 		constants.LogKeyCause, err.Error(),
 		constants.LogKeyFields, err.Fields(),
 	}
-	if err.HTTPStatus() >= http.StatusInternalServerError {
+	if isServerFault(err) {
 		log.Errorw(constants.LogMsgErrorResponse, args...)
 		return
 	}
 	log.Warnw(constants.LogMsgErrorResponse, args...)
+}
+
+func isServerFault(err apperror.IError) bool {
+	return err.HTTPStatus() >= http.StatusInternalServerError &&
+		err.Code() != apperror.CodeServiceUnavailable
 }

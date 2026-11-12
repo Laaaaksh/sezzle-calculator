@@ -20,8 +20,21 @@ func BodyLimit(limit int64) func(http.Handler) http.Handler {
 					WithField(constants.LogKeyContentLength, r.ContentLength))
 				return
 			}
-			r.Body = http.MaxBytesReader(w, r.Body, limit)
+			r.Body = http.MaxBytesReader(innermostWriter(w), r.Body, limit)
 			next.ServeHTTP(w, r)
 		})
+	}
+}
+
+// innermostWriter unwraps middleware writers down to the one net/http created.
+// MaxBytesReader can only tell the server to close an over-limit connection
+// through an unexported hook on that writer, which wrappers cannot forward.
+func innermostWriter(w http.ResponseWriter) http.ResponseWriter {
+	for {
+		u, ok := w.(interface{ Unwrap() http.ResponseWriter })
+		if !ok {
+			return w
+		}
+		w = u.Unwrap()
 	}
 }

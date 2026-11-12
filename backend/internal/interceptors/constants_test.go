@@ -8,6 +8,7 @@ import (
 
 const (
 	testPath          = "/things"
+	testPipeURL       = "http://pipe/things"
 	testQuery         = "secret=hunter2"
 	testIncomingID    = "abc-123"
 	testDotID         = "a.b_c-D9"

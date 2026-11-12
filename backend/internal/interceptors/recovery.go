@@ -13,6 +13,8 @@ import (
 
 // Recovery turns a handler panic into a logged stack and a JSON INTERNAL
 // error, so one bad request cannot crash the process or leak a stack trace.
+// If the response had already started, the panic is logged and the connection
+// is aborted with http.ErrAbortHandler.
 func Recovery(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rw := wrapWriter(w)
@@ -41,9 +43,10 @@ func handlePanic(rw *responseWriter, r *http.Request, rec any) {
 		constants.LogKeyStack, string(debug.Stack()),
 	)
 	// Once the header is out the status is fixed and a second body would
-	// corrupt the first, so the failure stays in the log only.
+	// corrupt the first. Aborting the connection makes the client see a failed
+	// response instead of a truncated body that looks complete.
 	if rw.wroteHeader {
-		return
+		panic(http.ErrAbortHandler)
 	}
 	httpx.WriteError(ctx, rw, apperror.New(apperror.CodeInternal, fmt.Errorf(panicMessageFmt, rec)))
 }
