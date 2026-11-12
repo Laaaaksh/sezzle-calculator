@@ -238,3 +238,20 @@ Run the calculator tests with coverage. Show me the per-file numbers. Anything i
 ```
 
 Produced: Per-file coverage for the calculator module (99.5% overall, every file 96.9% or higher) and docs/ERROR_CODES.md, a table of every error code with its HTTP status, an example input and its message, ready for the README. A test keeps that table in sync with pkg/apperror.
+
+---
+
+## 13. API contract
+
+```
+Before writing the handler, write the API contract as docs/API.md for my review:
+- POST /api/v1/calculate
+  - Request: {"operation": "divide", "operands": ["10", "4"]}
+  - Response 200: {"operation": "divide", "operands": ["10", "4"], "result": "2.5"}
+- GET /api/v1/operations: lists each operation with its name, arity, symbol and a one-line description, so the frontend can build its UI from it.
+- One error shape everywhere: {"error": {"code": "DIVISION_BY_ZERO", "message": "Cannot divide by zero.", "requestId": "...", "fields": {...}}}
+- A table mapping every error code to its HTTP status. Domain errors are 422 and malformed requests are 400. Explain that choice.
+Also explain why I chose one endpoint with an operation field over one route per operation, and what the trade-off is. Don't write any code in this step.
+```
+
+Produced: docs/API.md, the REST contract for review before any handler code: POST /api/v1/calculate, GET /api/v1/operations, one error shape, a table of every error code with its HTTP status, why domain errors are 422 and malformed requests are 400, and why one endpoint with an operation field beats one route per operation, with the trade-off. No code.
