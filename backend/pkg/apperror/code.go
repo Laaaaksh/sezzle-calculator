@@ -2,13 +2,18 @@
 // safe public message, an HTTP status and structured fields for logs.
 package apperror
 
-import "net/http"
+import (
+	"maps"
+	"net/http"
+	"slices"
+)
 
 // Code identifies a class of failure. A named type stops arbitrary strings
 // being passed where a known code is expected.
 type Code string
 
-// Error codes. Calculator-specific codes are added alongside the calculator.
+// Error codes. Calculator domain codes are 422: the request was well formed
+// but the calculation it asks for cannot be performed.
 const (
 	CodeBadRequest           Code = "BAD_REQUEST"
 	CodeValidationFailed     Code = "VALIDATION_FAILED"
@@ -18,6 +23,15 @@ const (
 	CodeMethodNotAllowed     Code = "METHOD_NOT_ALLOWED"
 	CodeInternal             Code = "INTERNAL"
 	CodeServiceUnavailable   Code = "SERVICE_UNAVAILABLE"
+	CodeUnknownOperation     Code = "UNKNOWN_OPERATION"
+	CodeInvalidOperandCount  Code = "INVALID_OPERAND_COUNT"
+	CodeOperandTooLarge      Code = "OPERAND_TOO_LARGE"
+	CodeInvalidOperand       Code = "INVALID_OPERAND"
+	CodeDivisionByZero       Code = "DIVISION_BY_ZERO"
+	CodeInvalidExponent      Code = "INVALID_EXPONENT"
+	CodeExponentTooLarge     Code = "EXPONENT_TOO_LARGE"
+	CodeResultTooLarge       Code = "RESULT_TOO_LARGE"
+	CodeNegativeSquareRoot   Code = "NEGATIVE_SQUARE_ROOT"
 )
 
 // httpStatusByCode is the only place a code is tied to a status.
@@ -30,6 +44,15 @@ var httpStatusByCode = map[Code]int{
 	CodeMethodNotAllowed:     http.StatusMethodNotAllowed,
 	CodeInternal:             http.StatusInternalServerError,
 	CodeServiceUnavailable:   http.StatusServiceUnavailable,
+	CodeUnknownOperation:     http.StatusUnprocessableEntity,
+	CodeInvalidOperandCount:  http.StatusUnprocessableEntity,
+	CodeOperandTooLarge:      http.StatusUnprocessableEntity,
+	CodeInvalidOperand:       http.StatusUnprocessableEntity,
+	CodeDivisionByZero:       http.StatusUnprocessableEntity,
+	CodeInvalidExponent:      http.StatusUnprocessableEntity,
+	CodeExponentTooLarge:     http.StatusUnprocessableEntity,
+	CodeResultTooLarge:       http.StatusUnprocessableEntity,
+	CodeNegativeSquareRoot:   http.StatusUnprocessableEntity,
 }
 
 // publicMessageByCode holds the default client-facing text per code.
@@ -42,6 +65,15 @@ var publicMessageByCode = map[Code]string{
 	CodeMethodNotAllowed:     MsgMethodNotAllowed,
 	CodeInternal:             MsgInternal,
 	CodeServiceUnavailable:   MsgServiceUnavailable,
+	CodeUnknownOperation:     MsgUnknownOperation,
+	CodeInvalidOperandCount:  MsgInvalidOperandCount,
+	CodeOperandTooLarge:      MsgOperandTooLarge,
+	CodeInvalidOperand:       MsgInvalidOperand,
+	CodeDivisionByZero:       MsgDivisionByZero,
+	CodeInvalidExponent:      MsgInvalidExponent,
+	CodeExponentTooLarge:     MsgExponentTooLarge,
+	CodeResultTooLarge:       MsgResultTooLarge,
+	CodeNegativeSquareRoot:   MsgNegativeSquareRoot,
 }
 
 // HTTPStatus returns the status for c. An unknown code maps to 500 so a
@@ -60,4 +92,10 @@ func (c Code) DefaultMessage() string {
 		return msg
 	}
 	return MsgInternal
+}
+
+// Codes lists every known code in alphabetical order. docs/ERROR_CODES.md is
+// checked against it in a test, so a new code cannot ship undocumented.
+func Codes() []Code {
+	return slices.Sorted(maps.Keys(httpStatusByCode))
 }

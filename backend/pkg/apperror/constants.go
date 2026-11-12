@@ -11,6 +11,15 @@ const (
 	MsgMethodNotAllowed     = "The method is not allowed for this resource."
 	MsgInternal             = "An internal error occurred."
 	MsgServiceUnavailable   = "The service is temporarily unavailable."
+	MsgUnknownOperation     = "The requested operation is not supported."
+	MsgInvalidOperandCount  = "The operation received the wrong number of operands."
+	MsgOperandTooLarge      = "An operand is larger than the allowed limit."
+	MsgInvalidOperand       = "An operand is not a valid number."
+	MsgDivisionByZero       = "Cannot divide by zero."
+	MsgInvalidExponent      = "The exponent must be a whole number."
+	MsgExponentTooLarge     = "The exponent is outside the allowed range."
+	MsgResultTooLarge       = "The result would be too large to calculate."
+	MsgNegativeSquareRoot   = "Cannot take the square root of a negative number."
 )
 
 // Formats for the internal Error() string, which is for logs only.

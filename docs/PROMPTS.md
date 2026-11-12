@@ -171,3 +171,70 @@ Add backend/Makefile with these targets: help, deps, fmt, lint, mock, test (with
 ```
 
 Produced: `backend/Makefile` with pinned tool versions, `backend/.golangci.yml` (12 linters, every non-default setting justified), root Makefile delegation and `.no-mistakes.yaml`. Lint 0 issues, total coverage 92.9%.
+
+---
+
+## 8. Operation contract and registry
+
+```
+Create the calculator module at internal/modules/calculator, using the same layout as health. Start with the domain only, no HTTP.
+- Use github.com/shopspring/decimal for all maths. Never use float64, because a payments reviewer will check that 0.1 + 0.2 equals exactly 0.3.
+- Define an Operation interface with Name() OperationType, Arity() int and Apply(operands []decimal.Decimal) (decimal.Decimal, apperror.IError).
+- Keep a Registry that maps OperationType to Operation. Lookup returns an UNKNOWN_OPERATION error for anything unregistered. Adding an operation should mean adding one file and one registry line, and nothing else changes.
+- The core service, Calculate(ctx, op, operands), looks up the operation, checks the arity (INVALID_OPERAND_COUNT), checks each operand against the configured limits, applies the operation, and normalises the result: trims trailing zeros and turns "-0" into "0".
+Don't add any operations yet except one fake in the tests. Test the registry, the arity check and the normalisation.
+```
+
+Produced: The calculator module domain with a decimal-only Operation interface, a registry behind one registration point, and a core that checks arity and operand limits and normalises results. Tests use a fake operation. Calculator coverage 100%.
+
+---
+
+## 9. Basic operations
+
+```
+Add add, subtract, multiply and divide, each in its own file, each registered.
+- Division by zero returns a DIVISION_BY_ZERO error with the message "Cannot divide by zero."
+- Division that doesn't terminate rounds to the configured precision with half-even (banker's) rounding. Document why: it's the standard for financial rounding because it doesn't bias the totals.
+Write one test suite per operation, with one method per behaviour. Cover at least: positive and negative values, zero, very large and very small numbers, many decimal places, 0.1 + 0.2 = 0.3, 1 / 3 at the configured precision, 2 / 3 rounding, -0 normalisation, and divide by zero. Every test name should read like a sentence, for example TestDivideWhenDivisorIsZeroReturnsDivisionByZero.
+```
+
+Produced: Add, subtract, multiply and divide, one file and one registry line each. Divide uses QuoRem for exact half-even rounding at the configured precision and returns DIVISION_BY_ZERO ("Cannot divide by zero."). One suite per operation. Calculator coverage 100% (core) and 97.8% (operations).
+
+---
+
+## 10. Advanced operations
+
+```
+Add power, sqrt and percentage, each in its own file.
+- power(base, exponent): integer exponents only, between -max and +max from config. Reject a fractional exponent with INVALID_EXPONENT, because decimal maths can't do it exactly and we don't want a silent float. Zero to a negative power returns DIVISION_BY_ZERO. Any number to the power 0 is 1.
+- sqrt(x): one operand. A negative x returns NEGATIVE_SQUARE_ROOT. Compute it with a decimal Newton's method to the configured precision, and stop after a bounded number of iterations so it can never hang. sqrt(0) is 0. Perfect squares are exact.
+- percentage(x, y): x percent of y, so x / 100 * y. Write the meaning down in a code comment and in the API docs, because "percentage" is ambiguous.
+Test every rule above, plus results that are large and results that are tiny.
+```
+
+Produced: Power (integer exponents within the configured range, digit-budget guard, exact squaring), sqrt (bounded decimal Newton's method with guard digits and half-even rounding) and percentage (x / 100 * y, exact), each in its own file and registered. Adds INVALID_EXPONENT, EXPONENT_TOO_LARGE, RESULT_TOO_LARGE and NEGATIVE_SQUARE_ROOT (422).
+
+---
+
+## 11. Input limits and parsing
+
+```
+Add a parser that turns operand strings into decimals, with strict rules:
+- Accept an optional leading minus, digits, and one optional decimal point.
+- Reject an empty string, whitespace, a plus sign, exponent notation, hex, NaN, Infinity, thousands separators and more than one decimal point. Each fails with INVALID_OPERAND, and the error fields say which operand index failed and why.
+- Reject operands longer than the configured max length with OPERAND_TOO_LARGE, before parsing, so a huge string can't eat CPU.
+Explain why we take strings and not JSON numbers: JSON numbers get parsed as float64 by most clients and lose precision.
+Test every accepted and rejected form.
+```
+
+Produced: A strict operand parser in the calculator module: optional minus, digits and one optional point, a precompiled regexp, a reason for every rejected form (empty, whitespace, plus_sign, exponent, hex, nan, infinity, separator, multiple_points, invalid_format) and a byte-length check before parsing. Adds INVALID_OPERAND (422). The package comment explains why operands are strings and not JSON numbers.
+
+---
+
+## 12. Core coverage check
+
+```
+Run the calculator tests with coverage. Show me the per-file numbers. Anything in the calculator module under 90 percent needs either a test or a reason why not. Then list every error code the core can return, with the input that triggers each one, as a table I can reuse in the README.
+```
+
+Produced: Per-file coverage for the calculator module (99.5% overall, every file 96.9% or higher) and docs/ERROR_CODES.md, a table of every error code with its HTTP status, an example input and its message, ready for the README. A test keeps that table in sync with pkg/apperror.

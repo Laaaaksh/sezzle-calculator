@@ -44,6 +44,11 @@ linters:
     # Skip files with the "Code generated ... DO NOT EDIT" header (gomock output).
     generated: strict
     rules:
+      # Tests are one method per behaviour with no table-driven shortcut (see go-testing-standards),
+      # so sibling suites (add, subtract, multiply) share a deliberate, repetitive shape.
+      - path: _test\.go
+        linters:
+          - dupl
       # G101 flags test constants whose names contain "credentials" or "secret"; they are
       # deliberate fixtures (a URL with userinfo to reject, a message asserted as not leaked).
       - path: _test\.go
@@ -57,6 +62,12 @@ linters:
         linters:
           - gosec
         text: "G112"
+      # G304 flags reading a path held in a variable. The docs test reads a fixed
+      # repo file (docs/ERROR_CODES.md) to check it against the code list.
+      - path: _test\.go
+        linters:
+          - gosec
+        text: "G304"
 
 formatters:
   enable:
