@@ -171,3 +171,18 @@ Add backend/Makefile with these targets: help, deps, fmt, lint, mock, test (with
 ```
 
 Produced: `backend/Makefile` with pinned tool versions, `backend/.golangci.yml` (12 linters, every non-default setting justified), root Makefile delegation and `.no-mistakes.yaml`. Lint 0 issues, total coverage 92.9%.
+
+---
+
+## 8. Operation contract and registry
+
+```
+Create the calculator module at internal/modules/calculator, using the same layout as health. Start with the domain only, no HTTP.
+- Use github.com/shopspring/decimal for all maths. Never use float64, because a payments reviewer will check that 0.1 + 0.2 equals exactly 0.3.
+- Define an Operation interface with Name() OperationType, Arity() int and Apply(operands []decimal.Decimal) (decimal.Decimal, apperror.IError).
+- Keep a Registry that maps OperationType to Operation. Lookup returns an UNKNOWN_OPERATION error for anything unregistered. Adding an operation should mean adding one file and one registry line, and nothing else changes.
+- The core service, Calculate(ctx, op, operands), looks up the operation, checks the arity (INVALID_OPERAND_COUNT), checks each operand against the configured limits, applies the operation, and normalises the result: trims trailing zeros and turns "-0" into "0".
+Don't add any operations yet except one fake in the tests. Test the registry, the arity check and the normalisation.
+```
+
+Produced: The calculator module domain with a decimal-only Operation interface, a registry behind one registration point, and a core that checks arity and operand limits and normalises results. Tests use a fake operation. Calculator coverage 100%.
