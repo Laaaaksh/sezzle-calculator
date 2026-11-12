@@ -55,7 +55,7 @@ Add, subtract, multiply and percentage are exact. Divide, square root and a powe
 
 ### Limits
 
-These come from the `[calculator]` section of the config. The values below are the defaults.
+These come from the `[calculator]` section of the config, except `max_body_bytes`, which is in `[server]`. The values below are the defaults.
 
 | Limit | Default | What it bounds | Error |
 | --- | --- | --- | --- |
