@@ -53,7 +53,7 @@ Legend: `[ ]` not done, `[x]` done and proven. Optional items are marked (option
 
 | ID | Requirement | Status | Proof |
 |---|---|---|---|
-| C1 | Frontend in React, TypeScript preferred | [ ] | |
+| C1 | Frontend in React, TypeScript preferred | [x] | `frontend/` React 19, TypeScript strict mode (`tsconfig.app.json`) |
 | C2 | Backend in Go (preferred) | [x] | `backend/` Go 1.26 |
 
 ## Deliverables
