@@ -241,8 +241,8 @@ cd frontend && npm run test:coverage
 
 | Layer | Result | HTML report |
 | --- | --- | --- |
-| Backend (Go) | 95.8% total coverage, race detector on, mocks excluded | `backend/coverage.html` |
-| Frontend (React) | 514 tests, 100% statements, branches, functions and lines | `frontend/coverage/index.html` |
+| Backend (Go) | 95.9% total coverage, race detector on, mocks excluded | `backend/coverage.html` |
+| Frontend (React) | 522 tests, 100% statements, branches, functions and lines | `frontend/coverage/index.html` |
 
 CI runs both suites on every push and pull request and uploads both reports as build artifacts. A third CI job builds the Docker stack and smoke tests it through nginx.
 
