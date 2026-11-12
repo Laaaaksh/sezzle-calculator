@@ -4,18 +4,18 @@
 help: ## List available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-24s %s\n", $$1, $$2}'
 
-# Aggregate targets run every part of the project. The frontend is added here when it has a Makefile.
+# Aggregate targets run every part of the project: the Go backend and the React frontend.
 .PHONY: lint
-lint: backend-lint ## Lint everything
+lint: backend-lint frontend-lint frontend-typecheck ## Lint everything
 
 .PHONY: test
-test: backend-test ## Test everything
+test: backend-test frontend-test ## Test everything
 
 .PHONY: test-coverage
-test-coverage: backend-test-coverage ## Test everything and write coverage reports
+test-coverage: backend-test-coverage frontend-test-coverage ## Test everything and write coverage reports
 
 .PHONY: build
-build: backend-build ## Build everything
+build: backend-build frontend-build ## Build everything
 
 .PHONY: hooks
 hooks: ## Enable the git hooks in .githooks (no em dash, no agent co-author)
@@ -50,5 +50,28 @@ backend-run: ## Backend: run the API locally
 backend-clean: ## Backend: remove build and coverage output
 	$(MAKE) -C backend clean
 
+# Each frontend-* target runs the matching npm script in frontend/.
+.PHONY: frontend-install frontend-lint frontend-typecheck frontend-test frontend-test-coverage frontend-build frontend-clean
+frontend-install: ## Frontend: install dependencies from package-lock.json
+	npm --prefix frontend ci
+
+frontend-lint: ## Frontend: run ESLint with zero warnings allowed
+	npm --prefix frontend run lint -- --max-warnings=0
+
+frontend-typecheck: ## Frontend: run the TypeScript compiler without emitting
+	npm --prefix frontend run typecheck
+
+frontend-test: ## Frontend: run tests once
+	npm --prefix frontend test
+
+frontend-test-coverage: ## Frontend: run tests and write coverage reports
+	npm --prefix frontend run test:coverage
+
+frontend-build: ## Frontend: build the production bundle
+	npm --prefix frontend run build
+
+frontend-clean: ## Frontend: remove build and coverage output
+	rm -rf frontend/dist frontend/coverage
+
 .PHONY: clean
-clean: backend-clean ## Clean everything
+clean: backend-clean frontend-clean ## Clean everything
