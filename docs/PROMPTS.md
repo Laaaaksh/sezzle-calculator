@@ -238,3 +238,46 @@ Run the calculator tests with coverage. Show me the per-file numbers. Anything i
 ```
 
 Produced: Per-file coverage for the calculator module (99.5% overall, every file 96.9% or higher) and docs/ERROR_CODES.md, a table of every error code with its HTTP status, an example input and its message, ready for the README. A test keeps that table in sync with pkg/apperror.
+
+---
+
+## 13. API contract
+
+```
+Before writing the handler, write the API contract as docs/API.md for my review:
+- POST /api/v1/calculate
+  - Request: {"operation": "divide", "operands": ["10", "4"]}
+  - Response 200: {"operation": "divide", "operands": ["10", "4"], "result": "2.5"}
+- GET /api/v1/operations: lists each operation with its name, arity, symbol and a one-line description, so the frontend can build its UI from it.
+- One error shape everywhere: {"error": {"code": "DIVISION_BY_ZERO", "message": "Cannot divide by zero.", "requestId": "...", "fields": {...}}}
+- A table mapping every error code to its HTTP status. Domain errors are 422 and malformed requests are 400. Explain that choice.
+Also explain why I chose one endpoint with an operation field over one route per operation, and what the trade-off is. Don't write any code in this step.
+```
+
+Produced: docs/API.md, the REST contract for review before any handler code: POST /api/v1/calculate, GET /api/v1/operations, one error shape, a table of every error code with its HTTP status, why domain errors are 422 and malformed requests are 400, and why one endpoint with an operation field beats one route per operation, with the trade-off. No code.
+
+---
+
+## 14. Handler and validation
+
+```
+Implement the contract from docs/API.md in the calculator module's server.go.
+- Decode with DisallowUnknownFields.
+- Reject a missing or wrong Content-Type with UNSUPPORTED_MEDIA_TYPE, an empty body with BAD_REQUEST, malformed JSON with BAD_REQUEST, and trailing data after the JSON object.
+- Validate that operation and operands are present before calling core.
+- Map every apperror to the JSON error shape with the request ID.
+- Set Content-Type and Cache-Control: no-store on every response.
+The handler depends on the ICore interface, not the concrete type. Generate the mocks with mockgen and test the handler with gomock using exact arguments and .Times(1), never gomock.Any() or AnyTimes(). Cover every success and failure path.
+```
+
+Produced: The calculate and operations endpoints in the calculator module's server.go, mounted under /api/v1. Strict decoding (unknown fields, empty body, malformed JSON, trailing data, oversize body), Content-Type check, required-field validation with a fields map, and every apperror mapped to the shared error shape with the request ID. Operations are listed from the registry in a fixed order. Handler tests use gomock with exact arguments and .Times(1), plus one end-to-end suite through the real router and core.
+
+---
+
+## 15. Backend end-to-end check
+
+```
+Run make lint, make test and make test-coverage, and show me the totals. Then start the server and use curl to hit every operation once, every error code once, and the health and operations endpoints. Paste the real request and response pairs. If anything looks wrong, reproduce it first, then fix it and add a test that would have caught it. Update docs/REQUIREMENTS.md for everything the backend now covers.
+```
+
+Produced: lint 0 issues, race tests green, backend coverage 95.7%, and a real-server smoke test of all 7 operations and every error code ([API_SMOKE.md](API_SMOKE.md)). Backend requirements ticked in REQUIREMENTS.md with proof.

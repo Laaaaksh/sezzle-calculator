@@ -18,6 +18,11 @@ type Operation interface {
 	// Arity is the exact number of operands Apply needs. The core checks it
 	// before calling Apply, so Apply may index operands without a length check.
 	Arity() int
+	// Symbol is a short display symbol such as "+". It is for showing an
+	// expression and is never accepted as input.
+	Symbol() string
+	// Description is one line of plain text for help text and tooltips.
+	Description() string
 	// Apply computes the result. It uses decimal maths only: a float64 would
 	// make 0.1 + 0.2 differ from 0.3.
 	Apply(operands []decimal.Decimal) (decimal.Decimal, apperror.IError)

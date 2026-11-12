@@ -14,6 +14,7 @@ import (
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/config"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/constants"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/logger"
+	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/health"
 )
 
@@ -43,7 +44,10 @@ func Initialize(ctx context.Context) (*App, error) {
 		constants.LogKeyPort, cfg.Server.Port,
 	)
 
-	modules := Modules{Health: health.NewModule(ctx)}
+	modules := Modules{
+		Health:     health.NewModule(ctx),
+		Calculator: calculator.NewModule(ctx, cfg.Calculator),
+	}
 	router := NewRouter(cfg, modules)
 
 	app := &App{cfg: cfg, server: newServer(cfg, router), health: modules.Health}

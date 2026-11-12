@@ -1,6 +1,6 @@
 # Error codes
 
-Every error the API returns uses one shape, `{"error": {"code": "...", "message": "...", "requestId": "...", "fields": {...}}}`. The message is fixed per code and never contains user input or internal detail. The `fields` column in the first table names the extra context an error carries.
+Every error the API returns uses one shape, `{"error": {"code": "...", "message": "...", "requestId": "...", "fields": {...}}}`. The message is fixed per code and never contains user input or internal detail. The `fields` column in the first table names the keys of the `fields` map sent to the client with that error; see [API.md](API.md).
 
 Domain errors (the request was well formed but the calculation cannot be done) are 422. Malformed requests and infrastructure failures use the other statuses.
 
@@ -10,7 +10,7 @@ Defaults used in the examples: `max_operand_length = 64`, `max_exponent = 1000`,
 
 | Code | HTTP status | Example input | Message | Fields |
 | --- | --- | --- | --- | --- |
-| `UNKNOWN_OPERATION` | 422 | `operation: "modulo"` | The requested operation is not supported. | `operation` |
+| `UNKNOWN_OPERATION` | 422 | `operation: "modulo"` | The requested operation is not supported. | `operation` (left out when the name is over 32 bytes) |
 | `INVALID_OPERAND_COUNT` | 422 | `add` with `["1"]` | The operation received the wrong number of operands. | `operation`, `expected`, `actual` |
 | `INVALID_OPERAND` | 422 | `add` with `["1", "1e5"]` | An operand is not a valid number. | `operand_index`, `reason` |
 | `OPERAND_TOO_LARGE` | 422 | `add` with `["1", "<65 digits>"]` | An operand is larger than the allowed limit. | `operand_index`, `limit` |
@@ -31,7 +31,7 @@ Examples per reason: `""` is `empty`, `" 1"` is `whitespace`, `"+1"` is `plus_si
 | Code | HTTP status | Example input | Message |
 | --- | --- | --- | --- |
 | `BAD_REQUEST` | 400 | A body that is not valid JSON | The request could not be understood. |
-| `VALIDATION_FAILED` | 422 | A request missing the `operation` or `operands` field | The request failed validation. |
+| `VALIDATION_FAILED` | 422 | A request missing the `operation` or `operands` field, or an `operation` over 32 bytes | The request failed validation. |
 | `UNSUPPORTED_MEDIA_TYPE` | 415 | `Content-Type: text/plain` | The content type is not supported. |
 | `PAYLOAD_TOO_LARGE` | 413 | A body over `max_body_bytes` (1 MiB) | The request body is too large. |
 | `NOT_FOUND` | 404 | `GET /api/v1/missing` | The requested resource was not found. |
@@ -39,7 +39,9 @@ Examples per reason: `""` is `empty`, `" 1"` is `whitespace`, `"+1"` is `plus_si
 | `INTERNAL` | 500 | An unexpected server fault, such as a recovered panic | An internal error occurred. |
 | `SERVICE_UNAVAILABLE` | 503 | The readiness probe while the service is not ready | The service is temporarily unavailable. |
 
-`BAD_REQUEST`, `VALIDATION_FAILED` and `UNSUPPORTED_MEDIA_TYPE` are raised by the calculate handler, which arrives in a later step. Until then only `PAYLOAD_TOO_LARGE`, `NOT_FOUND`, `METHOD_NOT_ALLOWED`, `INTERNAL` and `SERVICE_UNAVAILABLE` can occur.
+`PAYLOAD_TOO_LARGE` carries one field, `limit`, the body size limit in bytes. It is the same whether the declared `Content-Length` is refused up front or a body of unknown length is cut off while it is read.
+
+`BAD_REQUEST`, `VALIDATION_FAILED`, `UNSUPPORTED_MEDIA_TYPE` and `PAYLOAD_TOO_LARGE` are raised by the calculate handler as well as by the router. [API.md](API.md) describes the request cases and the order of the checks.
 
 `INTERNAL` can also come from the core in one case: the square root iteration hits its fixed cap. The cap is far above what any accepted input needs, so this is a safety net and not an expected result.
 

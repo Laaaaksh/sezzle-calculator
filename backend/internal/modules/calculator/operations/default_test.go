@@ -91,3 +91,81 @@ func (s *DefaultRegistryTestSuite) TestSqrtPicksUpThePrecisionFromConfig() {
 	s.Nil(applyErr)
 	s.Equal(testSqrtTwoAt20, got)
 }
+
+func (s *DefaultRegistryTestSuite) TestAddIsListedWithItsSymbolDescriptionAndArity() {
+	op := s.listed(entities.OpAdd)
+
+	s.Equal(wantAddSymbol, op.Symbol())
+	s.Equal(wantAddDescription, op.Description())
+	s.Equal(2, op.Arity())
+}
+
+func (s *DefaultRegistryTestSuite) TestSubtractIsListedWithItsSymbolDescriptionAndArity() {
+	op := s.listed(entities.OpSubtract)
+
+	s.Equal(wantSubtractSymbol, op.Symbol())
+	s.Equal(wantSubtractDescription, op.Description())
+	s.Equal(2, op.Arity())
+}
+
+func (s *DefaultRegistryTestSuite) TestMultiplyIsListedWithItsSymbolDescriptionAndArity() {
+	op := s.listed(entities.OpMultiply)
+
+	s.Equal(wantMultiplySymbol, op.Symbol())
+	s.Equal(wantMultiplyDescription, op.Description())
+	s.Equal(2, op.Arity())
+}
+
+func (s *DefaultRegistryTestSuite) TestDivideIsListedWithItsSymbolDescriptionAndArity() {
+	op := s.listed(entities.OpDivide)
+
+	s.Equal(wantDivideSymbol, op.Symbol())
+	s.Equal(wantDivideDescription, op.Description())
+	s.Equal(2, op.Arity())
+}
+
+func (s *DefaultRegistryTestSuite) TestPowerIsListedWithItsSymbolDescriptionAndArity() {
+	op := s.listed(entities.OpPower)
+
+	s.Equal(wantPowerSymbol, op.Symbol())
+	s.Equal(wantPowerDescription, op.Description())
+	s.Equal(2, op.Arity())
+}
+
+func (s *DefaultRegistryTestSuite) TestSqrtIsListedWithItsSymbolDescriptionAndArity() {
+	op := s.listed(entities.OpSqrt)
+
+	s.Equal(wantSqrtSymbol, op.Symbol())
+	s.Equal(wantSqrtDescription, op.Description())
+	s.Equal(1, op.Arity())
+}
+
+func (s *DefaultRegistryTestSuite) TestPercentageIsListedWithItsSymbolDescriptionAndArity() {
+	op := s.listed(entities.OpPercentage)
+
+	s.Equal(wantPercentageSymbol, op.Symbol())
+	s.Equal(wantPercentageDescription, op.Description())
+	s.Equal(2, op.Arity())
+}
+
+func (s *DefaultRegistryTestSuite) TestListReturnsEveryOperationInRegistrationOrder() {
+	var names []entities.OperationType
+	for _, op := range s.registry.List() {
+		names = append(names, op.Name())
+	}
+
+	s.Equal([]entities.OperationType{
+		entities.OpAdd, entities.OpSubtract, entities.OpMultiply, entities.OpDivide,
+		entities.OpPower, entities.OpSqrt, entities.OpPercentage,
+	}, names)
+}
+
+func (s *DefaultRegistryTestSuite) listed(name entities.OperationType) operations.Operation {
+	for _, op := range s.registry.List() {
+		if op.Name() == name {
+			return op
+		}
+	}
+	s.FailNow("operation is not listed", "name %s", name)
+	return nil
+}

@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/boot"
+	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/health"
 )
 
@@ -100,6 +101,7 @@ func (s *ServeTestSuite) SetupTest() {
 	s.T().Setenv(envVarConfigDir, s.dir)
 	s.T().Setenv(envVarPort, envValueEmpty)
 	health.HealthModule = nil
+	calculator.CalculatorModule = nil
 	s.listener = newPipeListener()
 	s.client = &http.Client{Transport: &http.Transport{DialContext: s.listener.dial}}
 }
@@ -107,6 +109,7 @@ func (s *ServeTestSuite) SetupTest() {
 func (s *ServeTestSuite) TearDownTest() {
 	s.client.CloseIdleConnections()
 	health.HealthModule = nil
+	calculator.CalculatorModule = nil
 }
 
 // writeConfig writes the default file with the given grace period line.

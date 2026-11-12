@@ -15,23 +15,27 @@ var CalculatorModule IModule
 var NewModule = func(_ context.Context, cfg config.CalculatorConfig) IModule {
 	if CalculatorModule == nil {
 		core := NewCore(operations.NewDefaultRegistry(cfg), cfg)
-		CalculatorModule = &Module{Core: core}
+		CalculatorModule = &Module{Core: core, Handler: NewHTTPHandler(core, cfg)}
 	}
 	return CalculatorModule
 }
 
-// IModule exposes the module's parts to boot. A handler is added with the
-// HTTP step.
+// IModule exposes the module's parts to boot.
 type IModule interface {
 	GetCore() ICore
+	GetHandler() *HTTPHandler
 }
 
 // Module is the concrete IModule.
 type Module struct {
-	Core ICore
+	Core    ICore
+	Handler *HTTPHandler
 }
 
 var _ IModule = (*Module)(nil)
 
 // GetCore returns the business logic.
 func (m *Module) GetCore() ICore { return m.Core }
+
+// GetHandler returns the HTTP handler.
+func (m *Module) GetHandler() *HTTPHandler { return m.Handler }

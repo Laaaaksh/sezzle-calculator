@@ -26,6 +26,10 @@ func (f *fakeOperation) Name() entities.OperationType { return f.name }
 
 func (f *fakeOperation) Arity() int { return f.arity }
 
+func (f *fakeOperation) Symbol() string { return testFakeSymbol }
+
+func (f *fakeOperation) Description() string { return testFakeDescription }
+
 func (f *fakeOperation) Apply(operands []decimal.Decimal) (decimal.Decimal, apperror.IError) {
 	f.calls++
 	f.seen = operands

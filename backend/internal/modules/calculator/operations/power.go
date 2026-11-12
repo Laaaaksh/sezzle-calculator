@@ -51,6 +51,7 @@ var one = decimal.NewFromInt(1)
 // fits the default budget of 640. The computed result is then counted exactly
 // and refused if the estimate let it slip past the budget.
 type Power struct {
+	descriptor
 	precision       int32
 	maxExponent     decimal.Decimal
 	maxResultDigits int64
@@ -61,17 +62,17 @@ var _ Operation = (*Power)(nil)
 // NewPower returns the power operation bounded by cfg.
 func NewPower(cfg config.CalculatorConfig) *Power {
 	return &Power{
+		descriptor: descriptor{
+			name:        entities.OpPower,
+			arity:       entities.ArityBinary,
+			symbol:      entities.SymbolPower,
+			description: entities.DescriptionPower,
+		},
 		precision:       scaleOf(cfg.DecimalPrecision),
 		maxExponent:     decimal.NewFromInt(int64(cfg.MaxExponent)),
 		maxResultDigits: int64(cfg.MaxOperandLength) * resultDigitsFactor,
 	}
 }
-
-// Name returns the registry key.
-func (*Power) Name() entities.OperationType { return entities.OpPower }
-
-// Arity is two: base and exponent.
-func (*Power) Arity() int { return entities.ArityBinary }
 
 // Apply returns operands[0] ^ operands[1]. The exponent is validated before
 // the base so a bad exponent is reported even for a zero base.

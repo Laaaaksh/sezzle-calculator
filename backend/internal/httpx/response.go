@@ -25,9 +25,9 @@ type ErrorBody struct {
 	Code      apperror.Code `json:"code"`
 	Message   string        `json:"message"`
 	RequestID string        `json:"requestId,omitempty"`
-	// Fields maps an input field to a client-safe problem description. It is
-	// reserved for validation errors and omitted when empty.
-	Fields map[string]string `json:"fields,omitempty"`
+	// Fields is client-safe context about the failure, such as which operand
+	// failed and why. It is omitted when empty.
+	Fields map[string]any `json:"fields,omitempty"`
 }
 
 // fallbackBody is sent when a response cannot be encoded. It is a constant so
@@ -56,12 +56,15 @@ func WriteJSON(ctx context.Context, w http.ResponseWriter, status int, v any) {
 	_, _ = w.Write(body)
 }
 
-// WriteError logs err in full (code, cause, fields) and sends only its public
-// part, so internals such as driver errors never reach a client.
+// WriteError logs err in full (code, cause, fields) and sends the code, the
+// public message and the error's fields. The cause is never sent. Fields are
+// built deliberately by the code that raises the error and hold only
+// client-safe context (operand_index, reason, limit, the request method and
+// path); anything internal belongs in the cause, which stays in the log.
 func WriteError(ctx context.Context, w http.ResponseWriter, err apperror.IError) {
 	logError(ctx, err)
 	public := apperror.ToPublic(err)
-	body := ErrorBody{Code: public.Code, Message: public.Message}
+	body := ErrorBody{Code: public.Code, Message: public.Message, Fields: err.Fields()}
 	if id, ok := contextkeys.RequestID(ctx); ok {
 		body.RequestID = id
 	}

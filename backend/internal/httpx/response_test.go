@@ -86,13 +86,27 @@ func (s *ResponseTestSuite) TestWriteErrorUsesStatusAndPublicFields() {
 	s.Equal(wantNoStore, s.recorder.Header().Get(constants.HeaderCacheControl))
 }
 
-func (s *ResponseTestSuite) TestWriteErrorNeverSendsCauseOrInternalFields() {
+func (s *ResponseTestSuite) TestWriteErrorNeverSendsTheCause() {
 	err := apperror.New(apperror.CodeInternal, errTestSecret).WithField(testFieldKey, testFieldValue)
 
 	httpx.WriteError(context.Background(), s.recorder, err)
 
 	s.NotContains(s.recorder.Body.String(), testSecretCause)
-	s.NotContains(s.recorder.Body.String(), testFieldValue)
+}
+
+func (s *ResponseTestSuite) TestWriteErrorSendsFieldsOfEveryCode() {
+	err := apperror.New(apperror.CodeInvalidOperand, errTestSecret).
+		WithField(testFieldKey, testFieldValue).
+		WithField(testIndexKey, testIndexValue)
+
+	httpx.WriteError(context.Background(), s.recorder, err)
+
+	s.Equal(map[string]any{testFieldKey: testFieldValue, testIndexKey: float64(testIndexValue)}, s.decodeError().Error.Fields)
+}
+
+func (s *ResponseTestSuite) TestWriteErrorOmitsFieldsWhenErrorHasNone() {
+	httpx.WriteError(context.Background(), s.recorder, apperror.New(apperror.CodeBadRequest, nil))
+
 	s.NotContains(s.recorder.Body.String(), jsonKeyFields)
 }
 
@@ -145,7 +159,7 @@ func (s *ResponseTestSuite) TestErrorBodyIncludesFieldsWhenSet() {
 	body := httpx.ErrorBody{
 		Code:    apperror.CodeValidationFailed,
 		Message: apperror.MsgValidationFailed,
-		Fields:  map[string]string{testFieldKey: testFieldValue},
+		Fields:  map[string]any{testFieldKey: testFieldValue},
 	}
 
 	raw, err := json.Marshal(httpx.ErrorResponse{Error: body})

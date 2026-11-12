@@ -9,6 +9,8 @@ const (
 	testSecretCause  = "pq: password authentication failed for user admin"
 	testFieldKey     = "account"
 	testFieldValue   = "acc-42"
+	testIndexKey     = "operand_index"
+	testIndexValue   = 1
 	testStatusKey    = "status"
 	testStatusValue  = "ok"
 	jsonKeyRequestID = `"requestId"`
