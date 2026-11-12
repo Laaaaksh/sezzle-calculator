@@ -26,9 +26,10 @@ const (
 	serveGraceDrain    = "shutdown_grace_period = \"5s\"\nshutdown_drain_delay = \"2s\""
 	serveDrainPoll     = 10 * time.Millisecond
 	serveURL           = "http://pipe"
-	// serveSettleDelay lets the server register the accepted connection; the
-	// net/http server exposes no hook to observe that.
-	serveSettleDelay = 20 * time.Millisecond
+	// serveRequestStart is the first four bytes of a request line. net.Pipe
+	// writes block until the server has read them, so once the write returns
+	// the server provably holds the connection: no sleep needed to "settle".
+	serveRequestStart = "GET "
 )
 
 var errTestAccept = errors.New("accept exploded")
@@ -206,12 +207,13 @@ func (s *ServeTestSuite) TestServeForcesCloseWhenGracePeriodExpires() {
 	ctx, cancel := context.WithCancel(context.Background())
 	done := s.start(ctx, app, s.listener)
 	s.Equal(http.StatusOK, s.status(testLivePath))
-	// A connection that never sends a request is not idle yet, so graceful
-	// shutdown has to wait for it until the grace period runs out.
+	// A connection that starts a request and never finishes it is not idle, so
+	// graceful shutdown has to wait for it until the grace period runs out.
 	stuck, err := s.listener.dial(context.Background(), "", "")
 	s.Require().NoError(err)
 	defer func() { _ = stuck.Close() }()
-	time.Sleep(serveSettleDelay)
+	_, err = stuck.Write([]byte(serveRequestStart))
+	s.Require().NoError(err)
 
 	cancel()
 

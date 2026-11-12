@@ -12,19 +12,18 @@ const (
 	MsgInternal             = "An internal error occurred."
 	MsgServiceUnavailable   = "The service is temporarily unavailable."
 	MsgRequestTimeout       = "The request took too long to process."
-	MsgUnknownOperation     = "The requested operation is not supported."
-	MsgInvalidOperandCount  = "The operation received the wrong number of operands."
-	MsgOperandTooLarge      = "An operand is larger than the allowed limit."
-	MsgInvalidOperand       = "An operand is not a valid number."
-	MsgDivisionByZero       = "Cannot divide by zero."
-	MsgInvalidExponent      = "The exponent must be a whole number."
-	MsgExponentTooLarge     = "The exponent is outside the allowed range."
-	MsgResultTooLarge       = "The result would be too large to calculate."
-	MsgNegativeSquareRoot   = "Cannot take the square root of a negative number."
 )
 
 // Formats for the internal Error() string, which is for logs only.
 const (
 	errFmtNoCause   = "%s: %s"
 	errFmtWithCause = "%s: %s: %v"
+)
+
+// Register rules. maxErrorStatus is the top of the 4xx and 5xx range; the
+// panic formats are for start-up wiring bugs, never for a request.
+const (
+	maxErrorStatus              = 599
+	panicFmtInvalidRegistration = "apperror: cannot register code %q with status %d"
+	panicFmtDuplicateCode       = "apperror: code %q registered twice"
 )

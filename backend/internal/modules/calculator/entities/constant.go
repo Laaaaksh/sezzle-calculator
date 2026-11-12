@@ -61,7 +61,16 @@ const (
 	FieldNameOperands  = "operands"
 	ProblemRequired    = "is required"
 	ProblemTooLong     = "is too long"
+	ProblemTooMany     = "too many"
 )
+
+// MaxOperandCount is a cheap pre-parse bound, deliberately well above any
+// operation's arity. The handler refuses a longer list before parsing a single
+// operand, so a request cannot make the service parse thousands of strings
+// only for the arity check to reject them. It is generous on purpose: a list
+// within it but of the wrong size still reaches the core and gets the precise
+// INVALID_OPERAND_COUNT. A test keeps it at or above the widest arity.
+const MaxOperandCount = 16
 
 // MaxOperationNameLength is the longest operation name, in bytes, the API
 // accepts or echoes back. The longest real name is "percentage" (10); this
@@ -78,6 +87,15 @@ const (
 	FieldActual       = "actual"
 	FieldLimit        = "limit"
 	FieldReason       = "reason"
+	// FieldKey names the offending JSON key in a BAD_REQUEST about the body's keys.
+	FieldKey = "key"
+)
+
+// Reasons a JSON key is rejected, reported in the "reason" field of
+// BAD_REQUEST next to the "key" field.
+const (
+	ReasonDuplicateKey = "duplicate"
+	ReasonKeyWrongCase = "wrong_case"
 )
 
 // Reasons an operand string is rejected, reported in the "reason" field of

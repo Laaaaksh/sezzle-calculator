@@ -9,8 +9,9 @@ import (
 	"github.com/Laaaaksh/sezzle-calculator/backend/pkg/apperror"
 )
 
-// Subtract subtracts the second operand from the first. The result is exact: decimal keeps every
-// digit, so 0.1 + 0.2 is 0.3 and not the 0.30000000000000004 a float64 gives.
+// Subtract subtracts the second operand from the first. The result is exact:
+// decimal keeps every digit, so 0.3 - 0.1 is 0.2 and not the 0.19999999999999998
+// a float64 gives.
 type Subtract struct{ descriptor }
 
 var _ Operation = (*Subtract)(nil)

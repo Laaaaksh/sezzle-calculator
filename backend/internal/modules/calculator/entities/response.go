@@ -18,8 +18,11 @@ type OperationInfo struct {
 	Description string        `json:"description"`
 }
 
-// OperationsResponse is the body of GET /api/v1/operations. The list sits in
-// an object so a field can be added later without breaking clients.
+// OperationsResponse is the body of GET /api/v1/operations. Operations lets a
+// client discover what the server supports; Limits lets it disable input the
+// server would refuse. Both sit in an object so a field can be added later
+// without breaking clients.
 type OperationsResponse struct {
 	Operations []OperationInfo `json:"operations"`
+	Limits     Limits          `json:"limits"`
 }

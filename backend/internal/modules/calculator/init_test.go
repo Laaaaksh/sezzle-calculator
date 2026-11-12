@@ -10,7 +10,6 @@ import (
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/config"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/entities"
-	"github.com/Laaaaksh/sezzle-calculator/backend/pkg/apperror"
 )
 
 type InitTestSuite struct {
@@ -48,7 +47,7 @@ func (s *InitTestSuite) TestNewModuleCoreRejectsOperationsThatAreNotRegistered()
 	_, err := module.GetCore().Calculate(s.ctx, testOpMissing, nil)
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeUnknownOperation, err.Code())
+	s.Equal(entities.CodeUnknownOperation, err.Code())
 }
 
 func (s *InitTestSuite) TestNewModuleWiresAHandler() {
@@ -68,6 +67,6 @@ func (s *InitTestSuite) TestNewModuleUsesTheConfigOfEachCall() {
 	_, looseErr := calculator.NewModule(s.ctx, loose).GetCore().Calculate(s.ctx, entities.OpPower, operands)
 
 	s.Require().NotNil(tightErr)
-	s.Equal(apperror.CodeExponentTooLarge, tightErr.Code())
+	s.Equal(entities.CodeExponentTooLarge, tightErr.Code())
 	s.Nil(looseErr)
 }

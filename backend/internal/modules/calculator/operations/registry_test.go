@@ -64,7 +64,7 @@ func (s *RegistryTestSuite) TestLookupWhenUnregisteredReturnsUnknownOperation() 
 
 	s.Nil(op)
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeUnknownOperation, err.Code())
+	s.Equal(entities.CodeUnknownOperation, err.Code())
 	s.ErrorIs(err, operations.ErrUnknownOperation)
 	s.Equal(testNameMissing, err.Fields()[entities.FieldOperation])
 }
@@ -84,7 +84,7 @@ func (s *RegistryTestSuite) TestLookupWhenNameIsOverTheLimitOmitsTheOperationFie
 	_, err := operations.NewRegistry().Lookup(entities.OperationType(name))
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeUnknownOperation, err.Code())
+	s.Equal(entities.CodeUnknownOperation, err.Code())
 	s.NotContains(err.Fields(), entities.FieldOperation)
 }
 
@@ -94,14 +94,14 @@ func (s *RegistryTestSuite) TestLookupWhenNameIsEmptyReturnsUnknownOperation() {
 	_, err := registry.Lookup(testNameBlank)
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeUnknownOperation, err.Code())
+	s.Equal(entities.CodeUnknownOperation, err.Code())
 }
 
 func (s *RegistryTestSuite) TestLookupOnEmptyRegistryReturnsUnknownOperation() {
 	_, err := operations.NewRegistry().Lookup(testNameOne)
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeUnknownOperation, err.Code())
+	s.Equal(entities.CodeUnknownOperation, err.Code())
 }
 
 func (s *RegistryTestSuite) TestNewRegistryPanicsOnDuplicateName() {

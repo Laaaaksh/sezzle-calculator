@@ -31,7 +31,7 @@ func Initialize(env constants.Environment) error {
 	// per mistyped URL buries the real problems (zap dev mode defaults to Warn).
 	built, err := cfg.Build(zap.AddStacktrace(zapcore.ErrorLevel))
 	if err != nil {
-		return fmt.Errorf("logger: build: %w", err)
+		return fmt.Errorf(ErrFmtBuild, err)
 	}
 	base.Store(built.Sugar())
 	return nil
@@ -110,6 +110,10 @@ func isHarmlessSyncError(err error) bool {
 
 // SetForTest swaps the base logger and returns a function that restores the
 // previous one. It exists so tests can capture output with an observer core.
+// It stays exported on purpose: the tests that need it live in other packages
+// (httpx, interceptors), which an export_test.go file of this package cannot
+// reach. The whole package is under internal/, so no code outside this module
+// can call it.
 func SetForTest(l *zap.SugaredLogger) (restore func()) {
 	prev := base.Swap(l)
 	return func() { base.Store(prev) }

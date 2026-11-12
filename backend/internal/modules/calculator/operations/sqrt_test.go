@@ -47,31 +47,31 @@ func (s *SqrtTestSuite) TestSqrtArityIsOne() {
 }
 
 func (s *SqrtTestSuite) TestSqrtOfZeroIsZero() {
-	s.Equal("0", s.sqrt("0"))
+	s.Equal(sqrtNum0, s.sqrt(sqrtNum0))
 }
 
 func (s *SqrtTestSuite) TestSqrtOfNegativeZeroIsZero() {
-	s.Equal("0", s.sqrt("-0.00"))
+	s.Equal(sqrtNum0, s.sqrt(sqrtNumNeg0Pt00))
 }
 
 func (s *SqrtTestSuite) TestSqrtOfOneIsOne() {
-	s.Equal("1", s.sqrt("1"))
+	s.Equal(sqrtNum1, s.sqrt(sqrtNum1))
 }
 
 func (s *SqrtTestSuite) TestSqrtOfAPerfectSquareIsExact() {
-	s.Equal("12", s.sqrt("144"))
+	s.Equal(sqrtNum12, s.sqrt(sqrtNum144))
 }
 
 func (s *SqrtTestSuite) TestSqrtOfAFractionalPerfectSquareIsExact() {
-	s.Equal("0.5", s.sqrt("0.25"))
+	s.Equal(sqrtNum0Pt5, s.sqrt(sqrtNum0Pt25))
 }
 
 func (s *SqrtTestSuite) TestSqrtOfAPerfectSquareWithTrailingZerosIsExact() {
-	s.Equal("1.5", s.sqrt("2.2500"))
+	s.Equal(sqrtNum1Pt5, s.sqrt(sqrtNum2Pt2500))
 }
 
 func (s *SqrtTestSuite) TestSqrtOfATinyPerfectSquareIsExact() {
-	s.Equal("0.00001", s.sqrt("0.0000000001"))
+	s.Equal(sqrtNum0Pt00001, s.sqrt(sqrtNum0Pt0000000001))
 }
 
 func (s *SqrtTestSuite) TestSqrtOfALargePerfectSquareIsExact() {
@@ -79,91 +79,91 @@ func (s *SqrtTestSuite) TestSqrtOfALargePerfectSquareIsExact() {
 }
 
 func (s *SqrtTestSuite) TestSqrtOfAPowerOfTenIsExact() {
-	s.Equal("100000000000000000000", s.sqrt("10000000000000000000000000000000000000000"))
+	s.Equal(sqrtLong1, s.sqrt(sqrtLong2))
 }
 
 func (s *SqrtTestSuite) TestSqrtOfTwoMatchesTheKnownValueAtTheConfiguredPrecision() {
-	s.Equal(testSqrtTwoAt20, s.sqrt("2"))
+	s.Equal(testSqrtTwoAt20, s.sqrt(sqrtNum2))
 }
 
 func (s *SqrtTestSuite) TestSqrtOfTwoMatchesTheKnownValueAtThirtyPlaces() {
-	s.Equal(testSqrtTwoAt30, s.sqrtAt(30, "2"))
+	s.Equal(testSqrtTwoAt30, s.sqrtAt(30, sqrtNum2))
 }
 
 func (s *SqrtTestSuite) TestSqrtOfThreeRoundsTheLastDigitUp() {
-	s.Equal(testSqrtThreeAt20, s.sqrt("3"))
+	s.Equal(testSqrtThreeAt20, s.sqrt(sqrtNum3))
 }
 
 func (s *SqrtTestSuite) TestSqrtOfANumberBelowOneKeepsTheLeadingDigitsOfTheRoot() {
-	s.Equal("0.7071067811865475244", s.sqrt("0.5"))
+	s.Equal(sqrtLong3, s.sqrt(sqrtNum0Pt5))
 }
 
 func (s *SqrtTestSuite) TestSqrtOfATinyNonSquareRoundsAtThePrecision() {
-	s.Equal(testSqrtTinyNonSquare, s.sqrt("0."+strings.Repeat("0", 29)+"2"))
+	s.Equal(testSqrtTinyNonSquare, s.sqrt(sqrtNum0Pt+strings.Repeat(sqrtNum0, 29)+sqrtNum2))
 }
 
 func (s *SqrtTestSuite) TestSqrtOfAValueWhoseRootIsBelowHalfTheLastPlaceIsZero() {
-	s.Equal("0", s.sqrt("0."+strings.Repeat("0", 49)+"1"))
+	s.Equal(sqrtNum0, s.sqrt(sqrtNum0Pt+strings.Repeat(sqrtNum0, 49)+sqrtNum1))
 }
 
 func (s *SqrtTestSuite) TestSqrtOfAnExponentNotationDecimalFarBelowThePrecisionIsZero() {
-	s.Equal("0", s.sqrt("1e-1000"))
+	s.Equal(sqrtNum0, s.sqrt("1e-1000"))
 }
 
 func (s *SqrtTestSuite) TestSqrtOfAVeryLargePowerOfTenConvergesWithinTheBound() {
-	s.Equal("1"+strings.Repeat("0", 150), s.sqrt("1"+strings.Repeat("0", 300)))
+	s.Equal(sqrtNum1+strings.Repeat(sqrtNum0, 150), s.sqrt(sqrtNum1+strings.Repeat(sqrtNum0, 300)))
 }
 
 func (s *SqrtTestSuite) TestSqrtOfALargeNonSquareJustAboveAPowerOfTenRoundsToThePower() {
-	got := s.sqrt("1" + strings.Repeat("0", 299) + "1")
+	got := s.sqrt(sqrtNum1 + strings.Repeat(sqrtNum0, 299) + sqrtNum1)
 
-	s.Equal("1"+strings.Repeat("0", 149), got[:150])
+	s.Equal(sqrtNum1+strings.Repeat(sqrtNum0, 149), got[:150])
 }
 
 func (s *SqrtTestSuite) TestSqrtWhenOperandIsNegativeReturnsNegativeSquareRoot() {
-	_, err := applyUnary(s.op, "-4")
+	_, err := applyUnary(s.op, sqrtNumNeg4)
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeNegativeSquareRoot, err.Code())
+	s.Equal(entities.CodeNegativeSquareRoot, err.Code())
 	s.ErrorIs(err, operations.ErrNegativeSquareRoot)
 }
 
 func (s *SqrtTestSuite) TestSqrtWhenOperandIsSlightlyNegativeReturnsNegativeSquareRoot() {
-	_, err := applyUnary(s.op, "-0.0000000001")
+	_, err := applyUnary(s.op, sqrtNumNeg0Pt0000000001)
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.CodeNegativeSquareRoot, err.Code())
+	s.Equal(entities.CodeNegativeSquareRoot, err.Code())
 }
 
 func (s *SqrtTestSuite) TestSqrtNegativeSquareRootUsesTheDocumentedMessage() {
-	_, err := applyUnary(s.op, "-1")
+	_, err := applyUnary(s.op, sqrtNumNeg1)
 
 	s.Require().NotNil(err)
-	s.Equal(apperror.MsgNegativeSquareRoot, err.PublicMessage())
+	s.Equal(entities.MsgNegativeSquareRoot, err.PublicMessage())
 }
 
 func (s *SqrtTestSuite) TestSqrtWhenExactTieFollowsAnEvenDigitRoundsDown() {
-	s.Equal("2", s.sqrtAt(0, "6.25"))
+	s.Equal(sqrtNum2, s.sqrtAt(0, sqrtNum6Pt25))
 }
 
 func (s *SqrtTestSuite) TestSqrtWhenExactTieFollowsAnOddDigitRoundsUp() {
-	s.Equal("2", s.sqrtAt(0, "2.25"))
+	s.Equal(sqrtNum2, s.sqrtAt(0, sqrtNum2Pt25))
 }
 
 func (s *SqrtTestSuite) TestSqrtWhenExactTieFollowsZeroRoundsToZero() {
-	s.Equal("0", s.sqrtAt(0, "0.25"))
+	s.Equal(sqrtNum0, s.sqrtAt(0, sqrtNum0Pt25))
 }
 
 func (s *SqrtTestSuite) TestSqrtWhenRootIsJustAboveATieRoundsUpEvenWithGuardDigitsShowingATie() {
 	// The root is 2.500000000001: past the ten guard digits it looks like an
 	// exact 2.5 tie (which would go down to the even 2), but it is above it.
-	s.Equal("3", s.sqrtAt(0, testNearTieSquare))
+	s.Equal(sqrtNum3, s.sqrtAt(0, testNearTieSquare))
 }
 
 func (s *SqrtTestSuite) TestSqrtWhenIterationCapIsReachedReturnsInternalInsteadOfHanging() {
 	capped := operations.NewBoundedSqrt(testConfiguredPrecision, testSqrtIterations)
 
-	_, err := applyUnary(capped, "2")
+	_, err := applyUnary(capped, sqrtNum2)
 
 	s.Require().NotNil(err)
 	s.Equal(apperror.CodeInternal, err.Code())
@@ -171,7 +171,7 @@ func (s *SqrtTestSuite) TestSqrtWhenIterationCapIsReachedReturnsInternalInsteadO
 }
 
 func (s *SqrtTestSuite) TestSqrtWhenContextEndedReturnsRequestTimeout() {
-	_, err := s.op.Apply(cancelled(), []decimal.Decimal{mustDecimal("2")})
+	_, err := s.op.Apply(cancelled(), []decimal.Decimal{mustDecimal(sqrtNum2)})
 
 	s.Require().NotNil(err)
 	s.Equal(apperror.CodeRequestTimeout, err.Code())

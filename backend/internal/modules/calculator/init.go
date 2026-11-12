@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/config"
+	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/entities"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/operations"
 )
 
@@ -12,8 +13,19 @@ import (
 // later call silently ignore its cfg, and tests would share state. Boot calls
 // it once and owns the result.
 func NewModule(_ context.Context, cfg config.CalculatorConfig) IModule {
-	core := NewCore(operations.NewDefaultRegistry(cfg), cfg)
-	return &Module{Core: core, Handler: NewHTTPHandler(core, cfg)}
+	limits := limitsFrom(cfg)
+	core := NewCore(operations.NewDefaultRegistry(limits), limits)
+	return &Module{Core: core, Handler: NewHTTPHandler(core, limits)}
+}
+
+// limitsFrom is the one place the module's config type becomes the domain
+// type, so nothing below this package imports internal/config.
+func limitsFrom(cfg config.CalculatorConfig) entities.Limits {
+	return entities.Limits{
+		MaxOperandLength: cfg.MaxOperandLength,
+		MaxExponent:      cfg.MaxExponent,
+		DecimalPrecision: cfg.DecimalPrecision,
+	}
 }
 
 // IModule exposes the module's parts to boot.

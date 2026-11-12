@@ -10,7 +10,6 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/Laaaaksh/sezzle-calculator/backend/internal/config"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/entities"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/operations"
 	"github.com/Laaaaksh/sezzle-calculator/backend/pkg/apperror"
@@ -26,7 +25,7 @@ func TestPowerTestSuite(t *testing.T) {
 }
 
 func (s *PowerTestSuite) SetupTest() {
-	s.op = operations.NewPower(config.CalculatorConfig{
+	s.op = operations.NewPower(entities.Limits{
 		MaxOperandLength: testMaxOperandLength,
 		MaxExponent:      testMaxExponent,
 		DecimalPrecision: testPowerPrecision,
@@ -54,255 +53,255 @@ func (s *PowerTestSuite) TestPowerArityIsTwo() {
 }
 
 func (s *PowerTestSuite) TestPowerWhenExponentIsPositiveReturnsTheProduct() {
-	s.Equal("1024", s.power("2", "10"))
+	s.Equal(powerNum1024, s.power(powerNum2, powerNum10))
 }
 
 func (s *PowerTestSuite) TestPowerWhenExponentIsOneReturnsTheBase() {
-	s.Equal("7.25", s.power("7.25", "1"))
+	s.Equal(powerNum7Pt25, s.power(powerNum7Pt25, powerNum1))
 }
 
 func (s *PowerTestSuite) TestPowerWhenExponentIsZeroReturnsOne() {
-	s.Equal("1", s.power("123.456", "0"))
+	s.Equal(powerNum1, s.power(powerNum123Pt456, powerNum0))
 }
 
 func (s *PowerTestSuite) TestPowerWhenBaseAndExponentAreZeroReturnsOne() {
-	s.Equal("1", s.power("0", "0"))
+	s.Equal(powerNum1, s.power(powerNum0, powerNum0))
 }
 
 func (s *PowerTestSuite) TestPowerWhenExponentIsNegativeZeroReturnsOne() {
-	s.Equal("1", s.power("9", "-0"))
+	s.Equal(powerNum1, s.power(powerNum9, powerNumNeg0))
 }
 
 func (s *PowerTestSuite) TestPowerWhenNegativeBaseHasOddExponentReturnsNegative() {
-	s.Equal("-8", s.power("-2", "3"))
+	s.Equal(powerNumNeg8, s.power(powerNumNeg2, powerNum3))
 }
 
 func (s *PowerTestSuite) TestPowerWhenNegativeBaseHasEvenExponentReturnsPositive() {
-	s.Equal("16", s.power("-2", "4"))
+	s.Equal(powerNum16, s.power(powerNumNeg2, powerNum4))
 }
 
 func (s *PowerTestSuite) TestPowerWhenBaseIsFractionalMultipliesExactly() {
-	s.Equal("2.25", s.power("1.5", "2"))
+	s.Equal(powerNum2Pt25, s.power(powerNum1Pt5, powerNum2))
 }
 
 func (s *PowerTestSuite) TestPowerWhenBaseIsPointOneCubedIsExactlyPointZeroZeroOne() {
-	s.Equal("0.001", s.power("0.1", "3"))
+	s.Equal(powerNum0Pt001, s.power(powerNum0Pt1, powerNum3))
 }
 
 func (s *PowerTestSuite) TestPowerWhenExponentIsWholeWithDecimalPointIsAccepted() {
-	s.Equal("4", s.power("2", "2.0"))
+	s.Equal(powerNum4, s.power(powerNum2, powerNum2Pt0))
 }
 
 func (s *PowerTestSuite) TestPowerWhenExponentIsNegativeReturnsTheReciprocal() {
-	s.Equal("0.25", s.power("2", "-2"))
+	s.Equal(powerNum0Pt25, s.power(powerNum2, powerNumNeg2))
 }
 
 func (s *PowerTestSuite) TestPowerWhenReciprocalDoesNotTerminateRoundsToThePrecision() {
-	s.Equal("0.33333333333333333333", s.power("3", "-1"))
+	s.Equal(powerLong1, s.power(powerNum3, powerNumNeg1))
 }
 
 func (s *PowerTestSuite) TestPowerWhenNegativeBaseHasNegativeOddExponentReturnsNegativeFraction() {
-	s.Equal("-0.125", s.power("-2", "-3"))
+	s.Equal(powerNumNeg0Pt125, s.power(powerNumNeg2, powerNumNeg3))
 }
 
 func (s *PowerTestSuite) TestPowerWhenNegativeExponentTieRoundsHalfEven() {
-	twoPlaces := operations.NewPower(config.CalculatorConfig{
+	twoPlaces := operations.NewPower(entities.Limits{
 		MaxOperandLength: testMaxOperandLength,
 		MaxExponent:      testMaxExponent,
 		DecimalPrecision: 2,
 	})
 
-	got, err := applyText(twoPlaces, "2", "-3")
+	got, err := applyText(twoPlaces, powerNum2, powerNumNeg3)
 
 	s.Nil(err)
-	s.Equal("0.12", got)
+	s.Equal(powerNum0Pt12, got)
 }
 
 func (s *PowerTestSuite) TestPowerWhenResultIsLargeKeepsEveryDigit() {
-	s.Equal(testTwoToTheHundred, s.power("2", "100"))
+	s.Equal(testTwoToTheHundred, s.power(powerNum2, powerNum100))
 }
 
 func (s *PowerTestSuite) TestPowerWhenBaseIsTenReturnsOneFollowedByZeros() {
-	s.Equal(testTenToTheThirty, s.power("10", "30"))
+	s.Equal(testTenToTheThirty, s.power(powerNum10, powerNum30))
 }
 
 func (s *PowerTestSuite) TestPowerWhenBaseHasTrailingZerosKeepsThemInTheResult() {
-	got := s.power("10", "500")
+	got := s.power(powerNum10, powerNum500)
 
 	s.Len(got, 501)
 }
 
 func (s *PowerTestSuite) TestPowerWhenResultIsExactlyTheSmallestRepresentableKeepsIt() {
-	s.Equal(testTinyUnit, s.power("10", "-20"))
+	s.Equal(testTinyUnit, s.power(powerNum10, powerNumNeg20))
 }
 
 func (s *PowerTestSuite) TestPowerWhenResultIsBelowHalfTheLastPlaceRoundsToZero() {
-	s.Equal("0", s.power("10", "-21"))
+	s.Equal(powerNum0, s.power(powerNum10, powerNumNeg21))
 }
 
 func (s *PowerTestSuite) TestPowerWhenBaseIsOneAtTheMaxExponentReturnsOne() {
-	s.Equal("1", s.power("1", "1000"))
+	s.Equal(powerNum1, s.power(powerNum1, powerNum1000))
 }
 
 func (s *PowerTestSuite) TestPowerWhenBaseIsMinusOneWithEvenExponentReturnsOne() {
-	s.Equal("1", s.power("-1", "1000"))
+	s.Equal(powerNum1, s.power(powerNumNeg1, powerNum1000))
 }
 
 func (s *PowerTestSuite) TestPowerWhenBaseIsMinusOneWithOddExponentReturnsMinusOne() {
-	s.Equal("-1", s.power("-1", "-999"))
+	s.Equal(powerNumNeg1, s.power(powerNumNeg1, powerNumNeg999))
 }
 
 func (s *PowerTestSuite) TestPowerWhenBaseIsZeroAndExponentPositiveReturnsZero() {
-	s.Equal("0", s.power("0", "5"))
+	s.Equal(powerNum0, s.power(powerNum0, powerNum5))
 }
 
 func (s *PowerTestSuite) TestPowerWhenBaseIsZeroAndExponentNegativeReturnsDivisionByZero() {
-	err := s.failure("0", "-1")
+	err := s.failure(powerNum0, powerNumNeg1)
 
-	s.Equal(apperror.CodeDivisionByZero, err.Code())
+	s.Equal(entities.CodeDivisionByZero, err.Code())
 	s.Equal("Cannot divide by zero.", err.PublicMessage())
 }
 
 func (s *PowerTestSuite) TestPowerWhenBaseIsNegativeZeroAndExponentNegativeReturnsDivisionByZero() {
-	err := s.failure("-0.0", "-3")
+	err := s.failure(powerNumNeg0Pt0, powerNumNeg3)
 
-	s.Equal(apperror.CodeDivisionByZero, err.Code())
+	s.Equal(entities.CodeDivisionByZero, err.Code())
 }
 
 func (s *PowerTestSuite) TestPowerWhenExponentIsFractionalReturnsInvalidExponent() {
-	err := s.failure("2", "0.5")
+	err := s.failure(powerNum2, powerNum0Pt5)
 
-	s.Equal(apperror.CodeInvalidExponent, err.Code())
+	s.Equal(entities.CodeInvalidExponent, err.Code())
 	s.ErrorIs(err, operations.ErrFractionalExponent)
 	s.Equal(testExponentIndex, err.Fields()[entities.FieldOperandIndex])
 }
 
 func (s *PowerTestSuite) TestPowerWhenNegativeExponentIsFractionalReturnsInvalidExponent() {
-	s.Equal(apperror.CodeInvalidExponent, s.failure("2", "-0.5").Code())
+	s.Equal(entities.CodeInvalidExponent, s.failure(powerNum2, powerNumNeg0Pt5).Code())
 }
 
 func (s *PowerTestSuite) TestPowerWhenExponentIsBarelyFractionalReturnsInvalidExponent() {
-	s.Equal(apperror.CodeInvalidExponent, s.failure("2", "3.0000000000000000001").Code())
+	s.Equal(entities.CodeInvalidExponent, s.failure(powerNum2, powerLong2).Code())
 }
 
 func (s *PowerTestSuite) TestPowerWhenBaseIsZeroAndExponentIsFractionalReturnsInvalidExponentFirst() {
-	s.Equal(apperror.CodeInvalidExponent, s.failure("0", "-0.5").Code())
+	s.Equal(entities.CodeInvalidExponent, s.failure(powerNum0, powerNumNeg0Pt5).Code())
 }
 
 func (s *PowerTestSuite) TestPowerWhenExponentIsAboveTheMaximumReturnsExponentTooLarge() {
-	err := s.failure("1", "1001")
+	err := s.failure(powerNum1, powerNum1001)
 
-	s.Equal(apperror.CodeExponentTooLarge, err.Code())
+	s.Equal(entities.CodeExponentTooLarge, err.Code())
 	s.Equal(int64(testMaxExponent), err.Fields()[entities.FieldLimit])
 }
 
 func (s *PowerTestSuite) TestPowerWhenExponentIsBelowTheMinimumReturnsExponentTooLarge() {
-	s.Equal(apperror.CodeExponentTooLarge, s.failure("1", "-1001").Code())
+	s.Equal(entities.CodeExponentTooLarge, s.failure(powerNum1, powerNumNeg1001).Code())
 }
 
 func (s *PowerTestSuite) TestPowerWhenExponentIsAHugeNumberReturnsExponentTooLarge() {
-	s.Equal(apperror.CodeExponentTooLarge, s.failure("2", "99999999999999999999").Code())
+	s.Equal(entities.CodeExponentTooLarge, s.failure(powerNum2, powerLong3).Code())
 }
 
 func (s *PowerTestSuite) TestPowerWhenResultWouldExceedTheDigitBudgetReturnsResultTooLarge() {
-	err := s.failure("9", "1000")
+	err := s.failure(powerNum9, powerNum1000)
 
-	s.Equal(apperror.CodeResultTooLarge, err.Code())
+	s.Equal(entities.CodeResultTooLarge, err.Code())
 	s.Equal(int64(testResultBudget), err.Fields()[entities.FieldLimit])
 }
 
 func (s *PowerTestSuite) TestPowerWhenNegativeExponentWouldExceedTheDigitBudgetReturnsResultTooLarge() {
-	s.Equal(apperror.CodeResultTooLarge, s.failure("9", "-1000").Code())
+	s.Equal(entities.CodeResultTooLarge, s.failure(powerNum9, powerNumNeg1000).Code())
 }
 
 func (s *PowerTestSuite) TestPowerWhenBaseIsLongAndExponentModestReturnsResultTooLarge() {
-	s.Equal(apperror.CodeResultTooLarge, s.failure("99999999999999999999", "50").Code())
+	s.Equal(entities.CodeResultTooLarge, s.failure(powerLong3, powerNum50).Code())
 }
 
 func (s *PowerTestSuite) TestPowerWhenTwoToTheThousandFitsTheBudgetReturnsTheExactValue() {
-	got := s.power("2", "1000")
+	got := s.power(powerNum2, powerNum1000)
 
 	s.Len(got, 302)
 	s.True(strings.HasPrefix(got, testTwoToTheThousandPrefix))
 }
 
 func (s *PowerTestSuite) TestPowerWhenBoundEqualsTheBudgetComputesTheResult() {
-	got := s.power("99", "320")
+	got := s.power(powerNum99, powerNum320)
 
 	s.Len(got, 639)
 }
 
 func (s *PowerTestSuite) TestPowerWhenBoundIsOneOverTheBudgetReturnsResultTooLarge() {
-	s.Equal(apperror.CodeResultTooLarge, s.failure("99", "321").Code())
+	s.Equal(entities.CodeResultTooLarge, s.failure(powerNum99, powerNum321).Code())
 }
 
 func (s *PowerTestSuite) TestPowerDigitBudgetScalesWithTheConfiguredOperandLength() {
-	small := operations.NewPower(config.CalculatorConfig{
+	small := operations.NewPower(entities.Limits{
 		MaxOperandLength: testSmallOperandLen,
 		MaxExponent:      testMaxExponent,
 		DecimalPrecision: testPowerPrecision,
 	})
 
-	allowed, errAllowed := applyText(small, "2", "63")
-	_, errRefused := applyText(small, "2", "64")
+	allowed, errAllowed := applyText(small, powerNum2, powerNum63)
+	_, errRefused := applyText(small, powerNum2, powerNum64)
 
 	s.Nil(errAllowed)
-	s.Equal("9223372036854775808", allowed)
+	s.Equal(powerLong4, allowed)
 	s.Require().NotNil(errRefused)
 	s.Equal(int64(testSmallBudget), errRefused.Fields()[entities.FieldLimit])
 }
 
 func (s *PowerTestSuite) TestPowerWhenTrailingZerosPushPastTheBudgetReturnsResultTooLarge() {
-	s.Equal(apperror.CodeResultTooLarge, s.failure("10", "1000").Code())
+	s.Equal(entities.CodeResultTooLarge, s.failure(powerNum10, powerNum1000).Code())
 }
 
 func (s *PowerTestSuite) TestPowerWhenBaseIsAMillionAndResultIsTooLongReturnsResultTooLarge() {
-	s.Equal(apperror.CodeResultTooLarge, s.failure("1000000", "1000").Code())
+	s.Equal(entities.CodeResultTooLarge, s.failure(powerNum1000000, powerNum1000).Code())
 }
 
 func (s *PowerTestSuite) TestPowerWhenBaseIsTenAndResultFitsReturnsEveryDigit() {
-	got := s.power("10", "638")
+	got := s.power(powerNum10, powerNum638)
 
 	s.Len(got, 639)
 }
 
 func (s *PowerTestSuite) TestPowerWhenFractionDigitsExceedTheBudgetReturnsResultTooLarge() {
-	s.Equal(apperror.CodeResultTooLarge, s.failure("0.1", "1000").Code())
+	s.Equal(entities.CodeResultTooLarge, s.failure(powerNum0Pt1, powerNum1000).Code())
 }
 
 func (s *PowerTestSuite) TestPowerWhenFractionDigitsEqualTheBudgetComputesTheResult() {
-	got := s.power("0.1", "640")
+	got := s.power(powerNum0Pt1, powerNum640)
 
-	s.Equal("0."+strings.Repeat("0", 639)+"1", got)
+	s.Equal(powerNum0Pt+strings.Repeat(powerNum0, 639)+powerNum1, got)
 }
 
 func (s *PowerTestSuite) TestPowerWhenFractionDigitsAreOneOverTheBudgetReturnsResultTooLarge() {
-	s.Equal(apperror.CodeResultTooLarge, s.failure("0.1", "641").Code())
+	s.Equal(entities.CodeResultTooLarge, s.failure(powerNum0Pt1, powerNum641).Code())
 }
 
 func (s *PowerTestSuite) TestPowerWhenSmallBaseHasNegativeExponentReturnsResultTooLarge() {
-	s.Equal(apperror.CodeResultTooLarge, s.failure("0.1", "-1000").Code())
+	s.Equal(entities.CodeResultTooLarge, s.failure(powerNum0Pt1, powerNumNeg1000).Code())
 }
 
 func (s *PowerTestSuite) TestPowerWhenTinyBaseHasNegativeExponentReturnsResultTooLarge() {
-	base := "0." + strings.Repeat("0", 61) + "2"
+	base := powerNum0Pt + strings.Repeat(powerNum0, 61) + powerNum2
 
-	s.Equal(apperror.CodeResultTooLarge, s.failure(base, "-1000").Code())
+	s.Equal(entities.CodeResultTooLarge, s.failure(base, powerNumNeg1000).Code())
 }
 
 func (s *PowerTestSuite) TestPowerWhenSmallBaseHasNegativeExponentThatFitsReturnsTheExactValue() {
-	s.Equal("1"+strings.Repeat("0", 600), s.power("0.1", "-600"))
+	s.Equal(powerNum1+strings.Repeat(powerNum0, 600), s.power(powerNum0Pt1, powerNumNeg600))
 }
 
 func (s *PowerTestSuite) TestPowerWhenBaseIsTenToTheMaxExponentReturnsResultTooLarge() {
-	err := s.failure("10", testMaxPowerExponent)
+	err := s.failure(powerNum10, testMaxPowerExponent)
 
-	s.Equal(apperror.CodeResultTooLarge, err.Code())
+	s.Equal(entities.CodeResultTooLarge, err.Code())
 	s.Equal(int64(testResultBudget), err.Fields()[entities.FieldLimit])
 }
 
 func (s *PowerTestSuite) TestPowerWhenTenToTheSixHundredFitsTheBudgetReturnsIt() {
-	got := s.power("10", testSixHundred)
+	got := s.power(powerNum10, testSixHundred)
 
 	s.Len(got, testTenToTheSixHundredLen)
 }
@@ -310,51 +309,51 @@ func (s *PowerTestSuite) TestPowerWhenTenToTheSixHundredFitsTheBudgetReturnsIt()
 // Main's reviewed size guard keeps one digit of margin against float rounding,
 // so 10^639 (exactly 640 digits) is refused and 10^638 is the last one allowed.
 func (s *PowerTestSuite) TestPowerWhenTenIsOneDigitUnderTheBudgetReturnsIt() {
-	s.Len(s.power("10", testTenToTheLastAllowed), testResultBudget-1)
+	s.Len(s.power(powerNum10, testTenToTheLastAllowed), testResultBudget-1)
 }
 
 func (s *PowerTestSuite) TestPowerWhenTenPrintsOneCharacterOverTheBudgetReturnsResultTooLarge() {
-	s.Equal(apperror.CodeResultTooLarge, s.failure("10", testTenToTheFirstRefused).Code())
+	s.Equal(entities.CodeResultTooLarge, s.failure(powerNum10, testTenToTheFirstRefused).Code())
 }
 
 func (s *PowerTestSuite) TestPowerWhenBaseIsAOneWithManyZerosReturnsResultTooLarge() {
-	s.Equal(apperror.CodeResultTooLarge, s.failure(roundBase(testRoundBaseZeros), testMaxPowerExponent).Code())
+	s.Equal(entities.CodeResultTooLarge, s.failure(roundBase(testRoundBaseZeros), testMaxPowerExponent).Code())
 }
 
 func (s *PowerTestSuite) TestPowerWhenBaseIsTinyAndExponentPositiveReturnsResultTooLarge() {
-	s.Equal(apperror.CodeResultTooLarge, s.failure(tinyBase(testNarrowFractionZeros), testMaxPowerExponent).Code())
+	s.Equal(entities.CodeResultTooLarge, s.failure(tinyBase(testNarrowFractionZeros), testMaxPowerExponent).Code())
 }
 
 func (s *PowerTestSuite) TestPowerWhenBaseIsTinyAndExponentNegativeReturnsResultTooLarge() {
-	s.Equal(apperror.CodeResultTooLarge, s.failure(tinyBase(testNarrowFractionZeros), testNegMaxPowerExponent).Code())
+	s.Equal(entities.CodeResultTooLarge, s.failure(tinyBase(testNarrowFractionZeros), testNegMaxPowerExponent).Code())
 }
 
 func (s *PowerTestSuite) TestPowerWhenPointOneToTheMaxExponentReturnsResultTooLarge() {
-	s.Equal(apperror.CodeResultTooLarge, s.failure("0.1", testMaxPowerExponent).Code())
+	s.Equal(entities.CodeResultTooLarge, s.failure(powerNum0Pt1, testMaxPowerExponent).Code())
 }
 
 func (s *PowerTestSuite) TestPowerWhenPointOneToTheSixHundredFitsTheBudgetReturnsIt() {
-	s.Len(s.power("0.1", testSixHundred), testPointOneToTheSixHundred)
+	s.Len(s.power(powerNum0Pt1, testSixHundred), testPointOneToTheSixHundred)
 }
 
 func (s *PowerTestSuite) TestPowerWhenFractionHasManyPlacesButFitsTheBudgetReturnsIt() {
-	s.LessOrEqual(len(s.power("0.5", testHalfToTheFiveHundred)), testResultBudget)
+	s.LessOrEqual(len(s.power(powerNum0Pt5, testHalfToTheFiveHundred)), testResultBudget)
 }
 
 func (s *PowerTestSuite) TestPowerWhenNegativeBaseTenToTheBudgetReturnsResultTooLarge() {
 	err := s.failure(testSignedBoundaryBase, testSignedBoundaryExponent)
 
-	s.Equal(apperror.CodeResultTooLarge, err.Code())
+	s.Equal(entities.CodeResultTooLarge, err.Code())
 }
 
 // The reciprocal of a huge round base rounds to zero at the configured precision,
 // so the result is tiny and the reviewed guard lets it through.
 func (s *PowerTestSuite) TestPowerWhenNegativeExponentBaseIsRoundAndHugeReturnsZero() {
-	s.Equal("0", s.power(roundBase(testRoundBaseZeros), testNegMaxPowerExponent))
+	s.Equal(powerNum0, s.power(roundBase(testRoundBaseZeros), testNegMaxPowerExponent))
 }
 
 func (s *PowerTestSuite) TestPowerWhenContextEndedBeforeTheLoopReturnsRequestTimeout() {
-	_, err := s.op.Apply(cancelled(), []decimal.Decimal{mustDecimal("2"), mustDecimal("10")})
+	_, err := s.op.Apply(cancelled(), []decimal.Decimal{mustDecimal(powerNum2), mustDecimal(powerNum10)})
 
 	s.Require().NotNil(err)
 	s.Equal(apperror.CodeRequestTimeout, err.Code())
@@ -365,15 +364,15 @@ func (s *PowerTestSuite) TestPowerWhenDeadlineHasPassedKeepsTheDeadlineCause() {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
 	defer cancel()
 
-	_, err := s.op.Apply(ctx, []decimal.Decimal{mustDecimal("2"), mustDecimal("10")})
+	_, err := s.op.Apply(ctx, []decimal.Decimal{mustDecimal(powerNum2), mustDecimal(powerNum10)})
 
 	s.Require().NotNil(err)
 	s.True(errors.Is(err, context.DeadlineExceeded))
 }
 
 func (s *PowerTestSuite) TestPowerWhenResultIsOneIgnoresAnEndedContext() {
-	got, err := s.op.Apply(cancelled(), []decimal.Decimal{mustDecimal("5"), mustDecimal("0")})
+	got, err := s.op.Apply(cancelled(), []decimal.Decimal{mustDecimal(powerNum5), mustDecimal(powerNum0)})
 
 	s.Nil(err)
-	s.Equal("1", got.String())
+	s.Equal(powerNum1, got.String())
 }

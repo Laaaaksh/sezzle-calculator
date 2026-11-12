@@ -21,7 +21,7 @@ const percentShift = -2
 //
 // The result is exact and needs no rounding: dividing by 100 only moves the
 // decimal point, so it always terminates, and multiplying decimals is exact.
-// No precision setting is involved. The API docs (docs/API.md) will carry this
+// No precision setting is involved. The API docs (docs/API.md) carry this
 // definition for clients.
 type Percentage struct{ descriptor }
 

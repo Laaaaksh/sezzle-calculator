@@ -9,6 +9,9 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	// Blank import: the calculator codes register themselves in that package's
+	// init, and the docs-sync tests below must see them in apperror.Codes.
+	_ "github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/entities"
 	"github.com/Laaaaksh/sezzle-calculator/backend/pkg/apperror"
 )
 

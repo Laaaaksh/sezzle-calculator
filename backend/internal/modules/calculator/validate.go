@@ -13,14 +13,14 @@ func checkArity(operation operations.Operation, operands []decimal.Decimal) appe
 	if len(operands) == operation.Arity() {
 		return nil
 	}
-	return apperror.New(apperror.CodeInvalidOperandCount, ErrWrongOperandCount).
+	return apperror.New(entities.CodeInvalidOperandCount, ErrWrongOperandCount).
 		WithField(entities.FieldOperation, string(operation.Name())).
 		WithField(entities.FieldExpected, operation.Arity()).
 		WithField(entities.FieldActual, len(operands))
 }
 
 // checkLimits rejects the first operand over the configured limits. The parser
-// already bounds the input string (a later step); this is the second line of
+// already bounds the input string; this is the second line of
 // defence for any caller that builds decimals another way.
 func (c *Core) checkLimits(operands []decimal.Decimal) apperror.IError {
 	for i, operand := range operands {
@@ -35,7 +35,7 @@ func (c *Core) checkLimits(operands []decimal.Decimal) apperror.IError {
 }
 
 func (c *Core) tooLarge(cause error, index int) apperror.IError {
-	return apperror.New(apperror.CodeOperandTooLarge, cause).
+	return apperror.New(entities.CodeOperandTooLarge, cause).
 		WithField(entities.FieldOperandIndex, index).
 		WithField(entities.FieldLimit, c.limits.MaxOperandLength)
 }

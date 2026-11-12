@@ -24,7 +24,14 @@ type App struct {
 	cfg    *config.Config
 	server *http.Server
 	health health.IModule
+	// listen binds the address. It is a field, not a direct net.Listen call,
+	// so a test can drive Run with an in-memory listener and never need a real
+	// port (a sandbox or CI job may forbid binding one).
+	listen listenFunc
 }
+
+// listenFunc has the shape of net.Listen.
+type listenFunc func(network, address string) (net.Listener, error)
 
 // Initialize wires the service in a fixed order: configuration, logger,
 // modules, router. The order is a dependency chain: the logger needs the
@@ -50,7 +57,7 @@ func Initialize(ctx context.Context) (*App, error) {
 	}
 	router := NewRouter(cfg, modules)
 
-	app := &App{cfg: cfg, server: newServer(cfg, router), health: modules.Health}
+	app := &App{cfg: cfg, server: newServer(cfg, router), health: modules.Health, listen: net.Listen}
 	// Ready only once the router exists, so a probe never sees a half-built app.
 	app.health.GetCore().SetReady(true)
 	return app, nil
@@ -84,7 +91,7 @@ func (a *App) Run(ctx context.Context) error {
 
 	// Binding first, separately from serving, makes "port already in use" a
 	// synchronous startup error instead of a goroutine failure.
-	listener, err := net.Listen("tcp", a.server.Addr)
+	listener, err := a.listen(constants.ListenNetwork, a.server.Addr)
 	if err != nil {
 		return fmt.Errorf(constants.ErrFmtListen, a.server.Addr, err)
 	}

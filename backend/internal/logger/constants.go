@@ -18,6 +18,9 @@ const (
 // timeKey names the timestamp field in JSON output.
 const timeKey = "time"
 
+// ErrFmtBuild wraps a zap build failure so the caller can tell which stage failed.
+const ErrFmtBuild = "logger: build: %w"
+
 // ErrFmtUnknownEnv wraps ErrUnknownEnvironment with the offending value.
 const ErrFmtUnknownEnv = "%w: %q"
 

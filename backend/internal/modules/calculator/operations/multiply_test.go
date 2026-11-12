@@ -37,41 +37,41 @@ func (s *MultiplyTestSuite) TestMultiplyArityIsTwo() {
 }
 
 func (s *MultiplyTestSuite) TestMultiplyWhenBothPositiveReturnsTheProduct() {
-	s.Equal("12", s.multiply("3", "4"))
+	s.Equal(multiplyNum12, s.multiply(multiplyNum3, multiplyNum4))
 }
 
 func (s *MultiplyTestSuite) TestMultiplyWhenSignsDifferReturnsANegativeProduct() {
-	s.Equal("-12", s.multiply("3", "-4"))
+	s.Equal(multiplyNumNeg12, s.multiply(multiplyNum3, multiplyNumNeg4))
 }
 
 func (s *MultiplyTestSuite) TestMultiplyWhenBothNegativeReturnsAPositiveProduct() {
-	s.Equal("12", s.multiply("-3", "-4"))
+	s.Equal(multiplyNum12, s.multiply(multiplyNumNeg3, multiplyNumNeg4))
 }
 
 func (s *MultiplyTestSuite) TestMultiplyWhenOneOperandIsZeroReturnsZero() {
-	s.Equal("0", s.multiply("123.456", "0"))
+	s.Equal(multiplyNum0, s.multiply(multiplyNum123Pt456, multiplyNum0))
 }
 
 func (s *MultiplyTestSuite) TestMultiplyWhenNegativeTimesZeroReturnsZeroWithoutASign() {
-	s.Equal("0", s.multiply("-5", "0"))
+	s.Equal(multiplyNum0, s.multiply(multiplyNumNeg5, multiplyNum0))
 }
 
 func (s *MultiplyTestSuite) TestMultiplyWhenOneOperandIsOneReturnsTheOther() {
-	s.Equal("-9.75", s.multiply("-9.75", "1"))
+	s.Equal(multiplyNumNeg9Pt75, s.multiply(multiplyNumNeg9Pt75, multiplyNum1))
 }
 
 func (s *MultiplyTestSuite) TestMultiplyPointOneTimesPointThreeIsExactlyPointZeroThree() {
-	s.Equal("0.03", s.multiply("0.1", "0.3"))
+	s.Equal(multiplyNum0Pt03, s.multiply(multiplyNum0Pt1, multiplyNum0Pt3))
 }
 
 func (s *MultiplyTestSuite) TestMultiplyWhenOperandsAreVeryLargeKeepsEveryDigit() {
-	s.Equal("10000000000000000000000000000000000000000000000000000000000000000", s.multiply("100000000000000000000000000000000", "100000000000000000000000000000000"))
+	s.Equal(multiplyLong1, s.multiply(multiplyLong2, multiplyLong2))
 }
 
 func (s *MultiplyTestSuite) TestMultiplyWhenOperandsAreVerySmallKeepsEveryDigit() {
-	s.Equal("0.000000000000000000000000000000001", s.multiply("0.000000000001", "0.000000000000000000001"))
+	s.Equal(multiplyLong3, s.multiply(multiplyNum0Pt000000000001, multiplyLong4))
 }
 
 func (s *MultiplyTestSuite) TestMultiplyWhenOperandsHaveManyDecimalPlacesKeepsThemAll() {
-	s.Equal("12.193263113702179522374638011112635269", s.multiply("1.234567890123456789", "9.876543210987654321"))
+	s.Equal(multiplyLong5, s.multiply(multiplyLong6, multiplyLong7))
 }

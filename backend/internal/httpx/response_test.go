@@ -95,7 +95,7 @@ func (s *ResponseTestSuite) TestWriteErrorNeverSendsTheCause() {
 }
 
 func (s *ResponseTestSuite) TestWriteErrorSendsFieldsOfEveryCode() {
-	err := apperror.New(apperror.CodeInvalidOperand, errTestSecret).
+	err := apperror.New(apperror.CodeBadRequest, errTestSecret).
 		WithField(testFieldKey, testFieldValue).
 		WithField(testIndexKey, testIndexValue)
 

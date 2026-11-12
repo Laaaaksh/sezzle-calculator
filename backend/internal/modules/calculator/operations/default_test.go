@@ -5,10 +5,8 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/Laaaaksh/sezzle-calculator/backend/internal/config"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/entities"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/operations"
-	"github.com/Laaaaksh/sezzle-calculator/backend/pkg/apperror"
 )
 
 type DefaultRegistryTestSuite struct {
@@ -21,7 +19,7 @@ func TestDefaultRegistryTestSuite(t *testing.T) {
 }
 
 func (s *DefaultRegistryTestSuite) SetupTest() {
-	s.registry = operations.NewDefaultRegistry(config.CalculatorConfig{
+	s.registry = operations.NewDefaultRegistry(entities.Limits{
 		MaxOperandLength: testMaxOperandLength,
 		MaxExponent:      testMaxExponent,
 		DecimalPrecision: testConfiguredPrecision,
@@ -79,7 +77,7 @@ func (s *DefaultRegistryTestSuite) TestPowerPicksUpTheExponentLimitFromConfig() 
 	_, applyErr := applyText(op, "1", "1001")
 
 	s.Require().NotNil(applyErr)
-	s.Equal(apperror.CodeExponentTooLarge, applyErr.Code())
+	s.Equal(entities.CodeExponentTooLarge, applyErr.Code())
 }
 
 func (s *DefaultRegistryTestSuite) TestSqrtPicksUpThePrecisionFromConfig() {
@@ -168,4 +166,19 @@ func (s *DefaultRegistryTestSuite) listed(name entities.OperationType) operation
 	}
 	s.FailNow("operation is not listed", "name %s", name)
 	return nil
+}
+
+// maxArity is the widest arity among the registered operations.
+func (s *DefaultRegistryTestSuite) maxArity() int {
+	widest := 0
+	for _, op := range s.registry.List() {
+		widest = max(widest, op.Arity())
+	}
+	return widest
+}
+
+// The handler refuses more than entities.MaxOperandCount operands before it
+// looks at the operation, so a wider operation would be unreachable.
+func (s *DefaultRegistryTestSuite) TestMaxOperandCountIsAtLeastTheWidestArity() {
+	s.LessOrEqual(s.maxArity(), entities.MaxOperandCount)
 }

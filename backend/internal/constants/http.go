@@ -40,6 +40,9 @@ const (
 // Server wiring.
 const (
 	ListenAddrFmt = ":%d"
+	// ListenNetwork is the network the API binds. TCP only: the service sits
+	// behind a proxy and has no use for a unix socket.
+	ListenNetwork = "tcp"
 )
 
 // MillisecondsPerDuration converts a duration for the access log: milliseconds as a float so

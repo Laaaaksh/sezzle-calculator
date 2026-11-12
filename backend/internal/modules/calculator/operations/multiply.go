@@ -10,7 +10,7 @@ import (
 )
 
 // Multiply multiplies the two operands. The result is exact: decimal keeps every
-// digit, so 0.1 + 0.2 is 0.3 and not the 0.30000000000000004 a float64 gives.
+// digit, so 0.1 * 3 is 0.3 and not the 0.30000000000000004 a float64 gives.
 type Multiply struct{ descriptor }
 
 var _ Operation = (*Multiply)(nil)
