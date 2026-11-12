@@ -1,0 +1,8 @@
+# Automated test overrides: short timeouts so failures surface fast.
+
+[server]
+read_timeout = "2s"
+write_timeout = "2s"
+idle_timeout = "5s"
+request_timeout = "1s"
+shutdown_grace_period = "1s"

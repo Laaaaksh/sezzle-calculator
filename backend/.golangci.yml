@@ -1,0 +1,72 @@
+# golangci-lint v2 config. Version is pinned in the Makefile and in .github/workflows/ci.yml.
+version: "2"
+
+run:
+  # Whole run must fit inside the CI job timeout (15 min); a hung linter should fail loudly.
+  timeout: 5m
+
+linters:
+  # Default set (errcheck, govet, ineffassign, staticcheck, unused) plus the project rules below.
+  default: standard
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - revive
+    - gosec
+    - gocyclo
+    - dupl
+    - goconst
+    - misspell
+    - unparam
+  settings:
+    gocyclo:
+      # Default is 30; 10 enforces the "small functions" rule from go-coding-standards.
+      min-complexity: 10
+    dupl:
+      # Default is 150 tokens; 100 catches copy-pasted blocks earlier.
+      threshold: 100
+    goconst:
+      # Strings repeated 3+ times (3+ chars) must become named constants (no magic values rule).
+      min-len: 3
+      min-occurrences: 3
+    revive:
+      # Default revive rules are broad and noisy; this explicit set is the rules we enforce.
+      rules:
+        - name: exported
+        - name: var-naming
+        - name: error-return
+        - name: error-strings
+        - name: receiver-naming
+        - name: indent-error-flow
+        - name: unused-parameter
+  exclusions:
+    # Skip files with the "Code generated ... DO NOT EDIT" header (gomock output).
+    generated: strict
+    rules:
+      # G101 flags test constants whose names contain "credentials" or "secret"; they are
+      # deliberate fixtures (a URL with userinfo to reject, a message asserted as not leaked).
+      - path: _test\.go
+        linters:
+          - gosec
+        text: "G101"
+      # G112 (Slowloris) flags in-test http.Servers served over an in-memory net.Pipe
+      # listener; no real network client can reach them. The production server sets
+      # ReadHeaderTimeout in internal/boot.
+      - path: _test\.go
+        linters:
+          - gosec
+        text: "G112"
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+  settings:
+    goimports:
+      # Group this module's imports after third-party imports.
+      local-prefixes:
+        - github.com/Laaaaksh/sezzle-calculator
+    gofumpt:
+      # Same grouping rule as goimports so the two formatters never disagree.
+      module-path: github.com/Laaaaksh/sezzle-calculator/backend

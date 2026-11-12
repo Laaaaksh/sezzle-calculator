@@ -1,0 +1,27 @@
+# Base configuration. Every key must be present here; dev, test and prod files
+# only override what differs. Any key can also be overridden by an environment
+# variable: APP_ plus the key with dots as underscores (server.port becomes
+# APP_SERVER_PORT).
+
+[server]
+port = 8080
+read_timeout = "5s"
+write_timeout = "10s"
+idle_timeout = "60s"
+# Per-request deadline carried on the request context. Must stay below write_timeout
+# so the handler can answer before the server cuts the connection.
+request_timeout = "5s"
+shutdown_grace_period = "10s"
+# How long to keep serving after /health/ready turns 503 on shutdown, so a load
+# balancer notices before connections are refused. Zero skips the wait.
+shutdown_drain_delay = "0s"
+max_body_bytes = 1048576 # 1 MiB
+
+[cors]
+# Override with a comma-separated list: APP_CORS_ALLOWED_ORIGINS=https://a.com,https://b.com
+allowed_origins = ["http://localhost:5173"]
+
+[calculator]
+max_operand_length = 64
+max_exponent = 1000
+decimal_precision = 20

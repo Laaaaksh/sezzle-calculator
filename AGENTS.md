@@ -19,7 +19,7 @@
 - Build step by step. Each prompt from the user is one step: build only that, show the change, then commit it as one Conventional Commit.
 - Log every project prompt word for word in `docs/PROMPTS.md`, with one line on what it produced.
 - Track the assignment requirements in `docs/REQUIREMENTS.md`.
-- Git hooks in `.githooks/` enforce the no em dash and no agent co-author rules. Enable them once per clone with `git config core.hooksPath .githooks`. Do not bypass them with `--no-verify`.
+- Git hooks in `.githooks/` enforce the no em dash and no agent co-author rules. Enable them once per clone with `make hooks` (runs `git config core.hooksPath .githooks`). Do not bypass them with `--no-verify`.
 
 ## Maintaining this file
 
