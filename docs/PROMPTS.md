@@ -315,3 +315,52 @@ Test with MSW: success, each error kind, a non-JSON error body, a timeout, and a
 ```
 
 Produced: frontend/src/api with types.ts mirroring docs/API.md, a fetch client (calculate, getOperations) with an env-driven base URL, a per-request timeout via AbortController, runtime response guards, and typed ApiError, NetworkError, TimeoutError and CanceledError. MSW tests cover success, each error kind, a non-JSON error body, a timeout and an aborted request, plus a test that fails when a code or operation in docs/API.md is missing from the types. Coverage is 100%.
+
+---
+
+## 18. State machine
+
+```
+Model the calculator state as a pure reducer in src/features/calculator/state.
+- States: entering the first operand, operator chosen, entering the second operand, waiting for the result, showing the result, and error.
+- Actions: digit, decimal point, operator, unary operator (sqrt), equals, backspace, clear, toggle sign, result received, request failed, and reuse from history.
+- Rules:
+  - Only one decimal point per operand.
+  - A max length per operand, matching the backend limit.
+  - Leading zeros collapse.
+  - Pressing an operator after a result chains from that result.
+  - Pressing an operator twice replaces it.
+  - Equals with nothing to compute does nothing.
+- The result is kept as the backend's string and never parsed into a JS number.
+Test each rule as its own test, and include the edge cases.
+```
+
+Produced: frontend/src/features/calculator/state: a pure reducer over a status-tagged union (entering the first operand, operator chosen, entering the second operand, waiting, showing the result, error) with actions for digits, decimal point, operators, sqrt, equals, backspace, clear, sign, result, failure, retry and history reuse. Operands stay strings (max 64 characters, one decimal point, collapsing leading zeros, chained and replaced operators), each waiting state carries a request id so stale responses are ignored, and every rule has its own test. Also adds toCalculatorError, which maps client errors into the reducer's error shape.
+
+---
+
+## 19. Hook, keyboard and history
+
+```
+Add a useCalculator hook. It wires the reducer to the API client, cancels an in-flight request if the user clears, ignores a stale response, and blocks double submits while a request is pending.
+Add keyboard support in its own hook: digits, the dot, + - * / ^ %, Enter or = for equals, Backspace, Escape to clear, and r for sqrt. Typing inside the input should not trigger the shortcuts twice.
+Add a history list held in memory: each entry shows the expression and the result, the newest goes on top, it's capped at 20, and clicking one reuses its result. Test the hook with MSW, the keyboard mapping, and the history behaviour.
+```
+
+Produced: frontend/src/features/calculator: useCalculator wires the reducer to an injected API client (default: the real one) with one AbortController per request, so clear and unmount cancel it, a canceled request never shows as an error, a stale response is dropped and double submits are ignored while pending. useCalculatorKeyboard maps digits, dot, operators, Enter or =, Backspace, Escape and r, and stays out of text fields, focused buttons and modified keys so nothing fires twice. An in-memory history keeps the newest 20 entries on top and reuses a result on click. Tests use MSW for the hook, a table for the key mapping and cover the history cap.
+
+---
+
+## 20. Components and error UX
+
+```
+Build the components: Display (expression line and result line), Keypad, Key, HistoryTape and an ErrorBanner.
+- Map every backend error code to friendly copy in one constants file. For example, DIVISION_BY_ZERO becomes "You can't divide by zero."
+- Unknown codes fall back to a generic message that includes the request ID.
+- Network and timeout errors show a Retry button that resends the same request.
+- While a request is pending, show a subtle loading state on the result line and disable equals.
+Use semantic HTML: real buttons, an aria-label on every symbol key, and a display with role="status" and aria-live="polite" so results and errors are announced.
+Write integration tests for the main journeys: 12.5 + 7.25 = 19.75, divide by zero shows the error, a network failure then retry succeeds, a full keyboard-only calculation, and reusing a result from history.
+```
+
+Produced: Calculator components (Display, Keypad, Key, HistoryTape, ErrorBanner, plus a Calculator that wires the hook and keyboard) rendered by App, with CSS modules and semantic buttons. Keys are data-driven from keys.ts with an aria-label on every symbol key; the display is a polite role=status region that also holds error text. All error codes get friendly copy in constants/errorMessages.ts (type-checked Record, generic fallback with the request ID), network, timeout, `INTERNAL` (500) and `SERVICE_UNAVAILABLE` (503) errors offer Retry, and equals is disabled with a loading state while pending. Integration tests run the real hook against MSW for the add, divide by zero, network retry, keyboard-only and history reuse journeys.

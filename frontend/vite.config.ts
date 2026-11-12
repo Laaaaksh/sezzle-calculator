@@ -31,7 +31,8 @@ export default defineConfig(({ mode }) => {
         provider: 'v8',
         reporter: ['text', 'html', 'lcov', 'json-summary'],
         reportsDirectory: 'coverage',
-        include: ['src/**'],
+        // Only source files: .gitkeep and .css would otherwise count as 0% and drag the totals down.
+        include: ['src/**/*.{ts,tsx}'],
         exclude: [
           'src/main.tsx',
           'src/**/*.test.{ts,tsx}',
