@@ -2,9 +2,7 @@ package operations
 
 import (
 	"context"
-	"math"
 	"math/big"
-	"strconv"
 	"strings"
 
 	"github.com/shopspring/decimal"
@@ -14,19 +12,9 @@ import (
 )
 
 const (
-	// resultDigitsFactor sets the digit budget of a power result as a multiple
-	// of the configured operand length: a result may be ten times longer than
-	// any operand the service accepts, and no longer.
-	resultDigitsFactor = 10
 	// exponentOperandIndex is where the exponent sits in the operand list; it
 	// is reported in INVALID_EXPONENT so a client knows which operand failed.
 	exponentOperandIndex = 1
-	// digitMargin is added to the digit bound so float rounding in log10 can
-	// never make it an under-estimate.
-	digitMargin = 1
-	// leadingDigits is how many leading digits of the coefficient are read
-	// as a float64 (it holds 15 decimal digits exactly).
-	leadingDigits = 15
 	// parityDivisor is 2: an exponent is even when it divides by 2 without remainder.
 	parityDivisor = 2
 )
@@ -45,13 +33,19 @@ var one = decimal.NewFromInt(1)
 // power is a division by zero. A negative exponent is 1 / base^|exponent| using
 // the same half-even division as Divide, at the configured precision.
 //
-// Size guard: the result may hold at most a digit budget of digits, counting
-// integer and fraction digits (10^1000 has 1001, 0.1^1000 has 1000). Before any
-// multiply, an upper bound on those digits is checked against the budget, so a
-// request like 9^1000, 10^1000 or 0.1^-1000 fails fast with RESULT_TOO_LARGE
-// instead of allocating a number with thousands of digits. 2^1000 (302 digits)
-// fits the default budget of 640. The computed result is then counted exactly
-// and refused if the estimate let it slip past the budget.
+// Size guard: the result may hold at most the shared digit budget of digits,
+// counting integer and fraction digits (10^1000 has 1001, 0.1^1000 has 1000).
+// The checks use whole-number arithmetic only, and run before the multiplication
+// they would make expensive:
+//   - the digits the shift of the decimal point adds (n*x for |base| = c*10^x)
+//     are known without multiplying, so 10^1000 and 0.1^1000 fail at once;
+//   - while c^n is built, each product of two numbers a and b has at least
+//     digits(a)+digits(b)-1 digits, so a product that must exceed the budget is
+//     refused before it is computed, and no multiplication ever sees an operand
+//     longer than the budget;
+//   - the finished result is counted exactly by the shared CheckResultSize.
+//
+// 2^1000 (302 digits) fits the default budget of 640.
 type Power struct {
 	descriptor
 	precision       int32
@@ -62,7 +56,7 @@ type Power struct {
 var _ Operation = (*Power)(nil)
 
 // NewPower returns the power operation bounded by limits: the exponent range,
-// the rounding precision and the operand length its digit budget derives from.
+// the rounding precision and the result digit budget.
 func NewPower(limits entities.Limits) *Power {
 	return &Power{
 		descriptor: descriptor{
@@ -73,7 +67,7 @@ func NewPower(limits entities.Limits) *Power {
 		},
 		precision:       scaleOf(limits.DecimalPrecision),
 		maxExponent:     decimal.NewFromInt(int64(limits.MaxExponent)),
-		maxResultDigits: int64(limits.MaxOperandLength) * resultDigitsFactor,
+		maxResultDigits: int64(limits.MaxResultDigits),
 	}
 }
 
@@ -94,19 +88,27 @@ func (p *Power) Apply(ctx context.Context, operands []decimal.Decimal) (decimal.
 	if base.Abs().Equal(one) {
 		return unitToPower(base, exponent), nil
 	}
-	base = stripTrailingZeros(base)
-	if aerr = p.checkResultSize(base, exponent); aerr != nil {
+	return p.compute(ctx, stripTrailingZeros(base), exponent)
+}
+
+// compute raises base, which has no trailing zeros in its coefficient and is
+// neither 0 nor +-1, to a non-zero whole exponent inside the digit budget.
+func (p *Power) compute(ctx context.Context, base decimal.Decimal, exponent int64) (decimal.Decimal, apperror.IError) {
+	n := abs64(exponent)
+	if aerr := p.checkShift(base, n, exponent < 0); aerr != nil {
 		return decimal.Zero, aerr
 	}
-	result, aerr := integerPower(ctx, base, abs64(exponent))
+	result, aerr := p.boundedPower(ctx, base, n)
 	if aerr != nil {
 		return decimal.Zero, aerr
 	}
 	if exponent < 0 {
-		result = divideHalfEven(one, result, p.precision)
+		if result, aerr = p.reciprocal(result); aerr != nil {
+			return decimal.Zero, aerr
+		}
 	}
-	if digitsOf(result) > p.maxResultDigits {
-		return decimal.Zero, p.tooLarge()
+	if aerr = CheckResultSize(result, p.maxResultDigits); aerr != nil {
+		return decimal.Zero, aerr
 	}
 	return result, nil
 }
@@ -126,61 +128,84 @@ func (p *Power) wholeExponent(exponent decimal.Decimal) (int64, apperror.IError)
 	return exponent.IntPart(), nil
 }
 
-// checkResultSize rejects a power whose result could exceed the digit budget.
-// base must have no trailing zeros in its coefficient, so |base| = c * 10^x
-// with c not divisible by 10 and c^n has no trailing zeros either.
+// checkShift rejects a power whose result must exceed the digit budget just
+// from where the decimal point lands. base has no trailing zeros in its
+// coefficient, so |base| = c * 10^x and base^n = c^n * 10^(n*x). With shift =
+// n*x and c^n at least one digit long:
+//   - shift >= 0: the zeros extend the integer part, so there are at least
+//     shift+1 digits (10^1000 has 1001);
+//   - shift < 0: the result has -shift fraction digits (0.1^1000 has 1000).
 //
-// c^n has at most floor(n * log10(c)) + 1 digits. That coefficient is built for
-// both signs of the exponent (as the divisor when it is negative), so it is
-// bounded first. Then the result itself:
-//   - base^n is c^n * 10^(n*x): with n*x >= 0 the zeros extend the integer
-//     part, with n*x < 0 the result has -n*x fraction digits.
-//   - base^-n is 1 / base^n rounded to the precision: its integer part has
-//     floor(-n * log10|base|) + 1 digits when |base| < 1. Its fraction digits
-//     are bounded by the precision and counted exactly after the division.
-//
-// One extra digit of margin covers float rounding, so each bound can only
-// over-estimate. The log10 is a float64 on purpose: it only sizes this guard
-// and never produces part of a result.
-func (p *Power) checkResultSize(base decimal.Decimal, exponent int64) apperror.IError {
-	n := abs64(exponent)
-	nLogC := float64(n) * log10Coefficient(base)
-	coefficientDigits := int64(math.Floor(nLogC)) + 1 + digitMargin
-	if coefficientDigits > p.maxResultDigits {
-		return p.tooLarge()
+// A negative exponent divides 1 by that number and rounds to the precision, so
+// its size is only known after the division. reciprocal bounds the integer part
+// before dividing and CheckResultSize counts the whole result afterwards.
+func (p *Power) checkShift(base decimal.Decimal, n int64, negativeExponent bool) apperror.IError {
+	if negativeExponent {
+		return nil
 	}
 	shift := n * int64(base.Exponent())
-	var estimate int64
-	switch {
-	case exponent < 0:
-		estimate = max(int64(math.Floor(-nLogC-float64(shift)))+1+digitMargin, 0)
-	case shift >= 0:
-		estimate = coefficientDigits + shift
-	default:
-		estimate = max(coefficientDigits, -shift)
+	minimum := -shift
+	if shift >= 0 {
+		minimum = shift + 1
 	}
-	if estimate > p.maxResultDigits {
-		return p.tooLarge()
+	if minimum > p.maxResultDigits {
+		return ResultTooLarge(p.maxResultDigits)
 	}
 	return nil
 }
 
-func (p *Power) tooLarge() apperror.IError {
-	return apperror.New(entities.CodeResultTooLarge, ErrResultBeyondBudget).
-		WithField(entities.FieldLimit, p.maxResultDigits)
+// reciprocal returns 1 / divisor rounded half-even to the precision. divisor is
+// c * 10^shift with c < 10^digits(c), so the quotient exceeds 10^(-shift-digits)
+// and has at least -shift-digits+1 integer digits. If that lower bound is over
+// the budget the division is skipped, so a tiny base such as 0.1 never has its
+// huge reciprocal built just to be refused.
+func (p *Power) reciprocal(divisor decimal.Decimal) (decimal.Decimal, apperror.IError) {
+	integerDigits := -int64(divisor.Exponent()) - coefficientDigits(divisor) + 1
+	if integerDigits > p.maxResultDigits {
+		return decimal.Zero, ResultTooLarge(p.maxResultDigits)
+	}
+	return divideHalfEven(one, divisor, p.precision), nil
 }
 
-// log10Coefficient is log10 of the coefficient of |d|. Only the leading
-// leadingDigits digits go through float64, so a coefficient far beyond
-// float64's range cannot overflow.
-func log10Coefficient(d decimal.Decimal) float64 {
-	digits := d.Abs().Coefficient().String()
-	head := digits
-	if len(head) > leadingDigits {
-		head = head[:leadingDigits]
+// checkProduct refuses a product of a and b before it is computed. A product
+// has at least digits(a)+digits(b)-1 digits, so if even that lower bound is over
+// the budget the final power certainly is: every later step only multiplies
+// this number in again. Because each factor passed the same check earlier, no
+// multiplication ever starts from an operand longer than the budget, which
+// keeps the work bounded.
+func (p *Power) checkProduct(a, b decimal.Decimal) apperror.IError {
+	if coefficientDigits(a)+coefficientDigits(b)-1 > p.maxResultDigits {
+		return ResultTooLarge(p.maxResultDigits)
 	}
-	leading, _ := strconv.ParseFloat(head, 64)
-	return math.Log10(leading) + float64(len(digits)-len(head))
+	return nil
+}
+
+// boundedPower is exponentiation by squaring, O(log n) exact multiplications,
+// with checkProduct run before each one. The final squaring is skipped so the
+// base is never squared past what the result needs. It returns base^n for n > 0
+// and RESULT_TOO_LARGE as soon as the coefficient cannot fit the budget; this
+// applies to a negative exponent too, whose divisor is this same number.
+func (p *Power) boundedPower(ctx context.Context, base decimal.Decimal, n int64) (decimal.Decimal, apperror.IError) {
+	result := one
+	for n > 0 {
+		if aerr := CheckContext(ctx); aerr != nil {
+			return decimal.Zero, aerr
+		}
+		if n&1 == 1 {
+			if aerr := p.checkProduct(result, base); aerr != nil {
+				return decimal.Zero, aerr
+			}
+			result = result.Mul(base)
+		}
+		n >>= 1
+		if n > 0 {
+			if aerr := p.checkProduct(base, base); aerr != nil {
+				return decimal.Zero, aerr
+			}
+			base = base.Mul(base)
+		}
+	}
+	return result, nil
 }
 
 // stripTrailingZeros moves the trailing zeros of the coefficient into the
@@ -196,22 +221,6 @@ func stripTrailingZeros(d decimal.Decimal) decimal.Decimal {
 	}
 	coefficient, _ := new(big.Int).SetString(digits, 10)
 	return decimal.NewFromBigInt(coefficient, d.Exponent()+zeros)
-}
-
-// digitsOf counts the digits of d as written without trailing fraction zeros
-// or a lone leading zero: integer digits plus fraction digits, so 1000 has 4,
-// 0.001 has 3 and 12.5 has 3. Zero has 1.
-func digitsOf(d decimal.Decimal) int64 {
-	if d.IsZero() {
-		return 1
-	}
-	d = stripTrailingZeros(d)
-	coefficientDigits := int64(len(d.Abs().Coefficient().String()))
-	exp := int64(d.Exponent())
-	if exp >= 0 {
-		return coefficientDigits + exp
-	}
-	return max(coefficientDigits, -exp)
 }
 
 // zeroToPower handles a zero base with a non-zero exponent: 0^n is 0 and
@@ -231,26 +240,6 @@ func unitToPower(base decimal.Decimal, exponent int64) decimal.Decimal {
 		return one
 	}
 	return one.Neg()
-}
-
-// integerPower is exponentiation by squaring: O(log e) exact multiplications.
-// The final squaring is skipped so the base is never squared past what the
-// result needs.
-func integerPower(ctx context.Context, base decimal.Decimal, exponent int64) (decimal.Decimal, apperror.IError) {
-	result := one
-	for exponent > 0 {
-		if aerr := CheckContext(ctx); aerr != nil {
-			return decimal.Zero, aerr
-		}
-		if exponent&1 == 1 {
-			result = result.Mul(base)
-		}
-		exponent >>= 1
-		if exponent > 0 {
-			base = base.Mul(base)
-		}
-	}
-	return result, nil
 }
 
 func abs64(n int64) int64 {

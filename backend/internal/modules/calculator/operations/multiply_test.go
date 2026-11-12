@@ -1,6 +1,7 @@
 package operations_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -74,4 +75,24 @@ func (s *MultiplyTestSuite) TestMultiplyWhenOperandsAreVerySmallKeepsEveryDigit(
 
 func (s *MultiplyTestSuite) TestMultiplyWhenOperandsHaveManyDecimalPlacesKeepsThemAll() {
 	s.Equal(multiplyLong5, s.multiply(multiplyLong6, multiplyLong7))
+}
+
+// (10^64 - 1)^2 = 10^128 - 2*10^64 + 1: 63 nines, an 8, 63 zeros, a 1.
+func (s *MultiplyTestSuite) maxOperandSquare() string {
+	return strings.Repeat(digitNine, testMaxOperandLength-1) + digitEight +
+		strings.Repeat(digitZero, testMaxOperandLength-1) + digitOne
+}
+
+func (s *MultiplyTestSuite) TestMultiplyOfTwoMaxLengthOperandsReturnsEveryDigit() {
+	maxOperand := strings.Repeat(digitNine, testMaxOperandLength)
+
+	s.Equal(s.maxOperandSquare(), s.multiply(maxOperand, maxOperand))
+}
+
+func (s *MultiplyTestSuite) TestMultiplyOfTwoMaxLengthOperandsFitsTheResultBudget() {
+	maxOperand := strings.Repeat(digitNine, testMaxOperandLength)
+	product := mustDecimal(s.multiply(maxOperand, maxOperand))
+
+	s.Equal(int64(2*testMaxOperandLength), operations.DigitsOf(product))
+	s.Nil(operations.CheckResultSize(product, testResultBudget))
 }

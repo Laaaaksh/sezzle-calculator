@@ -33,6 +33,7 @@ func (s *CoreTestSuite) SetupTest() {
 		MaxOperandLength: testMaxOperandLength,
 		MaxExponent:      testMaxExponent,
 		DecimalPrecision: testPrecision,
+		MaxResultDigits:  testResultDigits,
 	}
 	s.core = calculator.NewCore(operations.NewRegistry(s.fake), limits)
 }
@@ -96,7 +97,7 @@ func (s *CoreTestSuite) TestCalculateWhenOperandCountIsWrongDoesNotCallApply() {
 
 func (s *CoreTestSuite) TestCalculateHonoursAUnaryArity() {
 	unary := &fakeOperation{name: testOpUnary, arity: entities.ArityUnary, result: mustDecimal("3")}
-	core := calculator.NewCore(operations.NewRegistry(unary), entities.Limits{MaxOperandLength: testMaxOperandLength})
+	core := calculator.NewCore(operations.NewRegistry(unary), entities.Limits{MaxOperandLength: testMaxOperandLength, MaxResultDigits: testResultDigits})
 
 	result, err := core.Calculate(s.ctx, testOpUnary, []decimal.Decimal{mustDecimal("9")})
 
@@ -174,7 +175,7 @@ func (s *CoreTestSuite) TestCalculatePassesOperandsToApplyUnchanged() {
 func (s *CoreTestSuite) TestCalculateReturnsOperationErrorUnchanged() {
 	boom := apperror.New(apperror.CodeValidationFailed, errFakeCause)
 	failing := &fakeOperation{name: testOpBoom, arity: entities.ArityBinary, err: boom}
-	core := calculator.NewCore(operations.NewRegistry(failing), entities.Limits{MaxOperandLength: testMaxOperandLength})
+	core := calculator.NewCore(operations.NewRegistry(failing), entities.Limits{MaxOperandLength: testMaxOperandLength, MaxResultDigits: testResultDigits})
 
 	_, err := core.Calculate(s.ctx, testOpBoom, s.binary("1", "2"))
 
@@ -227,7 +228,7 @@ func TestDefaultOperationsTestSuite(t *testing.T) {
 
 func (s *DefaultOperationsTestSuite) SetupTest() {
 	s.ctx = context.Background()
-	cfg := entities.Limits{MaxOperandLength: testDefaultMaxLength, MaxExponent: testMaxExponent, DecimalPrecision: testPrecision}
+	cfg := entities.Limits{MaxOperandLength: testDefaultMaxLength, MaxExponent: testMaxExponent, DecimalPrecision: testPrecision, MaxResultDigits: testResultDigits}
 	s.core = calculator.NewCore(operations.NewDefaultRegistry(cfg), cfg)
 }
 
@@ -280,7 +281,7 @@ func (s *DefaultOperationsTestSuite) TestCalculateWhenNameIsNotRegisteredReturns
 
 func (s *CoreTestSuite) TestListOperationsDescribesEachRegisteredOperationInOrder() {
 	unary := &fakeOperation{name: testOpUnary, arity: entities.ArityUnary}
-	core := calculator.NewCore(operations.NewRegistry(s.fake, unary), entities.Limits{})
+	core := calculator.NewCore(operations.NewRegistry(s.fake, unary), entities.Limits{MaxResultDigits: testResultDigits})
 
 	got := core.ListOperations(s.ctx)
 
@@ -291,7 +292,7 @@ func (s *CoreTestSuite) TestListOperationsDescribesEachRegisteredOperationInOrde
 }
 
 func (s *CoreTestSuite) TestListOperationsWithNothingRegisteredReturnsAnEmptyList() {
-	core := calculator.NewCore(operations.NewRegistry(), entities.Limits{})
+	core := calculator.NewCore(operations.NewRegistry(), entities.Limits{MaxResultDigits: testResultDigits})
 
 	got := core.ListOperations(s.ctx)
 

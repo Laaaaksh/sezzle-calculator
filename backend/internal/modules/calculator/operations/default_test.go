@@ -23,6 +23,7 @@ func (s *DefaultRegistryTestSuite) SetupTest() {
 		MaxOperandLength: testMaxOperandLength,
 		MaxExponent:      testMaxExponent,
 		DecimalPrecision: testConfiguredPrecision,
+		MaxResultDigits:  testResultBudget,
 	})
 }
 

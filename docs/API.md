@@ -61,7 +61,7 @@ These come from the `[calculator]` section of the config, except `max_body_bytes
 | --- | --- | --- | --- |
 | `max_operand_length` | 64 | The length in bytes of each operand string, including `-` and `.`. Checked before parsing. The significant digits and decimal places of the parsed value are held to the same number. | `422 OPERAND_TOO_LARGE` |
 | `max_exponent` | 1000 | The absolute value of the exponent in `power`. | `422 EXPONENT_TOO_LARGE` |
-| result digit budget | `max_operand_length * 10` (640) | The number of digits a `power` result may have, counting integer and fraction digits, so zeros count: `10^1000` (1001 digits) and `0.1^1000` (1000 fraction digits) are refused even though they have one significant digit. A cheap upper bound with a margin of one digit runs before any multiplication and the finished result is counted exactly, so `2^1000` (302 digits) is computed and `9^1000` (955 digits) is refused. | `422 RESULT_TOO_LARGE` |
+| result digit budget | `max_operand_length * 10` (640) | The number of digits any result may have, for every operation, counting integer and fraction digits (not the sign, not trailing fraction zeros). Zeros inside the number count: `10^1000` (1001 digits) and `0.1^1000` (1000 fraction digits) are refused even though they have one significant digit. The core counts the finished result exactly after each operation. `power` also checks with whole-number arithmetic before it multiplies, so `9^1000` (955 digits) is refused without building the number, while `2^1000` (302 digits) and `7^757` (exactly 640 digits) are computed. Add, subtract, multiply, divide, percentage and square root cannot reach the budget with operands of at most 64 characters (the largest product has 128 digits), but they pass through the same check. | `422 RESULT_TOO_LARGE` |
 | `request_timeout` | 5s | How long one request may run. The calculation checks the deadline before it starts, inside the power and square root loops, and after it finishes. See the note below the error table. | `503 REQUEST_TIMEOUT` |
 | `max_body_bytes` | 1048576 (1 MiB) | The size of the request body. | `413 PAYLOAD_TOO_LARGE` |
 
@@ -163,7 +163,7 @@ Lets a client discover which operations the server supports and the limits it en
     {"name": "sqrt", "arity": 1, "symbol": "√", "description": "Returns the square root of the operand."},
     {"name": "percentage", "arity": 2, "symbol": "%", "description": "Returns the first operand percent of the second."}
   ],
-  "limits": {"maxOperandLength": 64, "maxExponent": 1000, "decimalPrecision": 20}
+  "limits": {"maxOperandLength": 64, "maxExponent": 1000, "decimalPrecision": 20, "maxResultDigits": 640}
 }
 ```
 
@@ -181,6 +181,7 @@ The `limits` object reports the configured limits, so a client does not hard-cod
 | `limits.maxOperandLength` | number | `max_operand_length`. The longest operand string the server accepts. |
 | `limits.maxExponent` | number | `max_exponent`. The largest absolute exponent `power` accepts. |
 | `limits.decimalPrecision` | number | `decimal_precision`. The decimal places kept when a result is rounded. |
+| `limits.maxResultDigits` | number | The most digits any result may have: `max_operand_length * 10`. A result over it returns `RESULT_TOO_LARGE`. |
 
 The list is in a fixed order (the order above), and the response does not change while the server runs. The array sits inside an object so a field can be added later without breaking clients.
 
@@ -272,7 +273,7 @@ An operand over the length limit says which one and what the limit is:
 | `DIVISION_BY_ZERO` | 422 | `divide` by zero, or zero to a negative power. |
 | `INVALID_EXPONENT` | 422 | The exponent in `power` is not a whole number. |
 | `EXPONENT_TOO_LARGE` | 422 | The exponent in `power` is outside `-max_exponent` to `max_exponent`. |
-| `RESULT_TOO_LARGE` | 422 | A `power` result would have more digits than the result digit budget allows. |
+| `RESULT_TOO_LARGE` | 422 | A result would have more digits than the result digit budget allows. Any operation can return it, `power` is the one that reaches it in practice. |
 | `NEGATIVE_SQUARE_ROOT` | 422 | `sqrt` of a negative number. |
 
 ### Why 400 for malformed and 422 for domain errors

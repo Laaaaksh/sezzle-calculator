@@ -29,7 +29,7 @@ One entry per decision. Each has the context, the decision and the trade-off.
 ## 5. Input and result limits
 
 - Context: A public endpoint with no bounds on numbers invites abuse of CPU and memory. `9^1000` has 955 digits, and larger exponents grow without bound.
-- Decision: An operand has at most 64 characters. A `power` exponent is within -1000 to 1000. A `power` result has at most 640 digits, checked from an upper bound before any multiplication. The body is at most 1 MiB. An `operation` name has at most 32 bytes and `operands` at most 16 items, both checked before parsing (`422 VALIDATION_FAILED`). The first three are config values. The result digit budget is derived as `max_operand_length * 10`, and the body limit is `max_body_bytes`.
+- Decision: An operand has at most 64 characters. A `power` exponent is within -1000 to 1000. Any result has at most 640 digits. The core counts the finished result of every operation exactly, and `power` also checks with whole-number arithmetic before it multiplies. The body is at most 1 MiB. An `operation` name has at most 32 bytes and `operands` at most 16 items, both checked before parsing (`422 VALIDATION_FAILED`). The first three are config values. The result digit budget is derived as `max_operand_length * 10`, published as `limits.maxResultDigits`, and the body limit is `max_body_bytes`.
 - Trade-off: Some valid maths is refused with a clear error. The limits are generous for a calculator and cheap to raise in config.
 
 ## 6. One endpoint with an operation field

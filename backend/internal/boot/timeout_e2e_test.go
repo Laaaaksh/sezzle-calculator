@@ -33,7 +33,7 @@ const (
 	slowBody           = `{"operation":"spin","operands":["1"]}`
 )
 
-var slowLimits = entities.Limits{MaxOperandLength: 64, MaxExponent: 1000, DecimalPrecision: 20}
+var slowLimits = entities.Limits{MaxOperandLength: 64, MaxExponent: 1000, DecimalPrecision: 20, MaxResultDigits: 640}
 
 // spinOperation works until its context ends, the way power and square root
 // do. It can only return once the request deadline cancels the context, so

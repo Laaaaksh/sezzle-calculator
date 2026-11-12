@@ -58,7 +58,7 @@ const (
 // Constants for the printed-length budget tests of power, divide and sqrt.
 const (
 	testTenToTheSixHundredLen   = 601
-	testTenToTheLastAllowed     = "638"
+	testTenToTheLastAllowed     = "639"
 	testTenToTheFirstRefused    = "640"
 	testRoundBaseZeros          = 62
 	testMaxPowerExponent        = "1000"
@@ -70,11 +70,26 @@ const (
 	testNarrowOperandDigits     = 63
 	testNarrowFractionZeros     = 61
 	testSignedBoundaryBase      = "-10"
-	testSignedBoundaryExponent  = "639"
+	testSignedBoundaryExponent  = "640"
 )
 
 const (
-	digitNine = "9"
-	digitZero = "0"
-	digitOne  = "1"
+	digitNine  = "9"
+	digitZero  = "0"
+	digitOne   = "1"
+	digitEight = "8"
+)
+
+// Constants for the shared result-size helpers.
+const (
+	sizeZero               = "0"
+	sizeThousand           = "1000"
+	sizeNegThousand        = "-1000"
+	sizeTenThousand        = "10000"
+	sizeTwelvePointFive    = "12.5"
+	sizePointZeroZeroOne   = "0.001"
+	sizeOnePointFiveZeros  = "1.500000"
+	sizeFiveFractionDigits = "0.12345"
+	sizeLongDigits         = 300
+	sizeFourDigits         = 4
 )

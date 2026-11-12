@@ -29,6 +29,7 @@ func (s *PowerTestSuite) SetupTest() {
 		MaxOperandLength: testMaxOperandLength,
 		MaxExponent:      testMaxExponent,
 		DecimalPrecision: testPowerPrecision,
+		MaxResultDigits:  testResultBudget,
 	})
 }
 
@@ -109,6 +110,7 @@ func (s *PowerTestSuite) TestPowerWhenNegativeExponentTieRoundsHalfEven() {
 		MaxOperandLength: testMaxOperandLength,
 		MaxExponent:      testMaxExponent,
 		DecimalPrecision: 2,
+		MaxResultDigits:  testResultBudget,
 	})
 
 	got, err := applyText(twoPlaces, powerNum2, powerNumNeg3)
@@ -225,6 +227,16 @@ func (s *PowerTestSuite) TestPowerWhenTwoToTheThousandFitsTheBudgetReturnsTheExa
 	s.True(strings.HasPrefix(got, testTwoToTheThousandPrefix))
 }
 
+// 7^757 has 640 digits and 7^758 has 641. A float log10 estimate lands within
+// rounding distance of these, so they pin the exact integer counting.
+func (s *PowerTestSuite) TestPowerWhenNonRoundBaseHasExactlyTheBudgetDigitsReturnsIt() {
+	s.Len(s.power(powerNum7, powerNum757), testResultBudget)
+}
+
+func (s *PowerTestSuite) TestPowerWhenNonRoundBaseHasOneDigitOverTheBudgetReturnsResultTooLarge() {
+	s.Equal(entities.CodeResultTooLarge, s.failure(powerNum7, powerNum758).Code())
+}
+
 func (s *PowerTestSuite) TestPowerWhenBoundEqualsTheBudgetComputesTheResult() {
 	got := s.power(powerNum99, powerNum320)
 
@@ -240,10 +252,11 @@ func (s *PowerTestSuite) TestPowerDigitBudgetScalesWithTheConfiguredOperandLengt
 		MaxOperandLength: testSmallOperandLen,
 		MaxExponent:      testMaxExponent,
 		DecimalPrecision: testPowerPrecision,
+		MaxResultDigits:  testSmallBudget,
 	})
 
 	allowed, errAllowed := applyText(small, powerNum2, powerNum63)
-	_, errRefused := applyText(small, powerNum2, powerNum64)
+	_, errRefused := applyText(small, powerNum2, powerNum67)
 
 	s.Nil(errAllowed)
 	s.Equal(powerLong4, allowed)
@@ -306,13 +319,13 @@ func (s *PowerTestSuite) TestPowerWhenTenToTheSixHundredFitsTheBudgetReturnsIt()
 	s.Len(got, testTenToTheSixHundredLen)
 }
 
-// Main's reviewed size guard keeps one digit of margin against float rounding,
-// so 10^639 (exactly 640 digits) is refused and 10^638 is the last one allowed.
-func (s *PowerTestSuite) TestPowerWhenTenIsOneDigitUnderTheBudgetReturnsIt() {
-	s.Len(s.power(powerNum10, testTenToTheLastAllowed), testResultBudget-1)
+// The digit count is exact, with no safety margin: 10^639 has exactly 640
+// digits and is the last power of ten allowed, 10^640 has 641 and is refused.
+func (s *PowerTestSuite) TestPowerWhenTenHasExactlyTheBudgetDigitsReturnsIt() {
+	s.Len(s.power(powerNum10, testTenToTheLastAllowed), testResultBudget)
 }
 
-func (s *PowerTestSuite) TestPowerWhenTenPrintsOneCharacterOverTheBudgetReturnsResultTooLarge() {
+func (s *PowerTestSuite) TestPowerWhenTenHasOneDigitOverTheBudgetReturnsResultTooLarge() {
 	s.Equal(entities.CodeResultTooLarge, s.failure(powerNum10, testTenToTheFirstRefused).Code())
 }
 
@@ -340,14 +353,14 @@ func (s *PowerTestSuite) TestPowerWhenFractionHasManyPlacesButFitsTheBudgetRetur
 	s.LessOrEqual(len(s.power(powerNum0Pt5, testHalfToTheFiveHundred)), testResultBudget)
 }
 
-func (s *PowerTestSuite) TestPowerWhenNegativeBaseTenToTheBudgetReturnsResultTooLarge() {
+func (s *PowerTestSuite) TestPowerWhenNegativeBaseTenHasOneDigitOverTheBudgetReturnsResultTooLarge() {
 	err := s.failure(testSignedBoundaryBase, testSignedBoundaryExponent)
 
 	s.Equal(entities.CodeResultTooLarge, err.Code())
 }
 
 // The reciprocal of a huge round base rounds to zero at the configured precision,
-// so the result is tiny and the reviewed guard lets it through.
+// so the result is tiny and the guard lets it through.
 func (s *PowerTestSuite) TestPowerWhenNegativeExponentBaseIsRoundAndHugeReturnsZero() {
 	s.Equal(powerNum0, s.power(roundBase(testRoundBaseZeros), testNegMaxPowerExponent))
 }
