@@ -1,5 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { darkTokens, lightTokens, rawTokens, resolveLightDark, tokensSource } from '../test/tokens';
+import {
+  darkTokens,
+  declarationsOf,
+  lightTokens,
+  rawTokens,
+  resolveLightDark,
+  ruleFor,
+} from '../test/tokens';
+
+function colorScheme(selector: string): string[] {
+  const rule = ruleFor(selector);
+  const values: string[] = [];
+  rule.walkDecls('color-scheme', (decl) => {
+    values.push(decl.value.trim());
+  });
+  return values;
+}
 
 describe('tokens.css', () => {
   it('defines each colour once as light-dark(), so the explicit and system dark themes cannot drift', () => {
@@ -11,13 +27,13 @@ describe('tokens.css', () => {
     for (const [name, value] of colours) {
       expect(value, name).toMatch(/^light-dark\(/);
     }
-    expect(tokensSource.match(/--color-bg:/g)).toHaveLength(1);
+    expect(declarationsOf('--color-bg')).toHaveLength(1);
   });
 
   it('follows the system by default and lets an explicit choice win', () => {
-    expect(tokensSource).toMatch(/:root\s*\{\s*color-scheme:\s*light dark;/);
-    expect(tokensSource).toMatch(/:root\[data-theme=['"]light['"]\]\s*\{\s*color-scheme:\s*light;/);
-    expect(tokensSource).toMatch(/:root\[data-theme=['"]dark['"]\]\s*\{\s*color-scheme:\s*dark;/);
+    expect(colorScheme(':root')).toEqual(['light dark']);
+    expect(colorScheme(":root[data-theme='light']")).toEqual(['light']);
+    expect(colorScheme(":root[data-theme='dark']")).toEqual(['dark']);
   });
 
   it('resolves nested light-dark() calls to the side of the scheme', () => {

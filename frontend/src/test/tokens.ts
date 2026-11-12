@@ -1,3 +1,4 @@
+import postcss, { type Declaration, type Root, type Rule } from 'postcss';
 import tokensCss from '../styles/tokens.css?raw';
 
 export type TokenMap = Record<string, string>;
@@ -5,24 +6,38 @@ export type Scheme = 'light' | 'dark';
 
 const LIGHT_DARK_CALL = 'light-dark(';
 
-/** Pulls `--name: value;` pairs out of a CSS block body. Values may span lines. */
-function parseDeclarations(body: string): TokenMap {
-  const tokens: TokenMap = {};
-  for (const match of body.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) {
-    const [, name, value] = match;
-    if (name !== undefined && value !== undefined) {
-      tokens[name] = value.replace(/\s+/g, ' ').trim();
-    }
+/** tokens.css parsed by postcss, for tests that check its rules by meaning. */
+export const tokensRoot: Root = postcss.parse(tokensCss, { from: 'tokens.css' });
+
+/** The top-level rule with exactly this selector, or a thrown error naming it. */
+export function ruleFor(selector: string): Rule {
+  const rule = tokensRoot.nodes.find(
+    (node): node is Rule => node.type === 'rule' && node.selector === selector,
+  );
+  if (rule === undefined) {
+    throw new Error(`tokens.css has no rule for ${selector}`);
   }
-  return tokens;
+  return rule;
 }
 
-function blockBody(pattern: RegExp): string {
-  const body = pattern.exec(tokensCss)?.[1];
-  if (body === undefined) {
-    throw new Error(`tokens.css has no block matching ${pattern.source}`);
-  }
-  return body;
+/** Every declaration of `prop` anywhere in tokens.css. */
+export function declarationsOf(prop: string): Declaration[] {
+  const found: Declaration[] = [];
+  tokensRoot.walkDecls(prop, (decl) => {
+    found.push(decl);
+  });
+  return found;
+}
+
+/** Custom property declarations of a rule, with whitespace in values collapsed. */
+function customProperties(rule: Rule): TokenMap {
+  const tokens: TokenMap = {};
+  rule.each((node) => {
+    if (node.type === 'decl' && node.prop.startsWith('--')) {
+      tokens[node.prop] = node.value.replace(/\s+/g, ' ').trim();
+    }
+  });
+  return tokens;
 }
 
 /** Splits `a, b` at the one comma that is not inside parentheses. */
@@ -63,7 +78,7 @@ export function resolveLightDark(value: string, scheme: Scheme): string {
 }
 
 /** Every token exactly as written in the :root block, light-dark() calls included. */
-export const rawTokens: TokenMap = parseDeclarations(blockBody(/:root\s*\{([^}]*)\}/));
+export const rawTokens: TokenMap = customProperties(ruleFor(':root'));
 
 function resolveAll(scheme: Scheme): TokenMap {
   return Object.fromEntries(
@@ -74,6 +89,3 @@ function resolveAll(scheme: Scheme): TokenMap {
 /** Token values as the light and the dark scheme see them. */
 export const lightTokens: TokenMap = resolveAll('light');
 export const darkTokens: TokenMap = resolveAll('dark');
-
-/** The theme rules in tokens.css, for tests that check the scheme switch. */
-export const tokensSource: string = tokensCss;

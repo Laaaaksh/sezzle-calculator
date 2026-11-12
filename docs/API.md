@@ -119,10 +119,12 @@ The symbol is for display. The frontend may draw `*` as `×`. Clients never send
 The server checks in this order and returns the first failure:
 
 1. `Content-Type` (`415`)
-2. Body size, then empty body, JSON syntax, unknown fields, field types and data after the JSON object (`413`, `400`)
-3. Top-level keys are exact, lower case and not repeated (`400 BAD_REQUEST`), then `operation` and `operands` are present, `operation` is at most 32 bytes and `operands` has at most 16 items (`422 VALIDATION_FAILED`)
-4. Each operand's length, then its syntax, in operand order (`422 OPERAND_TOO_LARGE`, `422 INVALID_OPERAND`)
-5. The operation exists, the operand count matches its arity, then the operation runs (`422`)
+2. Body size (`413`)
+3. Top-level keys are exact, lower case and not repeated (`400 BAD_REQUEST`). This scan reads the object's keys in order and stops quietly at the first JSON error, so a wrong-case or repeated key before a syntax error or an unknown field is the one reported
+4. Empty body, JSON syntax, unknown fields, field types and data after the JSON object (`400`)
+5. `operation` and `operands` are present, `operation` is at most 32 bytes and `operands` has at most 16 items (`422 VALIDATION_FAILED`)
+6. Each operand's length, then its syntax, in operand order (`422 OPERAND_TOO_LARGE`, `422 INVALID_OPERAND`)
+7. The operation exists, the operand count matches its arity, then the operation runs (`422`)
 
 One consequence: an unknown operation sent with a malformed operand reports the operand, not the operation.
 
