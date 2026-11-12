@@ -246,7 +246,7 @@ cd frontend && npm run test:coverage
 
 CI runs both suites on every push and pull request and uploads both reports as build artifacts. A third CI job builds the Docker stack and smoke tests it through nginx.
 
-Mocks are generated, not committed. On a fresh clone run `make test` (or `make mock` first), because a bare `go test ./...` fails until they exist.
+Mocks are generated, not committed. On a fresh clone run `make test` (or `make mock` first), because a bare `go test ./...` fails until they exist. The frontend `make` targets run `npm ci` themselves when `frontend/node_modules` is missing or older than the lockfile.
 
 Quality gates:
 
