@@ -48,8 +48,12 @@ function appendChar(operand: string, char: string): string {
 }
 
 /** Flips the sign. A zero stays unsigned, and the limit still counts the added "-". */
+function isZero(operand: string): boolean {
+  return !/[1-9]/.test(operand);
+}
+
 function negate(operand: string): string {
-  if (!/[1-9]/.test(operand)) {
+  if (isZero(operand)) {
     return operand;
   }
   if (operand.startsWith(MINUS)) {
@@ -237,13 +241,14 @@ function toggleSign(state: CalculatorState): CalculatorState {
         return refuseLongResult(state);
       }
       const operand = negate(state.result);
-      return operand === state.result
-        ? state
-        : ({
-            status: 'entering_first',
-            lastRequestId: state.lastRequestId,
-            operand,
-          } satisfies EnteringFirstState);
+      if (operand === state.result) {
+        return isZero(state.result) ? state : refuseLongResult(state);
+      }
+      return {
+        status: 'entering_first',
+        lastRequestId: state.lastRequestId,
+        operand,
+      } satisfies EnteringFirstState;
     }
     default:
       return state;

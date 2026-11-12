@@ -686,6 +686,23 @@ describe('a result longer than an operand may be', () => {
     });
   });
 
+  it('refuses a sign flip when the minus sign would not fit', () => {
+    expect(run(resultState(FITS), TOGGLE)).toMatchObject({
+      status: 'showing_result',
+      result: FITS,
+      notice: NOTICE,
+    });
+  });
+
+  it('flips the sign of a negative result that fits exactly', () => {
+    const negative = `-${'9'.repeat(MAX_OPERAND_LENGTH - 1)}`;
+
+    expect(run(resultState(negative), TOGGLE)).toMatchObject({
+      status: 'entering_first',
+      operand: negative.slice(1),
+    });
+  });
+
   it('is shown, with a notice, when reused from history', () => {
     expect(run(initialState, { type: 'reuse', result: LONG })).toMatchObject({
       status: 'showing_result',

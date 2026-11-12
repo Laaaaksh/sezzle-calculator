@@ -155,7 +155,7 @@ Every error has the same shape: `code`, `message`, `requestId` and an optional `
 | `DIVISION_BY_ZERO` | 422 | Divide by zero, or zero to a negative power |
 | `INVALID_EXPONENT` | 422 | Exponent in `power` is not a whole number |
 | `EXPONENT_TOO_LARGE` | 422 | Exponent outside -1000 to 1000 |
-| `RESULT_TOO_LARGE` | 422 | A `power` result would print more than 640 characters, for example `10^1000` |
+| `RESULT_TOO_LARGE` | 422 | A `power` result would have more than 640 digits, for example `10^1000` |
 | `NEGATIVE_SQUARE_ROOT` | 422 | `sqrt` of a negative number |
 
 <details>
@@ -266,7 +266,7 @@ Each decision has a longer entry in [docs/DECISIONS.md](docs/DECISIONS.md). The 
 - Operands are strings. JavaScript turns a JSON number into a float before the server sees the value, so the digits are already lost. A string arrives untouched. A JSON number in `operands` returns `400`.
 - Half-even rounding, 20 places. Divide, square root and negative powers have results with no end, so they round to 20 decimal places. An exact tie goes to the even digit, so `0.125` becomes `0.12`. Add, subtract, multiply and percentage are exact.
 - Percentage means x percent of y. `percentage(15, 200)` is `30`. The other common readings, such as "what percent is x of y", are not supported.
-- Input limits. An operand has at most 64 characters. A `power` exponent stays within 1000 either way. A `power` result prints at most 640 characters, so `10^1000` is refused even though its exponent is allowed. Calculations stop at the 5 second request deadline. The request body is at most 1 MiB. All of these are config values.
+- Input limits. An operand has at most 64 characters. A `power` exponent stays within 1000 either way. A `power` result has at most 640 digits, so `10^1000` is refused even though its exponent is allowed. Calculations stop at the 5 second request deadline. The request body is at most 1 MiB. All of these are config values.
 - One endpoint with an `operation` field. Validation, limits and the error shape live in one handler. A new operation needs no new route. The cost: logs and rate limits keyed on the path cannot tell operations apart.
 - 400 versus 422. `400` means the server cannot read the request, so the client code is wrong. `422` means the server read the request but the content breaks a rule, so the user types something else.
 - No database. A calculation is a pure function of its input, so the server keeps no state. The history in the UI lives in memory and is gone on reload.
