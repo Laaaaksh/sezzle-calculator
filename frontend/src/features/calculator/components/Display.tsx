@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import type { CSSProperties } from 'react';
 import { describeDisplay } from '../display';
 import type { CalculatorState } from '../state';
 import styles from './Display.module.css';
@@ -6,11 +6,9 @@ import styles from './Display.module.css';
 interface DisplayProps {
   state: CalculatorState;
   isPending: boolean;
-  /** Rendered inside the live region so an error message is announced with the display. */
-  children?: ReactNode;
 }
 
-export function Display({ state, isPending, children }: DisplayProps) {
+export function Display({ state, isPending }: DisplayProps) {
   const { expression, value } = describeDisplay(state);
   const valueClass = [styles.value, isPending ? styles.pending : undefined]
     .filter(Boolean)
@@ -26,7 +24,6 @@ export function Display({ state, isPending, children }: DisplayProps) {
       <p key={animationKey} className={valueClass} style={valueStyle}>
         {value}
       </p>
-      {children}
     </div>
   );
 }

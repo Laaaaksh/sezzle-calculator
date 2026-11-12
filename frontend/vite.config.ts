@@ -26,9 +26,11 @@ export default defineConfig(({ mode }) => {
     },
     test: {
       environment: 'jsdom',
-      // Vitest blanks CSS by default, even with ?raw. tokens.test.ts needs the real file to check the
-      // two dark theme copies and the contrast ratios.
-      css: { include: [/tokens\.css/] },
+      // Vitest blanks CSS by default, even with ?raw. The token and stylesheet tests read the real
+      // files to check contrast ratios, the two dark theme copies, focus rings and touch sizes.
+      // Only ?raw imports are opened up. Applying stylesheets to every component test would make
+      // jsdom hide the history button, because it ignores media queries and treats them as true.
+      css: { include: [/\.css\?raw/] },
       setupFiles: ['src/test/setup.ts'],
       coverage: {
         provider: 'v8',

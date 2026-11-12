@@ -26,16 +26,6 @@ describe('Display', () => {
     expect(screen.getByRole('status')).toHaveAttribute('aria-busy', 'true');
   });
 
-  it('renders children inside the live region', () => {
-    render(
-      <Display state={entering('5')} isPending={false}>
-        <p>child</p>
-      </Display>,
-    );
-
-    expect(screen.getByRole('status')).toContainElement(screen.getByText('child'));
-  });
-
   it.each([
     ['5', '1'],
     ['12345', '5'],

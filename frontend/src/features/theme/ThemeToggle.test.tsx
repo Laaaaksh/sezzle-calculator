@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { expectNoAxeViolations } from '../../test/axe';
 import { THEME_ATTRIBUTE, THEME_STORAGE_KEY } from './theme';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -78,5 +79,11 @@ describe('ThemeToggle', () => {
     await user.click(option('Dark'));
 
     expect(document.documentElement).toHaveAttribute(THEME_ATTRIBUTE, 'dark');
+  });
+
+  it('has no axe violations', async () => {
+    const { container } = render(<ThemeToggle />);
+
+    await expectNoAxeViolations(container);
   });
 });

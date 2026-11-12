@@ -82,3 +82,15 @@
     transform: translateY(1px);
   }
 }
+
+/* Windows high contrast mode drops box-shadow, so the ring is repeated as an outline there. */
+@media (forced-colors: active) {
+  .active {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+
+  .active:focus-visible {
+    outline-offset: 5px;
+  }
+}

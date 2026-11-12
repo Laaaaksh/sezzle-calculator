@@ -382,3 +382,21 @@ Keep it CSS modules or plain CSS, with no UI framework.
 ```
 
 Produced: frontend/src/styles/tokens.css holds the design tokens (colour, spacing, radius, shadow, type scale, motion) with a light theme, a dark theme under [data-theme] and the same dark values under prefers-color-scheme. Inter and JetBrains Mono load from the self-hosted @fontsource-variable packages. The calculator is a centered card with a muted expression line over a large right-aligned result that shrinks to fit from its length, tinted operator keys, an accent equals key and an accent-filled, ringed active operator. At 900px and wider the history tape sits beside the card; below that it is a drawer opened by a History button (aria-expanded, aria-controls, Escape closes, focus returns to the button). A System/Light/Dark toggle saves the choice in localStorage (safe when storage is blocked) and public/theme-init.js applies it before first paint without an inline script. Motion is a 1px key press and a 4px result fade, all under 200ms and only when reduced motion is not requested. Tests cover the toggle, the drawer, the init script and the token files.
+
+---
+
+## 22. Accessibility pass
+
+```
+Do a full accessibility pass and fix what you find.
+- Contrast of at least 4.5 to 1 for text and 3 to 1 for UI parts, checked in both themes.
+- A visible focus ring on every interactive element.
+- A logical tab order.
+- Touch targets of at least 44px.
+- The active operator is shown with a ring as well as a colour.
+- Errors are announced.
+- Zoom isn't blocked, and the layout holds at 200 percent zoom.
+Add an axe check to the component tests. Tell me what you changed and why.
+```
+
+Produced: Full accessibility pass, written up in docs/ACCESSIBILITY.md. src/styles/contrast.test.ts computes WCAG ratios from tokens.css for both themes (4.5:1 text, 3:1 focus and active rings; all pass). stylesheets.test.ts fails on any removed outline, clickable rule without a focus ring or a 44px minimum height, and any motion outside the no-preference query. Fixes: the error message is a role=alert outside the polite status region, Retry and history entries reach 44px, the active operator has aria-pressed, a ring that stays visible when focused and an outline fallback in forced-colors mode. index.html.test.ts blocks zoom limits and inline scripts, App.test.tsx checks tab order, and src/test/axe.ts runs axe-core (contrast rule off in jsdom only, covered by the token test) on the calculator when idle, with a result, an active operator, both error kinds and the drawer open, plus the theme toggle and the app.

@@ -33,3 +33,11 @@
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
+
+/* Forced colours replace the inverted fill, so mark the selected option another way. */
+@media (forced-colors: active) {
+  .option[aria-pressed='true'] {
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+}

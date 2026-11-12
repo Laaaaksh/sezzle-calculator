@@ -19,16 +19,15 @@ export function Calculator({ client }: CalculatorProps) {
   return (
     <div className={styles.layout}>
       <div className={styles.card}>
-        <Display state={state} isPending={isPending}>
-          {state.status === 'error' ? (
-            <ErrorBanner
-              error={state.error}
-              onRetry={() => {
-                dispatch({ type: 'retry' });
-              }}
-            />
-          ) : null}
-        </Display>
+        <Display state={state} isPending={isPending} />
+        {state.status === 'error' ? (
+          <ErrorBanner
+            error={state.error}
+            onRetry={() => {
+              dispatch({ type: 'retry' });
+            }}
+          />
+        ) : null}
         <Keypad isPending={isPending} activeOperator={activeOperatorOf(state)} onPress={dispatch} />
       </div>
       <HistoryDrawer entries={history} onReuse={reuse} />
