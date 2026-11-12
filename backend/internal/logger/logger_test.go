@@ -113,6 +113,13 @@ func (s *LoggerTestSuite) TestSyncIgnoresInvalidArgumentError() {
 	s.NoError(logger.Sync())
 }
 
+func (s *LoggerTestSuite) TestSyncIgnoresBadFileDescriptorError() {
+	restore := logger.SetForTest(syncErrLogger(syscall.EBADF))
+	defer restore()
+
+	s.NoError(logger.Sync())
+}
+
 func (s *LoggerTestSuite) TestSyncReturnsOtherErrors() {
 	restore := logger.SetForTest(syncErrLogger(errTestSync))
 	defer restore()

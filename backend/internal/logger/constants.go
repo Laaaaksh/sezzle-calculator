@@ -27,4 +27,6 @@ var ErrUnknownEnvironment = errors.New("logger: unknown environment")
 
 // harmlessSyncErrnos are what Sync reports when stderr is a terminal or pipe
 // that cannot be fsynced. They carry no lost data, so they must not fail shutdown.
-var harmlessSyncErrnos = []syscall.Errno{syscall.ENOTTY, syscall.EINVAL}
+// EBADF is what macOS returns when fsync is called on a pipe (seen when the
+// binary runs with stderr piped, as in CI and shell pipelines).
+var harmlessSyncErrnos = []syscall.Errno{syscall.ENOTTY, syscall.EINVAL, syscall.EBADF}
