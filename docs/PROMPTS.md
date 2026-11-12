@@ -186,3 +186,16 @@ Don't add any operations yet except one fake in the tests. Test the registry, th
 ```
 
 Produced: The calculator module domain with a decimal-only Operation interface, a registry behind one registration point, and a core that checks arity and operand limits and normalises results. Tests use a fake operation. Calculator coverage 100%.
+
+---
+
+## 9. Basic operations
+
+```
+Add add, subtract, multiply and divide, each in its own file, each registered.
+- Division by zero returns a DIVISION_BY_ZERO error with the message "Cannot divide by zero."
+- Division that doesn't terminate rounds to the configured precision with half-even (banker's) rounding. Document why: it's the standard for financial rounding because it doesn't bias the totals.
+Write one test suite per operation, with one method per behaviour. Cover at least: positive and negative values, zero, very large and very small numbers, many decimal places, 0.1 + 0.2 = 0.3, 1 / 3 at the configured precision, 2 / 3 rounding, -0 normalisation, and divide by zero. Every test name should read like a sentence, for example TestDivideWhenDivisorIsZeroReturnsDivisionByZero.
+```
+
+Produced: Add, subtract, multiply and divide, one file and one registry line each. Divide uses QuoRem for exact half-even rounding at the configured precision and returns DIVISION_BY_ZERO ("Cannot divide by zero."). One suite per operation. Calculator coverage 100% (core) and 97.8% (operations).

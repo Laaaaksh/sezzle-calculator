@@ -7,7 +7,6 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/Laaaaksh/sezzle-calculator/backend/internal/config"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/entities"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/operations"
 	"github.com/Laaaaksh/sezzle-calculator/backend/pkg/apperror"
@@ -91,10 +90,4 @@ func (s *RegistryTestSuite) TestUnknownOperationIsA422() {
 
 	s.Require().NotNil(err)
 	s.Equal(http.StatusUnprocessableEntity, err.HTTPStatus())
-}
-
-func (s *RegistryTestSuite) TestNewDefaultRegistryIsReadyToUse() {
-	registry := operations.NewDefaultRegistry(config.CalculatorConfig{})
-
-	s.NotNil(registry)
 }

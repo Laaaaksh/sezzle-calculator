@@ -221,3 +221,66 @@ func (s *CoreTestSuite) TestCalculateKeepsTheNumericValueOfTheResult() {
 	s.Require().Nil(err)
 	s.True(mustDecimal(testFakeResult).Equal(result.Value))
 }
+
+type DefaultOperationsTestSuite struct {
+	suite.Suite
+	ctx  context.Context
+	core *calculator.Core
+}
+
+func TestDefaultOperationsTestSuite(t *testing.T) {
+	suite.Run(t, new(DefaultOperationsTestSuite))
+}
+
+func (s *DefaultOperationsTestSuite) SetupTest() {
+	s.ctx = context.Background()
+	cfg := config.CalculatorConfig{MaxOperandLength: testDefaultMaxLength, MaxExponent: testMaxExponent, DecimalPrecision: testPrecision}
+	s.core = calculator.NewCore(operations.NewDefaultRegistry(cfg), cfg)
+}
+
+func (s *DefaultOperationsTestSuite) calculate(op entities.OperationType, left, right string) (entities.Result, apperror.IError) {
+	return s.core.Calculate(s.ctx, op, []decimal.Decimal{mustDecimal(left), mustDecimal(right)})
+}
+
+func (s *DefaultOperationsTestSuite) TestCalculateAddPointOnePlusPointTwoIsExactlyPointThree() {
+	result, err := s.calculate(entities.OpAdd, "0.1", "0.2")
+
+	s.Require().Nil(err)
+	s.Equal("0.3", result.Text)
+}
+
+func (s *DefaultOperationsTestSuite) TestCalculateMultiplyNegativeByZeroReturnsPlainZero() {
+	result, err := s.calculate(entities.OpMultiply, "-5", "0")
+
+	s.Require().Nil(err)
+	s.Equal(testZeroText, result.Text)
+}
+
+func (s *DefaultOperationsTestSuite) TestCalculateDivideOneByThreeReturnsTheConfiguredPrecision() {
+	result, err := s.calculate(entities.OpDivide, "1", "3")
+
+	s.Require().Nil(err)
+	s.Equal("0.33333333333333333333", result.Text)
+}
+
+func (s *DefaultOperationsTestSuite) TestCalculateDivideByZeroReturnsDivisionByZeroWithItsMessage() {
+	_, err := s.calculate(entities.OpDivide, "1", "0")
+
+	s.Require().NotNil(err)
+	s.Equal(apperror.CodeDivisionByZero, err.Code())
+	s.Equal(apperror.MsgDivisionByZero, err.PublicMessage())
+}
+
+func (s *DefaultOperationsTestSuite) TestCalculateSubtractTrimsTrailingZeros() {
+	result, err := s.calculate(entities.OpSubtract, "1.50", "0.25")
+
+	s.Require().Nil(err)
+	s.Equal("1.25", result.Text)
+}
+
+func (s *DefaultOperationsTestSuite) TestCalculateWhenNameIsNotRegisteredReturnsUnknownOperation() {
+	_, err := s.calculate(testOpMissing, "1", "2")
+
+	s.Require().NotNil(err)
+	s.Equal(apperror.CodeUnknownOperation, err.Code())
+}

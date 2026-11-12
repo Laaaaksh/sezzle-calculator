@@ -16,6 +16,7 @@ const (
 	testMaxOperandLength = 8
 	testMaxExponent      = 1000
 	testPrecision        = 20
+	testDefaultMaxLength = 64
 
 	testOperandOk       = "12345678"
 	testOperandTooLong  = "123456789"

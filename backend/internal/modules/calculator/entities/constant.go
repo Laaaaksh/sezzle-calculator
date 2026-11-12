@@ -5,6 +5,14 @@ package entities
 // being used where a registered operation name is expected.
 type OperationType string
 
+// Operation names, as clients send them.
+const (
+	OpAdd      OperationType = "add"
+	OpSubtract OperationType = "subtract"
+	OpMultiply OperationType = "multiply"
+	OpDivide   OperationType = "divide"
+)
+
 // Arity values: how many operands an operation consumes.
 const (
 	ArityUnary  = 1

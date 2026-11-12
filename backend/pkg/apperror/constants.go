@@ -14,6 +14,7 @@ const (
 	MsgUnknownOperation     = "The requested operation is not supported."
 	MsgInvalidOperandCount  = "The operation received the wrong number of operands."
 	MsgOperandTooLarge      = "An operand is larger than the allowed limit."
+	MsgDivisionByZero       = "Cannot divide by zero."
 )
 
 // Formats for the internal Error() string, which is for logs only.

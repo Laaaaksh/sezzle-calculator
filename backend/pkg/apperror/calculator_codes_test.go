@@ -37,3 +37,14 @@ func (s *CalculatorCodesTestSuite) TestOperandTooLargeIs422WithItsMessage() {
 	s.Equal(http.StatusUnprocessableEntity, err.HTTPStatus())
 	s.Equal(apperror.MsgOperandTooLarge, err.PublicMessage())
 }
+
+func (s *CalculatorCodesTestSuite) TestDivisionByZeroIs422WithItsMessage() {
+	err := apperror.New(apperror.CodeDivisionByZero, nil)
+
+	s.Equal(http.StatusUnprocessableEntity, err.HTTPStatus())
+	s.Equal(apperror.MsgDivisionByZero, err.PublicMessage())
+}
+
+func (s *CalculatorCodesTestSuite) TestDivisionByZeroMessageIsTheDocumentedText() {
+	s.Equal("Cannot divide by zero.", apperror.MsgDivisionByZero)
+}
