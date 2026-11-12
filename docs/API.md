@@ -190,7 +190,7 @@ Every non-2xx response, from every route, has this one shape:
 | `code` | yes | A stable, machine-readable name. Clients branch on this. |
 | `message` | yes | Fixed text per code, safe to show a user. It never contains the user's input or any internal detail. |
 | `requestId` | yes | The same value as the `X-Request-ID` response header. |
-| `fields` | no | A map from an input field to a short problem description. It is sent only with `VALIDATION_FAILED` and left out otherwise. |
+| `fields` | no | Client-safe context about the failure, such as which operand failed and why. Left out when an error has none. Which keys each code carries is listed in [ERROR_CODES.md](ERROR_CODES.md). |
 
 A validation error:
 
@@ -205,7 +205,33 @@ A validation error:
 }
 ```
 
-Extra detail about a domain error (which operand failed, which limit) is written to the server log with the request ID. It is not sent to the client, because the message is enough to tell a calculator user what to change, and the log has the rest.
+An operand that is not a number says which operand and why (`operand_index` counts from 0):
+
+```json
+{
+  "error": {
+    "code": "INVALID_OPERAND",
+    "message": "An operand is not a valid number.",
+    "requestId": "3f6c1d0e-8a54-4f0b-9a8e-0d5b0c1f7a21",
+    "fields": {"operand_index": 1, "reason": "exponent"}
+  }
+}
+```
+
+An operand over the length limit says which one and what the limit is:
+
+```json
+{
+  "error": {
+    "code": "OPERAND_TOO_LARGE",
+    "message": "An operand is larger than the allowed limit.",
+    "requestId": "3f6c1d0e-8a54-4f0b-9a8e-0d5b0c1f7a21",
+    "fields": {"operand_index": 1, "limit": 64}
+  }
+}
+```
+
+`fields` values are strings or numbers. The set of keys is fixed per code. The internal cause of an error (driver text, stack details) is never sent; it stays in the server log with the request ID. `NOT_FOUND` and `METHOD_NOT_ALLOWED` echo the request `method` and `path` in `fields`, since the client sent both.
 
 ### Error codes and HTTP statuses
 

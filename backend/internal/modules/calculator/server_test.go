@@ -262,55 +262,58 @@ func (s *ServerTestSuite) TestCalculateEmptyObjectReturns422NamingBothFields() {
 	s.post(contentTypeJSON, bodyNoFields)
 
 	body := s.requireError(http.StatusUnprocessableEntity, apperror.CodeValidationFailed)
-	s.Equal(map[string]string{fieldOperation: problemText, fieldOperands: problemText}, body.Fields)
+	s.Equal(map[string]any{fieldOperation: problemText, fieldOperands: problemText}, body.Fields)
 }
 
 func (s *ServerTestSuite) TestCalculateNullBodyReturns422NamingBothFields() {
 	s.post(contentTypeJSON, bodyNull)
 
 	body := s.requireError(http.StatusUnprocessableEntity, apperror.CodeValidationFailed)
-	s.Equal(map[string]string{fieldOperation: problemText, fieldOperands: problemText}, body.Fields)
+	s.Equal(map[string]any{fieldOperation: problemText, fieldOperands: problemText}, body.Fields)
 }
 
 func (s *ServerTestSuite) TestCalculateMissingOperationReturns422NamingOperation() {
 	s.post(contentTypeJSON, bodyNoOperation)
 
 	body := s.requireError(http.StatusUnprocessableEntity, apperror.CodeValidationFailed)
-	s.Equal(map[string]string{fieldOperation: problemText}, body.Fields)
+	s.Equal(map[string]any{fieldOperation: problemText}, body.Fields)
 }
 
 func (s *ServerTestSuite) TestCalculateBlankOperationReturns422NamingOperation() {
 	s.post(contentTypeJSON, bodyBlankOperation)
 
 	body := s.requireError(http.StatusUnprocessableEntity, apperror.CodeValidationFailed)
-	s.Equal(map[string]string{fieldOperation: problemText}, body.Fields)
+	s.Equal(map[string]any{fieldOperation: problemText}, body.Fields)
 }
 
 func (s *ServerTestSuite) TestCalculateMissingOperandsReturns422NamingOperands() {
 	s.post(contentTypeJSON, bodyNoOperands)
 
 	body := s.requireError(http.StatusUnprocessableEntity, apperror.CodeValidationFailed)
-	s.Equal(map[string]string{fieldOperands: problemText}, body.Fields)
+	s.Equal(map[string]any{fieldOperands: problemText}, body.Fields)
 }
 
 func (s *ServerTestSuite) TestCalculateNullOperandsReturns422NamingOperands() {
 	s.post(contentTypeJSON, bodyNullOperands)
 
 	body := s.requireError(http.StatusUnprocessableEntity, apperror.CodeValidationFailed)
-	s.Equal(map[string]string{fieldOperands: problemText}, body.Fields)
+	s.Equal(map[string]any{fieldOperands: problemText}, body.Fields)
 }
 
 func (s *ServerTestSuite) TestCalculateInvalidOperandReturns422WithoutCallingCore() {
 	s.post(contentTypeJSON, bodyBadOperand)
 
 	body := s.requireError(http.StatusUnprocessableEntity, apperror.CodeInvalidOperand)
-	s.Empty(body.Fields)
+	s.Equal(map[string]any{entities.FieldOperandIndex: float64(testIndexSecond), entities.FieldReason: entities.ReasonExponent}, body.Fields)
+	s.NotContains(s.recorder.Body.String(), calculator.ErrOperandSyntax.Error())
 }
 
 func (s *ServerTestSuite) TestCalculateOperandLongerThanConfiguredLimitReturns422() {
 	s.post(contentTypeJSON, bodyLongOperand)
 
-	s.requireError(http.StatusUnprocessableEntity, apperror.CodeOperandTooLarge)
+	body := s.requireError(http.StatusUnprocessableEntity, apperror.CodeOperandTooLarge)
+	s.Equal(map[string]any{entities.FieldOperandIndex: float64(testIndexSecond), entities.FieldLimit: float64(testHandlerMaxLen)}, body.Fields)
+	s.NotContains(s.recorder.Body.String(), calculator.ErrOperandTooLong.Error())
 }
 
 func (s *ServerTestSuite) TestCalculateEmptyOperandsArrayReachesCoreAndReturnsOperandCountError() {

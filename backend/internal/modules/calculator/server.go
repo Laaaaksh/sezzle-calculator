@@ -54,7 +54,7 @@ func (h *HTTPHandler) Calculate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if problems := missingFields(req); len(problems) > 0 {
-		httpx.WriteErrorWithFields(ctx, w, validationFailed(problems), problems)
+		httpx.WriteError(ctx, w, validationFailed(problems))
 		return
 	}
 	operands, aerr := ParseOperands(req.Operands, h.maxOperandLength)
@@ -157,8 +157,8 @@ func missingFields(req entities.CalculateRequest) map[string]string {
 	return problems
 }
 
-// validationFailed builds the error for missing fields and copies the problems
-// into its log fields, so the log says which field was missing.
+// validationFailed builds the error for missing fields. The problems become
+// the error fields, which reach both the client and the log.
 func validationFailed(problems map[string]string) apperror.IError {
 	aerr := apperror.New(apperror.CodeValidationFailed, ErrMissingRequestField)
 	for field, problem := range problems {

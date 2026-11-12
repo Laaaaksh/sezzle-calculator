@@ -86,13 +86,27 @@ func (s *ResponseTestSuite) TestWriteErrorUsesStatusAndPublicFields() {
 	s.Equal(wantNoStore, s.recorder.Header().Get(constants.HeaderCacheControl))
 }
 
-func (s *ResponseTestSuite) TestWriteErrorNeverSendsCauseOrInternalFields() {
+func (s *ResponseTestSuite) TestWriteErrorNeverSendsTheCause() {
 	err := apperror.New(apperror.CodeInternal, errTestSecret).WithField(testFieldKey, testFieldValue)
 
 	httpx.WriteError(context.Background(), s.recorder, err)
 
 	s.NotContains(s.recorder.Body.String(), testSecretCause)
-	s.NotContains(s.recorder.Body.String(), testFieldValue)
+}
+
+func (s *ResponseTestSuite) TestWriteErrorSendsFieldsOfEveryCode() {
+	err := apperror.New(apperror.CodeInvalidOperand, errTestSecret).
+		WithField(testFieldKey, testFieldValue).
+		WithField(testIndexKey, testIndexValue)
+
+	httpx.WriteError(context.Background(), s.recorder, err)
+
+	s.Equal(map[string]any{testFieldKey: testFieldValue, testIndexKey: float64(testIndexValue)}, s.decodeError().Error.Fields)
+}
+
+func (s *ResponseTestSuite) TestWriteErrorOmitsFieldsWhenErrorHasNone() {
+	httpx.WriteError(context.Background(), s.recorder, apperror.New(apperror.CodeBadRequest, nil))
+
 	s.NotContains(s.recorder.Body.String(), jsonKeyFields)
 }
 
@@ -145,33 +159,11 @@ func (s *ResponseTestSuite) TestErrorBodyIncludesFieldsWhenSet() {
 	body := httpx.ErrorBody{
 		Code:    apperror.CodeValidationFailed,
 		Message: apperror.MsgValidationFailed,
-		Fields:  map[string]string{testFieldKey: testFieldValue},
+		Fields:  map[string]any{testFieldKey: testFieldValue},
 	}
 
 	raw, err := json.Marshal(httpx.ErrorResponse{Error: body})
 
 	s.Require().NoError(err)
 	s.JSONEq(`{"error":{"code":"VALIDATION_FAILED","message":"The request failed validation.","fields":{"account":"acc-42"}}}`, string(raw))
-}
-
-func (s *ResponseTestSuite) TestWriteErrorWithFieldsSendsStatusRequestIDAndFields() {
-	ctx := contextkeys.WithRequestID(context.Background(), testRequestID)
-	err := apperror.New(apperror.CodeValidationFailed, errTestSecret)
-
-	httpx.WriteErrorWithFields(ctx, s.recorder, err, map[string]string{testFieldKey: testFieldValue})
-
-	got := s.decodeError().Error
-	s.Equal(http.StatusUnprocessableEntity, s.recorder.Code)
-	s.Equal(apperror.CodeValidationFailed, got.Code)
-	s.Equal(testRequestID, got.RequestID)
-	s.Equal(map[string]string{testFieldKey: testFieldValue}, got.Fields)
-	s.Equal(wantNoStore, s.recorder.Header().Get(constants.HeaderCacheControl))
-}
-
-func (s *ResponseTestSuite) TestWriteErrorWithFieldsStillHidesTheCause() {
-	err := apperror.New(apperror.CodeValidationFailed, errTestSecret)
-
-	httpx.WriteErrorWithFields(context.Background(), s.recorder, err, map[string]string{testFieldKey: testFieldValue})
-
-	s.NotContains(s.recorder.Body.String(), testSecretCause)
 }

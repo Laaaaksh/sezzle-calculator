@@ -1,6 +1,6 @@
 # Error codes
 
-Every error the API returns uses one shape, `{"error": {"code": "...", "message": "...", "requestId": "...", "fields": {...}}}`. The message is fixed per code and never contains user input or internal detail. The `fields` column in the first table names the extra context an error carries in the server log. Only `VALIDATION_FAILED` sends a `fields` map to the client; see [API.md](API.md).
+Every error the API returns uses one shape, `{"error": {"code": "...", "message": "...", "requestId": "...", "fields": {...}}}`. The message is fixed per code and never contains user input or internal detail. The `fields` column in the first table names the keys of the `fields` map sent to the client with that error; see [API.md](API.md).
 
 Domain errors (the request was well formed but the calculation cannot be done) are 422. Malformed requests and infrastructure failures use the other statuses.
 
