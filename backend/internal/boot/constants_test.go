@@ -19,9 +19,12 @@ const (
 
 	headerOrigin = "Origin"
 	headerACAO   = "Access-Control-Allow-Origin"
+	headerAllow  = "Allow"
 
 	wantNotFoundCode   = "NOT_FOUND"
 	wantMethodCode     = "METHOD_NOT_ALLOWED"
+	wantPingAllow      = "GET"
+	wantLiveAllow      = "GET"
 	wantTooLargeCode   = "PAYLOAD_TOO_LARGE"
 	wantContentType    = "application/json"
 	wantLiveBody       = `{"status":"ok"}`

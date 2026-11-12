@@ -4,6 +4,7 @@ package constants
 const (
 	HeaderRequestID   = "X-Request-ID"
 	HeaderContentType = "Content-Type"
+	HeaderAllow       = "Allow"
 
 	ContentTypeJSON = "application/json"
 )

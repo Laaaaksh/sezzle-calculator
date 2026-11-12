@@ -1,6 +1,9 @@
 package boot
 
 import (
+	"net/http"
+	"strings"
+
 	"github.com/go-chi/chi/v5"
 
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/config"
@@ -41,7 +44,7 @@ func NewRouter(cfg *config.Config, modules Modules, apiRoutes ...RouteRegistrar)
 	// Set before any Route/Mount: chi copies these handlers onto sub-routers
 	// only if they exist when the sub-router is mounted.
 	r.NotFound(httpx.NotFound)
-	r.MethodNotAllowed(httpx.MethodNotAllowed)
+	r.MethodNotAllowed(methodNotAllowed(r))
 
 	modules.Health.GetHandler().RegisterRoutes(r)
 
@@ -52,4 +55,40 @@ func NewRouter(cfg *config.Config, modules Modules, apiRoutes ...RouteRegistrar)
 		}
 	})
 	return r
+}
+
+// routableMethods are the methods probed to build the Allow header of a 405.
+var routableMethods = []string{
+	http.MethodGet,
+	http.MethodHead,
+	http.MethodPost,
+	http.MethodPut,
+	http.MethodPatch,
+	http.MethodDelete,
+	http.MethodOptions,
+	http.MethodConnect,
+	http.MethodTrace,
+}
+
+// methodNotAllowed answers with the JSON 405 and the Allow header RFC 9110
+// requires. chi only sets Allow in its own default responder and drops the
+// allowed methods once a custom responder is installed, so the root router is
+// probed for every method that does match the path.
+func methodNotAllowed(root chi.Routes) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.RawPath
+		if path == "" {
+			path = r.URL.Path
+		}
+		allowed := make([]string, 0, len(routableMethods))
+		for _, method := range routableMethods {
+			if root.Match(chi.NewRouteContext(), method, path) {
+				allowed = append(allowed, method)
+			}
+		}
+		if len(allowed) > 0 {
+			w.Header().Set(constants.HeaderAllow, strings.Join(allowed, ", "))
+		}
+		httpx.MethodNotAllowed(w, r)
+	}
 }

@@ -82,6 +82,7 @@ func (s *RouterTestSuite) TestWrongMethodReturnsJSONMethodNotAllowed() {
 	s.Equal(http.StatusMethodNotAllowed, s.recorder.Code)
 	s.Equal(wantMethodCode, string(body.Code))
 	s.NotEmpty(body.RequestID)
+	s.Equal(wantLiveAllow, s.recorder.Header().Get(headerAllow))
 }
 
 func (s *RouterTestSuite) TestAPIRoutesAreServedUnderVersionedPrefix() {
@@ -102,6 +103,7 @@ func (s *RouterTestSuite) TestWrongMethodUnderAPIPrefixReturnsJSONMethodNotAllow
 
 	s.Equal(http.StatusMethodNotAllowed, s.recorder.Code)
 	s.Equal(wantMethodCode, string(s.errorBody().Code))
+	s.Equal(wantPingAllow, s.recorder.Header().Get(headerAllow))
 }
 
 func (s *RouterTestSuite) TestUnknownAPIPathReturnsJSONNotFoundFromSubrouter() {
