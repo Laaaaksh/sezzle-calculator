@@ -6,7 +6,7 @@ help: ## List available targets
 
 # Aggregate targets run every part of the project: the Go backend and the React frontend.
 .PHONY: lint
-lint: backend-lint frontend-lint frontend-typecheck ## Lint everything
+lint: backend-lint frontend-lint frontend-typecheck frontend-format-check ## Lint everything
 
 .PHONY: test
 test: backend-test frontend-test ## Test everything
@@ -51,7 +51,7 @@ backend-clean: ## Backend: remove build and coverage output
 	$(MAKE) -C backend clean
 
 # Each frontend-* target runs the matching npm script in frontend/.
-.PHONY: frontend-install frontend-lint frontend-typecheck frontend-test frontend-test-coverage frontend-build frontend-clean
+.PHONY: frontend-install frontend-lint frontend-format-check frontend-typecheck frontend-test frontend-test-coverage frontend-build frontend-clean
 frontend-install: ## Frontend: install dependencies from package-lock.json
 	npm --prefix frontend ci
 
@@ -64,6 +64,9 @@ frontend/node_modules: frontend/package-lock.json
 
 frontend-lint: frontend/node_modules ## Frontend: run ESLint with zero warnings allowed
 	npm --prefix frontend run lint -- --max-warnings=0
+
+frontend-format-check: frontend/node_modules ## Frontend: check formatting with Prettier
+	npm --prefix frontend run format:check
 
 frontend-typecheck: frontend/node_modules ## Frontend: run the TypeScript compiler without emitting
 	npm --prefix frontend run typecheck
