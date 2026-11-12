@@ -31,8 +31,8 @@ func (h *HTTPHandler) RegisterRoutes(r chi.Router) {
 // Live answers 200 while the process can serve a request at all. It checks no
 // dependency on purpose: a failing dependency must not get the process killed
 // and restarted.
-func (h *HTTPHandler) Live(w http.ResponseWriter, _ *http.Request) {
-	httpx.WriteJSON(w, http.StatusOK, entities.LiveResponse{Status: entities.StatusOK})
+func (h *HTTPHandler) Live(w http.ResponseWriter, r *http.Request) {
+	httpx.WriteJSON(r.Context(), w, http.StatusOK, entities.LiveResponse{Status: entities.StatusOK})
 }
 
 // Ready answers 200 when the core reports ready and 503 otherwise.
@@ -41,5 +41,5 @@ func (h *HTTPHandler) Ready(w http.ResponseWriter, r *http.Request) {
 		httpx.WriteError(r.Context(), w, apperror.New(apperror.CodeServiceUnavailable, ErrNotReady))
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, entities.ReadyResponse{Status: entities.StatusReady})
+	httpx.WriteJSON(r.Context(), w, http.StatusOK, entities.ReadyResponse{Status: entities.StatusReady})
 }

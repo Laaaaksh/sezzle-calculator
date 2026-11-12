@@ -12,6 +12,9 @@ idle_timeout = "60s"
 # so the handler can answer before the server cuts the connection.
 request_timeout = "5s"
 shutdown_grace_period = "10s"
+# How long to keep serving after /health/ready turns 503 on shutdown, so a load
+# balancer notices before connections are refused. Zero skips the wait.
+shutdown_drain_delay = "0s"
 max_body_bytes = 1048576 # 1 MiB
 
 [cors]

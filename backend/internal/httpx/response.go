@@ -37,11 +37,12 @@ const fallbackBody = `{"error":{"code":"` + string(apperror.CodeInternal) +
 
 // WriteJSON writes v as JSON with status. The body is encoded before anything
 // is sent, so an unencodable value becomes a clean 500 instead of a truncated
-// 200.
-func WriteJSON(w http.ResponseWriter, status int, v any) {
+// 200. ctx is the request context, so an encode failure is logged with the
+// request ID.
+func WriteJSON(ctx context.Context, w http.ResponseWriter, status int, v any) {
 	body, err := json.Marshal(v)
 	if err != nil {
-		logger.Ctx(context.Background()).Errorw(constants.LogMsgResponseEncode,
+		logger.Ctx(ctx).Errorw(constants.LogMsgResponseEncode,
 			constants.LogKeyError, err.Error())
 		status = http.StatusInternalServerError
 		body = []byte(fallbackBody)
@@ -64,7 +65,7 @@ func WriteError(ctx context.Context, w http.ResponseWriter, err apperror.IError)
 	if id, ok := contextkeys.RequestID(ctx); ok {
 		body.RequestID = id
 	}
-	WriteJSON(w, err.HTTPStatus(), ErrorResponse{Error: body})
+	WriteJSON(ctx, w, err.HTTPStatus(), ErrorResponse{Error: body})
 }
 
 // logError records server faults at error level and client faults at warn, so

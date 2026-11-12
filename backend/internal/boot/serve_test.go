@@ -23,6 +23,8 @@ const (
 	serveGraceDefault  = `shutdown_grace_period = "2s"`
 	serveGraceOverride = `shutdown_grace_period = "5s"`
 	serveGraceShort    = `shutdown_grace_period = "50ms"`
+	serveGraceDrain    = "shutdown_grace_period = \"5s\"\nshutdown_drain_delay = \"2s\""
+	serveDrainPoll     = 10 * time.Millisecond
 	serveURL           = "http://pipe"
 	// serveSettleDelay lets the server register the accepted connection; the
 	// net/http server exposes no hook to observe that.
@@ -166,6 +168,21 @@ func (s *ServeTestSuite) TestServeFlipsReadinessOffWhenShutdownStarts() {
 	s.Require().NoError(s.wait(done))
 
 	s.False(health.HealthModule.GetCore().IsReady(context.Background()))
+}
+
+func (s *ServeTestSuite) TestServeKeepsAnsweringNotReadyDuringDrainDelay() {
+	s.writeConfig(serveGraceDrain)
+	app := s.initialize()
+	ctx, cancel := context.WithCancel(context.Background())
+	done := s.start(ctx, app, s.listener)
+	s.Equal(http.StatusOK, s.status(testReadyPath))
+
+	cancel()
+
+	s.Eventually(func() bool {
+		return s.status(testReadyPath) == http.StatusServiceUnavailable
+	}, serveWaitLimit, serveDrainPoll)
+	s.NoError(s.wait(done))
 }
 
 func (s *ServeTestSuite) TestServeReturnsErrorAndDrainsWhenListenerFails() {

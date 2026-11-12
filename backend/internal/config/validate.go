@@ -33,6 +33,9 @@ func (s ServerConfig) validate() []error {
 		errs = append(errs, withValue(ErrRequestTimeoutNotBelowWrite, s.RequestTimeout))
 	}
 	errs = appendIfNotPositive(errs, s.ShutdownGracePeriod, ErrShutdownGraceNotPositive)
+	if s.ShutdownDrainDelay < 0 {
+		errs = append(errs, withValue(ErrShutdownDrainNegative, s.ShutdownDrainDelay))
+	}
 	if s.MaxBodyBytes <= 0 {
 		errs = append(errs, withValue(ErrMaxBodyNotPositive, s.MaxBodyBytes))
 	}

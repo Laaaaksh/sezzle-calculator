@@ -29,6 +29,8 @@ var (
 		constants.KeyServerRequestTimeout, constants.KeyServerWriteTimeout)
 	ErrShutdownGraceNotPositive = fmt.Errorf(constants.ErrFmtPositive,
 		constants.KeyServerShutdownGracePeriod)
+	ErrShutdownDrainNegative = fmt.Errorf(constants.ErrFmtNotNeg,
+		constants.KeyServerShutdownDrainDelay)
 	ErrMaxBodyNotPositive = fmt.Errorf(constants.ErrFmtPositive,
 		constants.KeyServerMaxBodyBytes)
 

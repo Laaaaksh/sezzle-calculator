@@ -73,6 +73,7 @@ const (
 	envValueMaxBody      = "2048"
 	envValueDecimalPrec  = "30"
 	envValueCORSOrigins  = "https://a.example.com,https://b.example.com"
+	envValueCORSSlashed  = "https://a.example.com/,https://b.example.com"
 	envValueMissingDir   = "does-not-exist"
 	envValueEmpty        = ""
 	envValueDefaultNoDir = "config"

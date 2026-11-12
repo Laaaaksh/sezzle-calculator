@@ -48,7 +48,7 @@ func (s *ResponseTestSuite) decodeError() httpx.ErrorResponse {
 }
 
 func (s *ResponseTestSuite) TestWriteJSONSetsStatusHeadersAndBody() {
-	httpx.WriteJSON(s.recorder, http.StatusCreated, map[string]string{testStatusKey: testStatusValue})
+	httpx.WriteJSON(context.Background(), s.recorder, http.StatusCreated, map[string]string{testStatusKey: testStatusValue})
 
 	s.Equal(http.StatusCreated, s.recorder.Code)
 	s.Equal(wantContentType, s.recorder.Header().Get(constants.HeaderContentType))
@@ -57,12 +57,22 @@ func (s *ResponseTestSuite) TestWriteJSONSetsStatusHeadersAndBody() {
 }
 
 func (s *ResponseTestSuite) TestWriteJSONUnencodableValueSendsInternalFallback() {
-	httpx.WriteJSON(s.recorder, http.StatusOK, make(chan int))
+	httpx.WriteJSON(context.Background(), s.recorder, http.StatusOK, make(chan int))
 
 	s.Equal(http.StatusInternalServerError, s.recorder.Code)
 	s.Equal(wantFallbackBody, s.recorder.Body.String())
 	s.Equal(wantContentType, s.recorder.Header().Get(constants.HeaderContentType))
 	s.Equal(1, s.observed.FilterMessage(constants.LogMsgResponseEncode).Len())
+}
+
+func (s *ResponseTestSuite) TestWriteJSONEncodeFailureLogsRequestID() {
+	ctx := contextkeys.WithRequestID(context.Background(), testRequestID)
+
+	httpx.WriteJSON(ctx, s.recorder, http.StatusOK, make(chan int))
+
+	entries := s.observed.FilterMessage(constants.LogMsgResponseEncode).All()
+	s.Require().Len(entries, 1)
+	s.Equal(testRequestID, entries[0].ContextMap()[constants.LogKeyRequestID])
 }
 
 func (s *ResponseTestSuite) TestWriteErrorUsesStatusAndPublicFields() {

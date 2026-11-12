@@ -1,5 +1,9 @@
 # Production overrides.
 
+[server]
+# Longer than a typical load balancer readiness poll interval.
+shutdown_drain_delay = "5s"
+
 [cors]
 # Placeholder only. Set the real frontend origin through
 # APP_CORS_ALLOWED_ORIGINS at deploy time; never ship a localhost origin here.

@@ -2,6 +2,7 @@
 package config
 
 import (
+	"strings"
 	"time"
 
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/constants"
@@ -31,12 +32,24 @@ type ServerConfig struct {
 	IdleTimeout         time.Duration `mapstructure:"idle_timeout"`
 	RequestTimeout      time.Duration `mapstructure:"request_timeout"`
 	ShutdownGracePeriod time.Duration `mapstructure:"shutdown_grace_period"`
-	MaxBodyBytes        int64         `mapstructure:"max_body_bytes"`
+	// ShutdownDrainDelay keeps serving after readiness turns 503, so a load
+	// balancer polling /health/ready can stop routing before the listener closes.
+	ShutdownDrainDelay time.Duration `mapstructure:"shutdown_drain_delay"`
+	MaxBodyBytes       int64         `mapstructure:"max_body_bytes"`
 }
 
 // CORSConfig lists the browser origins allowed to call the API.
 type CORSConfig struct {
 	AllowedOrigins []string `mapstructure:"allowed_origins"`
+}
+
+// normalize strips the trailing "/" from each origin. Browsers send Origin
+// without one and the CORS middleware compares strings exactly, so
+// "https://a.com/" would otherwise pass validation yet never match.
+func (c *CORSConfig) normalize() {
+	for i, origin := range c.AllowedOrigins {
+		c.AllowedOrigins[i] = strings.TrimSuffix(origin, constants.OriginPathRoot)
+	}
 }
 
 // CalculatorConfig bounds the work one calculation may demand, so a single

@@ -131,6 +131,15 @@ func (s *LoadTestSuite) TestLoadWhenCORSEnvVarSetSplitsCommaSeparatedList() {
 	s.Equal([]string{wantOverrideOriginOne, wantOverrideOriginTwo}, cfg.CORS.AllowedOrigins)
 }
 
+func (s *LoadTestSuite) TestLoadStripsTrailingSlashFromCORSOrigins() {
+	s.T().Setenv(envVarCORSOrigins, envValueCORSSlashed)
+
+	cfg, err := config.Load()
+
+	s.Require().NoError(err)
+	s.Equal([]string{wantOverrideOriginOne, wantOverrideOriginTwo}, cfg.CORS.AllowedOrigins)
+}
+
 func (s *LoadTestSuite) TestLoadWhenEnvVarSetBeatsEnvFile() {
 	s.T().Setenv(envVarEnvironment, envNameTest)
 	s.T().Setenv(envVarPort, envValuePort)

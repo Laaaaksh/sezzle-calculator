@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/config"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/constants"
@@ -110,13 +111,16 @@ func (a *App) serveFailed(ctx context.Context, err error) error {
 	return fmt.Errorf(constants.ErrFmtServe, err)
 }
 
-// shutdown flips readiness first so load balancers stop sending traffic, then
-// lets in-flight requests finish within the grace period. If they do not,
-// connections are closed so the process never hangs past the deadline.
+// shutdown flips readiness first and keeps serving for the drain delay, so
+// load balancers polling readiness stop sending traffic before the listener
+// closes. It then lets in-flight requests finish within the grace period. If
+// they do not, connections are closed so the process never hangs past the
+// deadline.
 func (a *App) shutdown(ctx context.Context, serveErr <-chan error) error {
 	log := logger.Ctx(ctx)
 	log.Infow(constants.LogMsgShutdownStarted)
 	a.health.GetCore().SetReady(false)
+	time.Sleep(a.cfg.Server.ShutdownDrainDelay)
 
 	// The run context is already cancelled; the grace period needs its own.
 	graceCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), a.cfg.Server.ShutdownGracePeriod)

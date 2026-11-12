@@ -17,6 +17,7 @@ const (
 	KeyServerIdleTimeout         = "server.idle_timeout"
 	KeyServerRequestTimeout      = "server.request_timeout"
 	KeyServerShutdownGracePeriod = "server.shutdown_grace_period"
+	KeyServerShutdownDrainDelay  = "server.shutdown_drain_delay"
 	KeyServerMaxBodyBytes        = "server.max_body_bytes"
 	KeyCORSAllowedOrigins        = "cors.allowed_origins"
 	KeyCalculatorMaxOperandLen   = "calculator.max_operand_length"
@@ -54,6 +55,7 @@ const (
 const (
 	ErrFmtRange      = "%s must be between %d and %d"
 	ErrFmtPositive   = "%s must be greater than zero"
+	ErrFmtNotNeg     = "%s must not be negative"
 	ErrFmtBelow      = "%s must be less than %s"
 	ErrFmtRequired   = "%s must contain at least one origin"
 	ErrFmtWildcard   = "%s must not contain the wildcard origin"

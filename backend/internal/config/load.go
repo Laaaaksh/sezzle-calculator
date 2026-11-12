@@ -45,6 +45,7 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf(constants.ErrFmtUnmarshal, err)
 	}
 	cfg.App.Env = env
+	cfg.CORS.normalize()
 
 	if err := cfg.Validate(); err != nil {
 		return nil, fmt.Errorf(constants.ErrFmtInvalid, err)

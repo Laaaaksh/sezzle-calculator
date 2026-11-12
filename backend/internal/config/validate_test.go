@@ -113,6 +113,18 @@ func (s *ValidateTestSuite) TestValidateWhenShutdownGraceZeroReturnsError() {
 	s.ErrorIs(s.cfg.Validate(), config.ErrShutdownGraceNotPositive)
 }
 
+func (s *ValidateTestSuite) TestValidateWhenShutdownDrainNegativeReturnsError() {
+	s.cfg.Server.ShutdownDrainDelay = invalidNegDuration
+
+	s.ErrorIs(s.cfg.Validate(), config.ErrShutdownDrainNegative)
+}
+
+func (s *ValidateTestSuite) TestValidateWhenShutdownDrainZeroIsValid() {
+	s.cfg.Server.ShutdownDrainDelay = invalidDuration
+
+	s.NoError(s.cfg.Validate())
+}
+
 func (s *ValidateTestSuite) TestValidateWhenMaxBodyZeroReturnsError() {
 	s.cfg.Server.MaxBodyBytes = invalidMaxBody
 
