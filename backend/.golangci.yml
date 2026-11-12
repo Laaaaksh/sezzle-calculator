@@ -50,6 +50,13 @@ linters:
         linters:
           - gosec
         text: "G101"
+      # G112 (Slowloris) flags in-test http.Servers served over an in-memory net.Pipe
+      # listener; no real network client can reach them. The production server sets
+      # ReadHeaderTimeout in internal/boot.
+      - path: _test\.go
+        linters:
+          - gosec
+        text: "G112"
 
 formatters:
   enable:
