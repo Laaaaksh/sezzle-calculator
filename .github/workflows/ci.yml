@@ -38,13 +38,13 @@ jobs:
           go-version-file: backend/go.mod
           cache-dependency-path: backend/go.sum
 
+      # Generate gomock mocks; test files import them, so this must run before the tidy check, lint and test.
+      - name: Generate mocks
+        run: make mock
+
       # Fail if go.mod or go.sum are out of date with the code.
       - name: Verify modules are tidy
         run: go mod tidy -diff
-
-      # Generate gomock mocks; test files import them, so this must run before lint and test.
-      - name: Generate mocks
-        run: make mock
 
       # Run golangci-lint with the pinned version; any finding fails the job.
       - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
