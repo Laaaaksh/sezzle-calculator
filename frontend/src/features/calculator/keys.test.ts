@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { DIGITS } from '../../constants/calculator';
-import { isActionAvailable, KEYS, operationForAction } from './keys';
+import {
+  isActionAvailable,
+  KEYS,
+  operationForAction,
+  PERCENT_KEY_ARIA_LABEL,
+  PERCENT_KEY_HINT,
+  PERCENT_KEY_LABEL,
+} from './keys';
 
 describe('KEYS', () => {
   it('has an aria-label on every key that is not a plain digit', () => {
@@ -42,6 +49,26 @@ describe('KEYS', () => {
       expect(KEYS.some((key) => key.action.type === type)).toBe(true);
     },
   );
+});
+
+describe('percent key', () => {
+  const percent = KEYS.find((key) => key.id === 'percentage');
+
+  it('shows "% of" and is named "Percent of", not a bare "%"', () => {
+    expect(percent?.label).toBe(PERCENT_KEY_LABEL);
+    expect(percent?.ariaLabel).toBe(PERCENT_KEY_ARIA_LABEL);
+    expect(PERCENT_KEY_LABEL).toBe('% of');
+    expect(PERCENT_KEY_ARIA_LABEL).toBe('Percent of');
+  });
+
+  it('carries a hint that spells out the order of the operands', () => {
+    expect(percent?.hint).toBe(PERCENT_KEY_HINT);
+    expect(PERCENT_KEY_HINT).toBe('x percent of y: type x, press % of, then type y');
+  });
+
+  it('is the only key with a hint', () => {
+    expect(KEYS.filter((key) => key.hint !== undefined)).toHaveLength(1);
+  });
 });
 
 describe('operationForAction', () => {

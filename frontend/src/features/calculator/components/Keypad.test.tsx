@@ -17,6 +17,27 @@ describe('Keypad', () => {
     expect(screen.getByRole('button', { name: 'Divide' })).toHaveTextContent('÷');
   });
 
+  it('names the percent key "Percent of" and shows "% of"', () => {
+    render(<Keypad isPending={false} onPress={vi.fn()} />);
+
+    expect(screen.getByRole('button', { name: 'Percent of' })).toHaveTextContent('% of');
+  });
+
+  it('explains the percent key in a tooltip and in its accessible description', () => {
+    render(<Keypad isPending={false} onPress={vi.fn()} />);
+
+    const key = screen.getByRole('button', { name: 'Percent of' });
+
+    expect(key).toHaveAttribute('title', 'x percent of y: type x, press % of, then type y');
+    expect(key).toHaveAccessibleDescription('x percent of y: type x, press % of, then type y');
+  });
+
+  it('gives the other keys no tooltip', () => {
+    render(<Keypad isPending={false} onPress={vi.fn()} />);
+
+    expect(screen.getByRole('button', { name: 'Divide' })).not.toHaveAttribute('title');
+  });
+
   it('passes the key action to onPress', async () => {
     const onPress = vi.fn();
     render(<Keypad isPending={false} onPress={onPress} />);

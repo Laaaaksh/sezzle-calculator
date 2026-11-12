@@ -1,5 +1,5 @@
-import { OPERATION_SYMBOLS, type BinaryOperation } from '../../constants/calculator';
-import { formatExpression } from './expression';
+import type { BinaryOperation } from '../../constants/calculator';
+import { formatExpression, formatPendingExpression } from './expression';
 import type { CalculatorState } from './state';
 
 export interface DisplayLines {
@@ -20,12 +20,12 @@ export function describeDisplay(state: CalculatorState): DisplayLines {
       return { expression: '', value: state.operand === '' ? ZERO : state.operand };
     case 'operator_chosen':
       return {
-        expression: `${state.left} ${OPERATION_SYMBOLS[state.operator]}`,
+        expression: formatPendingExpression(state.left, state.operator),
         value: state.left,
       };
     case 'entering_second':
       return {
-        expression: `${state.left} ${OPERATION_SYMBOLS[state.operator]}`,
+        expression: formatPendingExpression(state.left, state.operator),
         value: state.operand,
       };
     case 'error':

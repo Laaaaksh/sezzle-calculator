@@ -96,6 +96,25 @@ describe('Calculator', () => {
     expect(bodies).toEqual([{ operation: 'add', operands: ['12.5', '7.25'] }]);
   });
 
+  it('reads "20% of 50" from the % of key and sends x as the first operand', async () => {
+    const bodies = recordCalculate(() =>
+      HttpResponse.json({ operation: 'percentage', operands: ['20', '50'], result: '10' }),
+    );
+    const user = renderCalculator();
+
+    await pressKeys(user, '2', '0', 'Percent of');
+
+    expect(display()).toHaveTextContent('20% of');
+
+    await pressKeys(user, '5', '0', 'Equals');
+
+    await waitFor(() => {
+      expect(display()).toHaveTextContent('20% of 50 =');
+    });
+    expect(liveRegion()).toHaveTextContent('10');
+    expect(bodies).toEqual([{ operation: 'percentage', operands: ['20', '50'] }]);
+  });
+
   it('shows friendly copy and no Retry when dividing by zero', async () => {
     recordCalculate(divideByZero);
     const user = renderCalculator();

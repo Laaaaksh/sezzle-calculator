@@ -110,7 +110,7 @@ Operands are used in the order given.
 | `sqrt` | 1 | `√` | The square root of `a`. A negative `a` is `NEGATIVE_SQUARE_ROOT`. A perfect square is exact: `sqrt(144)` is `12`. |
 | `percentage` | 2 | `%` | `a` percent of `b`, which is `a / 100 * b`. So `percentage(20, 50)` is `10`. |
 
-`percentage` has several meanings in everyday use: "what percent is x of y", and "x increased by y percent" are two others. This API means only "x percent of y", with the percent first and the base second.
+`percentage` has several meanings in everyday use: "what percent is x of y", and "x increased by y percent" are two others. This API means only "x percent of y", with the percent first and the base second. The web keypad says the same: the key reads `% of` (accessible name "Percent of"), has a tooltip "x percent of y: type x, press % of, then type y", and the display shows `20% of` while the second number is typed.
 
 The symbol is for display. The frontend may draw `*` as `×`. Clients never send a symbol, only the name.
 

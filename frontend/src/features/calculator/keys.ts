@@ -16,6 +16,8 @@ export interface KeyDefinition {
   kind: KeyKind;
   /** Takes two columns of the four-column grid. */
   wide?: boolean;
+  /** Extra help shown as a tooltip and read after the name, for a key whose meaning is not obvious. */
+  hint?: string;
 }
 
 const digitKey = (digit: Digit): KeyDefinition => ({
@@ -47,7 +49,24 @@ const symbol = (
   action: CalculatorAction,
   kind: KeyKind,
   wide = false,
-): KeyDefinition => ({ id, label, ariaLabel, action, kind, ...(wide ? { wide } : {}) });
+  hint?: string,
+): KeyDefinition => ({
+  id,
+  label,
+  ariaLabel,
+  action,
+  kind,
+  ...(wide ? { wide } : {}),
+  ...(hint === undefined ? {} : { hint }),
+});
+
+/**
+ * The % key means "x percent of y", not "divide by 100". The visible label says "of" and the hint
+ * spells out the order, because a bare % reads differently on every phone calculator.
+ */
+export const PERCENT_KEY_LABEL = '% of';
+export const PERCENT_KEY_ARIA_LABEL = 'Percent of';
+export const PERCENT_KEY_HINT = 'x percent of y: type x, press % of, then type y';
 
 /** In reading order for a four-column grid: a double-width row, then four columns by five rows. */
 export const KEYS: readonly KeyDefinition[] = [
@@ -55,7 +74,15 @@ export const KEYS: readonly KeyDefinition[] = [
   symbol('power', '^', 'Power', { type: 'operator', operator: 'power' }, 'operator', true),
   symbol('clear', 'C', 'Clear', { type: 'clear' }, 'function'),
   symbol('backspace', '⌫', 'Backspace', { type: 'backspace' }, 'function'),
-  symbol('percentage', '%', 'Percent', { type: 'operator', operator: 'percentage' }, 'operator'),
+  symbol(
+    'percentage',
+    PERCENT_KEY_LABEL,
+    PERCENT_KEY_ARIA_LABEL,
+    { type: 'operator', operator: 'percentage' },
+    'operator',
+    false,
+    PERCENT_KEY_HINT,
+  ),
   symbol('divide', '÷', 'Divide', { type: 'operator', operator: 'divide' }, 'operator'),
   digitKeys['7'],
   digitKeys['8'],
