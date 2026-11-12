@@ -181,9 +181,14 @@ func log10Coefficient(d decimal.Decimal) float64 {
 // coefficient 1, exponent 1, the same value. d must not be zero.
 func stripTrailingZeros(d decimal.Decimal) decimal.Decimal {
 	digits := d.Coefficient().String()
-	trimmed := strings.TrimRight(digits, "0")
-	coefficient, _ := new(big.Int).SetString(trimmed, 10)
-	return decimal.NewFromBigInt(coefficient, d.Exponent()+int32(len(digits)-len(trimmed)))
+	// Count zeros as int32 directly so no int -> int32 conversion is needed.
+	var zeros int32
+	for strings.HasSuffix(digits, "0") {
+		digits = digits[:len(digits)-1]
+		zeros++
+	}
+	coefficient, _ := new(big.Int).SetString(digits, 10)
+	return decimal.NewFromBigInt(coefficient, d.Exponent()+zeros)
 }
 
 // digitsOf counts the digits of d as written without trailing fraction zeros
