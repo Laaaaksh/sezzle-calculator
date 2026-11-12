@@ -15,16 +15,16 @@ Legend: `[ ]` not done, `[x]` done and proven. Optional items are marked (option
 | F5 | Exponentiation (optional) | [x] | `operations/power.go`, tests, [smoke](API_SMOKE.md) |
 | F6 | Square root (optional) | [x] | `operations/sqrt.go`, tests, [smoke](API_SMOKE.md) |
 | F7 | Percentage (optional) | [x] | `operations/percentage.go` (x percent of y), tests, [smoke](API_SMOKE.md) |
-| F8 | Frontend consumes the backend API for every calculation | [x] | `useCalculator.ts` sends every calculation through the API client `calculate`, `Calculator.test.tsx` journeys |
+| F8 | Frontend consumes the backend API for every calculation | [x] | `src/api/client.ts` used by `useCalculator`; the UI never computes, `Calculator.test.tsx` journeys ([screenshots](screenshots/)) |
 
 ## Frontend (React)
 
 | ID | Requirement | Status | Proof |
 |---|---|---|---|
-| FE1 | Intuitive UI for entering input and displaying results | [ ] | |
-| FE2 | Input validation | [ ] | |
-| FE3 | Error handling | [x] | `constants/errorMessages.ts` copy per code, `ErrorBanner` with Retry, `Calculator.test.tsx` divide by zero and network retry journeys |
-| FE4 | Responsive design (basic mobile support) | [ ] | |
+| FE1 | Intuitive UI for entering input and displaying results | [x] | keypad, display, history, keyboard support ([desktop](screenshots/desktop-light.jpg)) |
+| FE2 | Input validation | [x] | reducer rules (one decimal point, max length, leading zeros), `state/reducer.test.ts` |
+| FE3 | Error handling | [x] | friendly copy per error code, retry on network errors ([error](screenshots/mobile-error.jpg)), `ErrorBanner` tests, `Calculator.test.tsx` divide by zero and network retry journeys |
+| FE4 | Responsive design (basic mobile support) | [x] | checked at 320 to 1440 px, history drawer below 900 px ([mobile](screenshots/mobile-dark.jpg)) |
 
 ## Backend (REST API)
 
@@ -42,7 +42,7 @@ Legend: `[ ]` not done, `[x]` done and proven. Optional items are marked (option
 |---|---|---|---|
 | NF1 | Clean, readable, idiomatic frontend code | [ ] | |
 | NF2 | Clean, readable, idiomatic backend code | [ ] | |
-| NF3 | Unit tests covering key frontend functionality | [ ] | |
+| NF3 | Unit tests covering key frontend functionality | [x] | Vitest + RTL + MSW, 485 tests, 100% coverage (`npm run test:coverage`) |
 | NF4 | Unit tests covering key backend functionality | [x] | testify suites per package, 95.7% backend coverage (`make test-coverage`) |
 | NF5 | Documentation: setup instructions | [ ] | |
 | NF6 | Documentation: API usage | [ ] | |
@@ -53,7 +53,7 @@ Legend: `[ ]` not done, `[x]` done and proven. Optional items are marked (option
 
 | ID | Requirement | Status | Proof |
 |---|---|---|---|
-| C1 | Frontend in React, TypeScript preferred | [x] | `frontend/` React 19, TypeScript strict mode (`tsconfig.app.json`) |
+| C1 | Frontend in React, TypeScript preferred | [x] | `frontend/` React 19 + TypeScript strict |
 | C2 | Backend in Go (preferred) | [x] | `backend/` Go 1.26 |
 
 ## Deliverables

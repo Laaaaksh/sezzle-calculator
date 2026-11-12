@@ -400,3 +400,13 @@ Add an axe check to the component tests. Tell me what you changed and why.
 ```
 
 Produced: Full accessibility pass, written up in docs/ACCESSIBILITY.md. src/styles/contrast.test.ts computes WCAG ratios from tokens.css for both themes (4.5:1 text, 3:1 focus and active rings; all pass). stylesheets.test.ts fails on any removed outline, clickable rule without a focus ring or a 44px minimum height, and any motion outside the no-preference query. Fixes: the error message is a role=alert outside the polite status region, Retry and history entries reach 44px, the active operator has aria-pressed, a ring that stays visible when focused and an outline fallback in forced-colors mode. index.html.test.ts blocks zoom limits and inline scripts, App.test.tsx checks tab order, and src/test/axe.ts runs axe-core (contrast rule off in jsdom only, covered by the token test) on the calculator when idle, with a result, an active operator, both error kinds and the drawer open, plus the theme toggle and the app.
+
+---
+
+## 23. Browser check
+
+```
+Run the backend and frontend together and check the UI in a real browser at 320px, 375px, 768px and 1440px, in light and dark mode. Do a full calculation with the keyboard only. Take screenshots of each and show me. Be picky: alignment, spacing, overflow on long numbers, focus rings, the loading and error states. Fix anything that looks off, then run frontend typecheck, lint and test with coverage and show me the numbers.
+```
+
+Produced: a real-browser check at 320, 375, 768, 1280 and 1440 px in light and dark, keyboard-only flows, no horizontal overflow, exact results (0.1+0.2, 1/3, 987654321 squared, 2^200, sqrt 2). Found and fixed two issues: the error state read like "9 / 0 = 0", and the drawer repeated its heading. Screenshots in docs/screenshots.
