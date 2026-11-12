@@ -1,6 +1,7 @@
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { WIDE_LAYOUT_QUERY } from '../../../constants/layout';
 import type { HistoryEntry } from '../history';
 import { HistoryDrawer } from './HistoryDrawer';
 
@@ -157,7 +158,7 @@ describe('HistoryDrawer', () => {
 
     media.resize(true);
 
-    expect(media.queries).toEqual(['(min-width: 900px)']);
+    expect(media.queries).toEqual([WIDE_LAYOUT_QUERY]);
     expect(toggle()).toHaveAttribute('aria-expanded', 'false');
     const event = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
     screen.getByRole('button', { name: /12\.5 \+ 7\.25/ }).dispatchEvent(event);

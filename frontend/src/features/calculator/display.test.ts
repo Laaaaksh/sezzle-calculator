@@ -5,7 +5,6 @@ import type { CalculatorError, CalculatorState, PendingRequest } from './state';
 const PENDING: PendingRequest = { id: 1, operation: 'add', operands: ['12.5', '7.25'], then: null };
 const ERROR: CalculatorError = {
   code: 'NETWORK_ERROR',
-  message: 'x',
   requestId: undefined,
   retryable: true,
 };

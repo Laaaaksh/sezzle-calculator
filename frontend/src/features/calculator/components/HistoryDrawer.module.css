@@ -66,6 +66,7 @@
 }
 
 /* Beside the keypad there is room for the tape, so the button and its open state do not apply. */
+/* 900px = WIDE_LAYOUT_MIN_WIDTH_PX in constants/layout.ts; breakpoints.test.ts keeps them equal. */
 @media (min-width: 900px) {
   .toggle {
     display: none;
@@ -82,10 +83,11 @@
 /*
  * In the drawer the toggle already says "History", so a visible heading right below it repeats
  * it. Hide it on screen but keep it for screen readers. Same declarations as the global
- * .visually-hidden class, repeated because a media query cannot apply a class.
+ * .visually-hidden class, repeated because a media query cannot apply a class. HistoryTape
+ * receives this class as a prop, so the drawer styles its child without reaching into it.
  */
 @media (max-width: 899.98px) {
-  .panel h2 {
+  .panelHeading {
     position: absolute;
     width: 1px;
     height: 1px;

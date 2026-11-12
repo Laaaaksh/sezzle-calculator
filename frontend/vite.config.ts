@@ -15,8 +15,9 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     server: {
-      // types.test.ts imports ../docs/API.md to check the API types against the contract.
-      // Only that folder is opened up; the rest of the repo stays outside the dev server.
+      // types.test.ts reads ../docs/API.md to check the API types against the contract.
+      // Only that folder is opened up. A single-file entry is not enough: Vite then denies the
+      // file's ?raw import, so the narrowest working scope is the docs folder itself.
       fs: { allow: ['.', '../docs'] },
       // Proxying keeps the browser on one origin in dev, so there are no CORS issues.
       proxy: {

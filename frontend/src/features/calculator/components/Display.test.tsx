@@ -108,7 +108,7 @@ describe('Display', () => {
         state={{
           status: 'error',
           lastRequestId: 1,
-          error: { code: 'NETWORK_ERROR', message: 'x', requestId: undefined, retryable: true },
+          error: { code: 'NETWORK_ERROR', requestId: undefined, retryable: true },
           pending: { id: 1, operation: 'divide', operands: ['9', '0'], then: null },
         }}
         isPending={false}

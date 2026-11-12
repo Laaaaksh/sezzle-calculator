@@ -1,3 +1,4 @@
+import { CANCELED_MESSAGE, ERROR_MESSAGES } from '../constants/errorMessages';
 import type { ApiErrorCode, ErrorFields } from './types';
 
 export interface ApiErrorInit {
@@ -31,7 +32,7 @@ export class NetworkError extends Error {
   override readonly name = 'NetworkError';
 
   constructor(options?: ErrorOptions) {
-    super('Could not reach the server.', options);
+    super(ERROR_MESSAGES.NETWORK_ERROR, options);
   }
 }
 
@@ -41,7 +42,7 @@ export class TimeoutError extends Error {
   readonly timeoutMs: number;
 
   constructor(timeoutMs: number, options?: ErrorOptions) {
-    super(`The request took longer than ${timeoutMs} ms.`, options);
+    super(ERROR_MESSAGES.TIMEOUT, options);
     this.timeoutMs = timeoutMs;
   }
 }
@@ -54,6 +55,6 @@ export class CanceledError extends Error {
   override readonly name = 'CanceledError';
 
   constructor(options?: ErrorOptions) {
-    super('The request was canceled.', options);
+    super(CANCELED_MESSAGE, options);
   }
 }

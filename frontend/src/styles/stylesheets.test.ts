@@ -186,7 +186,7 @@ describe('history heading', () => {
   const drawer = moduleNamed('HistoryDrawer.module.css');
 
   it('is visually hidden in the drawer, where the toggle already says History', () => {
-    const hidden = rulesFor(drawer, '.panel h2').filter((rule) =>
+    const hidden = rulesFor(drawer, '.panelHeading').filter((rule) =>
       mediaQueries(rule).some((query) => query.includes('max-width')),
     );
 

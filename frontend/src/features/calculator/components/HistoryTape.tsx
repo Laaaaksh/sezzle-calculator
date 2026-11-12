@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { formatExpression } from '../expression';
 import type { HistoryEntry } from '../history';
 import styles from './HistoryTape.module.css';
@@ -6,12 +7,15 @@ interface HistoryTapeProps {
   /** Newest first. */
   entries: readonly HistoryEntry[];
   onReuse: (entry: HistoryEntry) => void;
+  /** Extra class for the heading, so a parent can restyle it without a selector into this component. */
+  headingClassName?: string | undefined;
 }
 
-export function HistoryTape({ entries, onReuse }: HistoryTapeProps) {
+export function HistoryTape({ entries, onReuse, headingClassName }: HistoryTapeProps) {
+  const headingId = useId();
   return (
-    <section aria-labelledby="history-heading">
-      <h2 id="history-heading" className={styles.heading}>
+    <section aria-labelledby={headingId}>
+      <h2 id={headingId} className={[styles.heading, headingClassName].filter(Boolean).join(' ')}>
         History
       </h2>
       {entries.length === 0 ? (

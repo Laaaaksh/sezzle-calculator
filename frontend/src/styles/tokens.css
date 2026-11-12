@@ -1,11 +1,12 @@
 /*
  * Design tokens. Components read these variables and never hard-code a colour, size or timing.
- * Light is the base. Dark lives in two places that must stay identical: an explicit
- * [data-theme='dark'] choice, and the system preference when no choice is made.
- * tokens.test.ts fails if the two copies drift apart.
+ * Each colour is written once as light-dark(light, dark). color-scheme decides which side wins:
+ * 'light dark' follows the system, and [data-theme] pins one. So the explicit choice and the
+ * system preference share one definition and cannot drift apart. The theme attribute is set
+ * before first paint (public/theme-init.js), so there is no flash.
  */
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
 
   --font-ui: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   /* Monospace digits keep the display from jittering while a number is typed. */
@@ -38,90 +39,41 @@
   --duration-base: 180ms;
   --ease-out: cubic-bezier(0.2, 0, 0, 1);
 
-  --color-bg: #f7f6f3;
-  --color-card: #ffffff;
-  --color-well: #f7f6f3;
-  --color-text: #111827;
-  --color-text-muted: #4b5563;
-  --color-border: #e5e7eb;
+  --color-bg: light-dark(#f7f6f3, #0b0f14);
+  --color-card: light-dark(#ffffff, #10161d);
+  --color-well: light-dark(#f7f6f3, #0b0f14);
+  --color-text: light-dark(#111827, #e6edf3);
+  --color-text-muted: light-dark(#4b5563, #9aa7b4);
+  --color-border: light-dark(#e5e7eb, #263140);
 
-  --color-key: #ffffff;
-  --color-key-hover: #f3f4f6;
-  --color-key-fn: #f3f4f6;
-  --color-key-fn-hover: #e9ebee;
-  --color-key-op: #efecfe;
-  --color-key-op-hover: #e4dffd;
+  --color-key: light-dark(#ffffff, #151b23);
+  --color-key-hover: light-dark(#f3f4f6, #1b232d);
+  --color-key-fn: light-dark(#f3f4f6, #1b232d);
+  --color-key-fn-hover: light-dark(#e9ebee, #232c38);
+  --color-key-op: light-dark(#efecfe, #12332d);
+  --color-key-op-hover: light-dark(#e4dffd, #17413a);
 
-  --color-accent: #5b3df5;
-  --color-accent-hover: #4b2ee0;
-  --color-on-accent: #ffffff;
+  --color-accent: light-dark(#5b3df5, #2dd4a7);
+  --color-accent-hover: light-dark(#4b2ee0, #4fe0ba);
+  --color-on-accent: light-dark(#ffffff, #0b0f14);
 
-  --color-error-bg: #fef2f2;
-  --color-error-text: #991b1b;
+  --color-error-bg: light-dark(#fef2f2, #2b1416);
+  --color-error-text: light-dark(#991b1b, #fca5a5);
 
   /* The focus ring is the text colour: highest contrast on every surface, and it cannot be
      mistaken for the accent ring that marks the active operator. */
-  --color-focus: #111827;
+  --color-focus: light-dark(#111827, #e6edf3);
 
-  --shadow-card: 0 1px 2px rgb(17 24 39 / 4%), 0 8px 24px rgb(17 24 39 / 6%);
+  --shadow-card:
+    0 1px 2px light-dark(rgb(17 24 39 / 4%), rgb(0 0 0 / 40%)),
+    0 8px 24px light-dark(rgb(17 24 39 / 6%), rgb(0 0 0 / 0%));
+}
+
+/* An explicit choice pins the scheme; with none, the system preference decides. */
+:root[data-theme='light'] {
+  color-scheme: light;
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-
-  --color-bg: #0b0f14;
-  --color-card: #10161d;
-  --color-well: #0b0f14;
-  --color-text: #e6edf3;
-  --color-text-muted: #9aa7b4;
-  --color-border: #263140;
-
-  --color-key: #151b23;
-  --color-key-hover: #1b232d;
-  --color-key-fn: #1b232d;
-  --color-key-fn-hover: #232c38;
-  --color-key-op: #12332d;
-  --color-key-op-hover: #17413a;
-
-  --color-accent: #2dd4a7;
-  --color-accent-hover: #4fe0ba;
-  --color-on-accent: #0b0f14;
-
-  --color-error-bg: #2b1416;
-  --color-error-text: #fca5a5;
-
-  --color-focus: #e6edf3;
-
-  --shadow-card: 0 1px 2px rgb(0 0 0 / 40%);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    color-scheme: dark;
-
-    --color-bg: #0b0f14;
-    --color-card: #10161d;
-    --color-well: #0b0f14;
-    --color-text: #e6edf3;
-    --color-text-muted: #9aa7b4;
-    --color-border: #263140;
-
-    --color-key: #151b23;
-    --color-key-hover: #1b232d;
-    --color-key-fn: #1b232d;
-    --color-key-fn-hover: #232c38;
-    --color-key-op: #12332d;
-    --color-key-op-hover: #17413a;
-
-    --color-accent: #2dd4a7;
-    --color-accent-hover: #4fe0ba;
-    --color-on-accent: #0b0f14;
-
-    --color-error-bg: #2b1416;
-    --color-error-text: #fca5a5;
-
-    --color-focus: #e6edf3;
-
-    --shadow-card: 0 1px 2px rgb(0 0 0 / 40%);
-  }
 }

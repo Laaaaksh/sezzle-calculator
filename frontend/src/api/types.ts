@@ -17,29 +17,32 @@ export const OPERATION_TYPES = [
 
 export type OperationType = (typeof OPERATION_TYPES)[number];
 
-/** Every error code the server can send (the "Error codes and HTTP statuses" table). */
-export const ERROR_CODES = [
-  'BAD_REQUEST',
-  'VALIDATION_FAILED',
-  'UNSUPPORTED_MEDIA_TYPE',
-  'PAYLOAD_TOO_LARGE',
-  'NOT_FOUND',
-  'METHOD_NOT_ALLOWED',
-  'INTERNAL',
-  'SERVICE_UNAVAILABLE',
-  'REQUEST_TIMEOUT',
-  'UNKNOWN_OPERATION',
-  'INVALID_OPERAND_COUNT',
-  'OPERAND_TOO_LARGE',
-  'INVALID_OPERAND',
-  'DIVISION_BY_ZERO',
-  'INVALID_EXPONENT',
-  'EXPONENT_TOO_LARGE',
-  'RESULT_TOO_LARGE',
-  'NEGATIVE_SQUARE_ROOT',
-] as const;
+/** Every error code the server can send (the "Error codes and HTTP statuses" table), by name. */
+export const ERROR_CODE = {
+  BAD_REQUEST: 'BAD_REQUEST',
+  VALIDATION_FAILED: 'VALIDATION_FAILED',
+  UNSUPPORTED_MEDIA_TYPE: 'UNSUPPORTED_MEDIA_TYPE',
+  PAYLOAD_TOO_LARGE: 'PAYLOAD_TOO_LARGE',
+  NOT_FOUND: 'NOT_FOUND',
+  METHOD_NOT_ALLOWED: 'METHOD_NOT_ALLOWED',
+  INTERNAL: 'INTERNAL',
+  SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
+  REQUEST_TIMEOUT: 'REQUEST_TIMEOUT',
+  UNKNOWN_OPERATION: 'UNKNOWN_OPERATION',
+  INVALID_OPERAND_COUNT: 'INVALID_OPERAND_COUNT',
+  OPERAND_TOO_LARGE: 'OPERAND_TOO_LARGE',
+  INVALID_OPERAND: 'INVALID_OPERAND',
+  DIVISION_BY_ZERO: 'DIVISION_BY_ZERO',
+  INVALID_EXPONENT: 'INVALID_EXPONENT',
+  EXPONENT_TOO_LARGE: 'EXPONENT_TOO_LARGE',
+  RESULT_TOO_LARGE: 'RESULT_TOO_LARGE',
+  NEGATIVE_SQUARE_ROOT: 'NEGATIVE_SQUARE_ROOT',
+} as const;
 
-export type ErrorCode = (typeof ERROR_CODES)[number];
+/** The same codes as a list, for runtime checks. */
+export const ERROR_CODES = Object.values(ERROR_CODE);
+
+export type ErrorCode = (typeof ERROR_CODE)[keyof typeof ERROR_CODE];
 
 /**
  * Codes the client makes up itself. The server never sends them.
@@ -47,7 +50,12 @@ export type ErrorCode = (typeof ERROR_CODES)[number];
  * - UNKNOWN: an error response that is not in the standard error shape (a proxy's HTML page,
  *   say) or that carries a code this client does not know.
  */
-export type ClientErrorCode = 'INVALID_RESPONSE' | 'UNKNOWN';
+export const CLIENT_ERROR_CODE = {
+  INVALID_RESPONSE: 'INVALID_RESPONSE',
+  UNKNOWN: 'UNKNOWN',
+} as const;
+
+export type ClientErrorCode = (typeof CLIENT_ERROR_CODE)[keyof typeof CLIENT_ERROR_CODE];
 
 export type ApiErrorCode = ErrorCode | ClientErrorCode;
 
@@ -74,8 +82,20 @@ export interface OperationInfo {
   description: string;
 }
 
+/**
+ * The server's input limits, sent with the operations list. The UI uses maxOperandLength to stop
+ * typing at the same length the server accepts. The other two are carried for completeness.
+ */
+export interface OperationLimits {
+  maxOperandLength: number;
+  maxExponent: number;
+  decimalPrecision: number;
+}
+
 export interface OperationsResponse {
   operations: OperationInfo[];
+  /** Absent from an older server: callers then fall back to their built-in defaults. */
+  limits?: OperationLimits;
 }
 
 /** Values in `fields` are strings or numbers. The keys are fixed per code. */

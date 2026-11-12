@@ -1,7 +1,8 @@
-export { calculate, createApiClient, getOperations, resolveBaseUrl } from './client';
+export { ApiClientContext, useApiClient } from './ApiClientContext';
+export { createApiClient, defaultApiClient, resolveBaseUrl } from './client';
 export type { ApiClient, ApiClientConfig, RequestOptions } from './client';
 export { ApiError, CanceledError, NetworkError, TimeoutError } from './errors';
-export { ERROR_CODES, OPERATION_TYPES } from './types';
+export { CLIENT_ERROR_CODE, ERROR_CODE, ERROR_CODES, OPERATION_TYPES } from './types';
 export type {
   ApiErrorBody,
   ApiErrorCode,
@@ -11,6 +12,7 @@ export type {
   ErrorCode,
   ErrorFields,
   OperationInfo,
+  OperationLimits,
   OperationType,
   OperationsResponse,
 } from './types';

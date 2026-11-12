@@ -1,18 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { DIGITS, MAX_OPERAND_LENGTH, type BinaryOperation } from '../../../constants/calculator';
-import { calculatorReducer, createInitialState, initialState } from './reducer';
+import {
+  calculatorReducer,
+  createCalculatorReducer,
+  createInitialState,
+  initialState,
+} from './reducer';
 import type { CalculatorAction, CalculatorError, CalculatorState } from './types';
 
 const NETWORK_ERROR: CalculatorError = {
   code: 'NETWORK_ERROR',
-  message: 'Could not reach the server.',
   requestId: undefined,
   retryable: true,
 };
 
 const API_ERROR: CalculatorError = {
   code: 'DIVISION_BY_ZERO',
-  message: 'Cannot divide by zero.',
   requestId: 'req-1',
   retryable: false,
 };
@@ -742,5 +745,51 @@ describe('createInitialState', () => {
       operand: '',
       lastRequestId: 7,
     });
+  });
+});
+
+describe('createCalculatorReducer', () => {
+  const SHORT = 5;
+  const shortReducer = createCalculatorReducer({ maxOperandLength: SHORT });
+  const runShort = (...actions: CalculatorAction[]) =>
+    actions.reduce<CalculatorState>(shortReducer, initialState);
+
+  it('stops typing at the limit it was built with, not at the built-in one', () => {
+    const state = runShort(...keys('1234567'));
+
+    expect(state).toMatchObject({ operand: '12345' });
+  });
+
+  it('refuses a decimal point that would leave no room for a digit after it', () => {
+    expect(runShort(...keys('1234.'))).toMatchObject({ operand: '1234' });
+    expect(runShort(...keys('123.'))).toMatchObject({ operand: '123.' });
+  });
+
+  it('counts the minus sign when negating', () => {
+    expect(runShort(...keys('12345'), TOGGLE)).toMatchObject({ operand: '12345' });
+    expect(runShort(...keys('1234'), TOGGLE)).toMatchObject({ operand: '-1234' });
+  });
+
+  it('treats a result longer than its limit as too long to reuse', () => {
+    const showing: CalculatorState = {
+      status: 'showing_result',
+      lastRequestId: 1,
+      result: '123456',
+      request: null,
+    };
+
+    const state = shortReducer(showing, { type: 'operator', operator: 'add' });
+
+    expect(state).toMatchObject({
+      status: 'showing_result',
+      notice: { code: 'RESULT_TOO_LONG_TO_REUSE' },
+    });
+  });
+
+  it('is the same reducer as calculatorReducer when given the built-in limit', () => {
+    const builtIn = createCalculatorReducer({ maxOperandLength: MAX_OPERAND_LENGTH });
+    const action: CalculatorAction = { type: 'digit', digit: '7' };
+
+    expect(builtIn(initialState, action)).toEqual(calculatorReducer(initialState, action));
   });
 });

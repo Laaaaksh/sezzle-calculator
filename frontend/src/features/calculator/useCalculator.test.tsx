@@ -1,16 +1,32 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { delay, http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
-import { createApiClient } from '../../api';
+import type { ReactNode } from 'react';
+import { ApiClientContext, createApiClient, type ApiClient } from '../../api';
 import type { CalculateRequest, CalculateResponse } from '../../api';
-import { DIGITS, HISTORY_LIMIT, type BinaryOperation } from '../../constants/calculator';
+import {
+  DIGITS,
+  HISTORY_LIMIT,
+  MAX_OPERAND_LENGTH,
+  type BinaryOperation,
+} from '../../constants/calculator';
 import { server } from '../../test/server';
 import type { CalculatorAction, CalculatorState } from './state';
-import { useCalculator, type CalculatorClient } from './useCalculator';
+import { useCalculator } from './useCalculator';
 
 const BASE_URL = 'http://api.test';
 const CALCULATE_URL = `${BASE_URL}/api/v1/calculate`;
 const client = createApiClient({ baseUrl: BASE_URL });
+
+type CalculatorClient = Pick<ApiClient, 'calculate'>;
+
+/** Provides `override` on top of the real client, through the context the app reads. */
+function wrapperFor(override: Partial<ApiClient> = client) {
+  const value: ApiClient = { ...client, ...override };
+  return function Wrapper({ children }: { children: ReactNode }) {
+    return <ApiClientContext value={value}>{children}</ApiClientContext>;
+  };
+}
 
 function digitsOf(text: string): CalculatorAction[] {
   const actions: CalculatorAction[] = [];
@@ -90,7 +106,7 @@ describe('useCalculator', () => {
         });
       }),
     );
-    const { result } = renderHook(() => useCalculator({ client }));
+    const { result } = renderHook(() => useCalculator(), { wrapper: wrapperFor() });
 
     press(result, ...expression('12.5', 'add', '7.25'), EQUALS);
 
@@ -103,7 +119,7 @@ describe('useCalculator', () => {
 
   it('reports pending while the request is in flight', async () => {
     const { fake, calls } = manualClient();
-    const { result } = renderHook(() => useCalculator({ client: fake }));
+    const { result } = renderHook(() => useCalculator(), { wrapper: wrapperFor(fake) });
 
     press(result, ...expression('1', 'add', '2'), EQUALS);
 
@@ -123,7 +139,7 @@ describe('useCalculator', () => {
         return HttpResponse.json({ operation: 'add', operands: ['1', '2'], result: '3' });
       }),
     );
-    const { result } = renderHook(() => useCalculator({ client }));
+    const { result } = renderHook(() => useCalculator(), { wrapper: wrapperFor() });
 
     press(result, ...expression('1', 'add', '2'), EQUALS, EQUALS, EQUALS);
 
@@ -146,7 +162,7 @@ describe('useCalculator', () => {
         return HttpResponse.json({});
       }),
     );
-    const { result } = renderHook(() => useCalculator({ client }));
+    const { result } = renderHook(() => useCalculator(), { wrapper: wrapperFor() });
     press(result, ...expression('1', 'add', '2'), EQUALS);
     await waitFor(() => {
       expect(started).toBe(true);
@@ -163,7 +179,7 @@ describe('useCalculator', () => {
 
   it('does not show a canceled request as an error', async () => {
     server.use(http.post(CALCULATE_URL, () => delay('infinite')));
-    const { result } = renderHook(() => useCalculator({ client }));
+    const { result } = renderHook(() => useCalculator(), { wrapper: wrapperFor() });
     press(result, ...expression('1', 'add', '2'), EQUALS);
 
     press(result, { type: 'clear' });
@@ -187,7 +203,7 @@ describe('useCalculator', () => {
         return HttpResponse.json({});
       }),
     );
-    const { result, unmount } = renderHook(() => useCalculator({ client }));
+    const { result, unmount } = renderHook(() => useCalculator(), { wrapper: wrapperFor() });
     press(result, ...expression('1', 'add', '2'), EQUALS);
     await waitFor(() => {
       expect(started).toBe(true);
@@ -202,7 +218,7 @@ describe('useCalculator', () => {
 
   it('ignores a stale response to a request the user cleared', async () => {
     const { fake, calls } = manualClient();
-    const { result } = renderHook(() => useCalculator({ client: fake }));
+    const { result } = renderHook(() => useCalculator(), { wrapper: wrapperFor(fake) });
     press(result, ...expression('1', 'add', '2'), EQUALS);
     press(result, { type: 'clear' }, ...expression('5', 'add', '5'), EQUALS);
 
@@ -231,7 +247,7 @@ describe('useCalculator', () => {
         ),
       ),
     );
-    const { result } = renderHook(() => useCalculator({ client }));
+    const { result } = renderHook(() => useCalculator(), { wrapper: wrapperFor() });
 
     press(result, ...expression('1', 'divide', '0'), EQUALS);
 
@@ -245,7 +261,7 @@ describe('useCalculator', () => {
 
   it('does not add a failed calculation to the history', async () => {
     server.use(http.post(CALCULATE_URL, () => HttpResponse.error()));
-    const { result } = renderHook(() => useCalculator({ client }));
+    const { result } = renderHook(() => useCalculator(), { wrapper: wrapperFor() });
 
     press(result, ...expression('1', 'add', '2'), EQUALS);
     await waitFor(() => {
@@ -267,7 +283,7 @@ describe('useCalculator', () => {
           : HttpResponse.json({ operation: 'add', operands: ['1', '2'], result: '3' });
       }),
     );
-    const { result } = renderHook(() => useCalculator({ client }));
+    const { result } = renderHook(() => useCalculator(), { wrapper: wrapperFor() });
     press(result, ...expression('1', 'add', '2'), EQUALS);
     await waitFor(() => {
       expect(result.current.state).toMatchObject({ status: 'error', error: { retryable: true } });
@@ -288,7 +304,7 @@ describe('useCalculator', () => {
 describe('history', () => {
   it('records the expression and the result of each calculation', async () => {
     addHandler();
-    const { result } = renderHook(() => useCalculator({ client }));
+    const { result } = renderHook(() => useCalculator(), { wrapper: wrapperFor() });
 
     press(result, ...expression('12', 'add', '7'), EQUALS);
     await waitFor(() => {
@@ -303,7 +319,7 @@ describe('history', () => {
 
   it('puts the newest entry on top', async () => {
     const { fake, calls } = manualClient();
-    const { result } = renderHook(() => useCalculator({ client: fake }));
+    const { result } = renderHook(() => useCalculator(), { wrapper: wrapperFor(fake) });
     press(result, ...expression('1', 'add', '1'), EQUALS);
     act(() => calls[0]?.respond('2'));
     await waitFor(() => {
@@ -326,7 +342,7 @@ describe('history', () => {
         result: `r${request.operands[0] ?? ''}`,
       }),
     );
-    const { result } = renderHook(() => useCalculator({ client: { calculate } }));
+    const { result } = renderHook(() => useCalculator(), { wrapper: wrapperFor({ calculate }) });
 
     for (let n = 1; n <= HISTORY_LIMIT + 1; n += 1) {
       press(result, { type: 'clear' }, ...digitsOf(String(n)), op('add'), ...digitsOf('1'), EQUALS);
@@ -342,7 +358,7 @@ describe('history', () => {
 
   it('reuses the result of an entry when it is clicked', async () => {
     addHandler();
-    const { result } = renderHook(() => useCalculator({ client }));
+    const { result } = renderHook(() => useCalculator(), { wrapper: wrapperFor() });
     press(result, ...expression('12', 'add', '7'), EQUALS);
     await waitFor(() => {
       expect(result.current.history).toHaveLength(1);
@@ -362,5 +378,52 @@ describe('history', () => {
       result: 'ok',
       request: null,
     });
+  });
+});
+
+describe('useCalculator client and limits', () => {
+  it('does not re-send the request when the client object changes identity on re-render', () => {
+    let sent = 0;
+    const calculate: CalculatorClient['calculate'] = () => {
+      sent += 1;
+      return new Promise<CalculateResponse>(() => {
+        // Never answers, so the request stays in flight across the re-render.
+      });
+    };
+    const { result, rerender } = renderHook(() => useCalculator(), {
+      // A new client object on every render, as an inline provider value would be.
+      wrapper: ({ children }: { children: ReactNode }) => (
+        <ApiClientContext value={{ ...client, calculate }}>{children}</ApiClientContext>
+      ),
+    });
+
+    press(result, ...expression('1', 'add', '2'), EQUALS);
+    rerender();
+    rerender();
+
+    expect(sent).toBe(1);
+    expect(result.current.isPending).toBe(true);
+  });
+
+  it('uses the built-in operand limit when none is given', () => {
+    const { result } = renderHook(() => useCalculator(), { wrapper: wrapperFor() });
+
+    press(result, ...digitsOf('1'.repeat(MAX_OPERAND_LENGTH + 5)));
+
+    expect(result.current.state).toMatchObject({ operand: '1'.repeat(MAX_OPERAND_LENGTH) });
+  });
+
+  it('uses the operand limit it is given and follows it when it changes', () => {
+    const { result, rerender } = renderHook(
+      ({ max }: { max: number }) => useCalculator({ maxOperandLength: max }),
+      { wrapper: wrapperFor(), initialProps: { max: 4 } },
+    );
+
+    press(result, ...digitsOf('123456'));
+    expect(result.current.state).toMatchObject({ operand: '1234' });
+
+    rerender({ max: 6 });
+    press(result, ...digitsOf('567'));
+    expect(result.current.state).toMatchObject({ operand: '123456' });
   });
 });

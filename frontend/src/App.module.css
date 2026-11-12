@@ -23,6 +23,7 @@
 }
 
 /* Wide enough for the history tape beside the card. Keep in step with Calculator.module.css. */
+/* 900px = WIDE_LAYOUT_MIN_WIDTH_PX in constants/layout.ts; breakpoints.test.ts keeps them equal. */
 @media (min-width: 900px) {
   .page {
     max-width: calc(48rem + 2 * var(--space-4));

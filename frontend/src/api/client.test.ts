@@ -272,7 +272,7 @@ describe('createApiClient', () => {
     server.use(http.get(OPERATIONS_URL, () => HttpResponse.json({ operations: [ADD_OPERATION] })));
     const slashed = createApiClient({ baseUrl: `${BASE_URL}/` });
 
-    await expect(slashed.getOperations()).resolves.toEqual([ADD_OPERATION]);
+    await expect(slashed.getOperations()).resolves.toEqual({ operations: [ADD_OPERATION] });
   });
 });
 
@@ -286,10 +286,39 @@ describe('getOperations', () => {
       }),
     );
 
-    const operations = await client.getOperations();
+    const response = await client.getOperations();
 
-    expect(operations).toEqual([ADD_OPERATION]);
+    expect(response).toEqual({ operations: [ADD_OPERATION] });
+    expect(response.limits).toBeUndefined();
     expect(method).toBe('GET');
+  });
+
+  it('returns the server limits when it sends them', async () => {
+    const limits = { maxOperandLength: 32, maxExponent: 500, decimalPrecision: 20 };
+    server.use(
+      http.get(OPERATIONS_URL, () => HttpResponse.json({ operations: [ADD_OPERATION], limits })),
+    );
+
+    const response = await client.getOperations();
+
+    expect(response.limits).toEqual(limits);
+  });
+
+  it.each([
+    ['a non-object', 'big'],
+    ['a zero length', { maxOperandLength: 0, maxExponent: 5, decimalPrecision: 5 }],
+    ['a fractional length', { maxOperandLength: 1.5, maxExponent: 5, decimalPrecision: 5 }],
+    ['a string exponent', { maxOperandLength: 64, maxExponent: '5', decimalPrecision: 5 }],
+    ['a missing precision', { maxOperandLength: 64, maxExponent: 5 }],
+  ])('rejects limits with %s as an INVALID_RESPONSE', async (_name, limits) => {
+    server.use(
+      http.get(OPERATIONS_URL, () => HttpResponse.json({ operations: [ADD_OPERATION], limits })),
+    );
+
+    const error = await rejectionOf(client.getOperations());
+
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error).toMatchObject({ code: 'INVALID_RESPONSE' });
   });
 
   it('accepts an operation this client does not know yet', async () => {
@@ -298,9 +327,9 @@ describe('getOperations', () => {
       http.get(OPERATIONS_URL, () => HttpResponse.json({ operations: [ADD_OPERATION, modulo] })),
     );
 
-    const operations = await client.getOperations();
+    const response = await client.getOperations();
 
-    expect(operations).toEqual([ADD_OPERATION, modulo]);
+    expect(response.operations).toEqual([ADD_OPERATION, modulo]);
   });
 
   it.each([
@@ -375,8 +404,10 @@ describe('default client', () => {
       ),
     );
 
-    const { getOperations } = await import('./client');
+    const { defaultApiClient } = await import('./client');
 
-    await expect(getOperations()).resolves.toEqual([ADD_OPERATION]);
+    await expect(defaultApiClient.getOperations()).resolves.toEqual({
+      operations: [ADD_OPERATION],
+    });
   });
 });
