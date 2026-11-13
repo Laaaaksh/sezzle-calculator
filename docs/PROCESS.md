@@ -6,8 +6,6 @@ How I used AI on this project and how I checked the result. The prompts are in [
 
 AI wrote much of the code, mainly Claude Code, under my step-by-step direction. I set the rules, gave one prompt per step and reviewed each result before the next. The 26 build prompts and 3 operational entries are in [PROMPTS.md](PROMPTS.md), in order, with a line on what each produced. An automated review pipeline and CI checked each pull request.
 
-`AGENTS.md` and `CLAUDE.md` hold the working rules I gave the AI tools. They are not part of the app.
-
 ## How I directed this
 
 Decided before any code:
