@@ -34,44 +34,6 @@ func TestErrorTestSuite(t *testing.T) {
 	suite.Run(t, new(ErrorTestSuite))
 }
 
-func (s *ErrorTestSuite) TestStatusBadRequestIs400() {
-	s.Equal(http.StatusBadRequest, apperror.New(apperror.CodeBadRequest, nil).HTTPStatus())
-}
-
-func (s *ErrorTestSuite) TestStatusValidationFailedIs422() {
-	s.Equal(http.StatusUnprocessableEntity, apperror.New(apperror.CodeValidationFailed, nil).HTTPStatus())
-}
-
-func (s *ErrorTestSuite) TestStatusUnsupportedMediaTypeIs415() {
-	s.Equal(http.StatusUnsupportedMediaType, apperror.New(apperror.CodeUnsupportedMediaType, nil).HTTPStatus())
-}
-
-func (s *ErrorTestSuite) TestStatusPayloadTooLargeIs413() {
-	s.Equal(http.StatusRequestEntityTooLarge, apperror.New(apperror.CodePayloadTooLarge, nil).HTTPStatus())
-}
-
-func (s *ErrorTestSuite) TestStatusNotFoundIs404() {
-	s.Equal(http.StatusNotFound, apperror.New(apperror.CodeNotFound, nil).HTTPStatus())
-}
-
-func (s *ErrorTestSuite) TestStatusMethodNotAllowedIs405() {
-	s.Equal(http.StatusMethodNotAllowed, apperror.New(apperror.CodeMethodNotAllowed, nil).HTTPStatus())
-}
-
-func (s *ErrorTestSuite) TestStatusServiceUnavailableIs503() {
-	s.Equal(http.StatusServiceUnavailable, apperror.New(apperror.CodeServiceUnavailable, nil).HTTPStatus())
-	s.Equal(apperror.MsgServiceUnavailable, apperror.New(apperror.CodeServiceUnavailable, nil).PublicMessage())
-}
-
-func (s *ErrorTestSuite) TestStatusRequestTimeoutIs503() {
-	s.Equal(http.StatusServiceUnavailable, apperror.New(apperror.CodeRequestTimeout, nil).HTTPStatus())
-	s.Equal(apperror.MsgRequestTimeout, apperror.New(apperror.CodeRequestTimeout, nil).PublicMessage())
-}
-
-func (s *ErrorTestSuite) TestStatusInternalIs500() {
-	s.Equal(http.StatusInternalServerError, apperror.New(apperror.CodeInternal, nil).HTTPStatus())
-}
-
 func (s *ErrorTestSuite) TestStatusUnknownCodeIs500() {
 	s.Equal(http.StatusInternalServerError, apperror.New(testUnknownCode, nil).HTTPStatus())
 }

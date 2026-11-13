@@ -22,19 +22,16 @@ function renderCalculator() {
   return userEvent.setup();
 }
 
-/** The whole display: expression and value. */
 function display() {
   return screen.getByRole('group', { name: 'Display' });
 }
 
-/** The live region, which holds the value only. */
 function liveRegion() {
   return screen.getByRole('status');
 }
 
 const OPERATIONS_URL = `${BASE_URL}/api/v1/operations`;
 
-/** Answers the operations lookup with only the named operations. */
 function reportOperations(...names: string[]) {
   server.use(
     http.get(OPERATIONS_URL, () =>
@@ -45,14 +42,12 @@ function reportOperations(...names: string[]) {
   );
 }
 
-/** Clicks keys by their accessible names, in order. */
 async function pressKeys(user: ReturnType<typeof userEvent.setup>, ...names: string[]) {
   for (const name of names) {
     await user.click(screen.getByRole('button', { name }));
   }
 }
 
-/** Records every request body and answers with the given response. */
 function recordCalculate(respond: (body: CalculateRequest, attempt: number) => Response) {
   const bodies: CalculateRequest[] = [];
   server.use(
@@ -123,6 +118,32 @@ describe('Calculator', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('alert')).toHaveTextContent("You can't divide by zero.");
+    });
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
+  });
+
+  it('shows the rate limit message and no Retry when the server answers 429', async () => {
+    recordCalculate(() =>
+      HttpResponse.json(
+        {
+          error: {
+            code: 'RATE_LIMITED',
+            message: 'Too many requests. Please wait and try again.',
+            requestId: 'req-rl',
+            fields: { retryAfterSeconds: 2 },
+          },
+        },
+        { status: 429, headers: { 'Retry-After': '2' } },
+      ),
+    );
+    const user = renderCalculator();
+
+    await pressKeys(user, '1', 'Add', '2', 'Equals');
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Too many calculations too quickly. Wait a few seconds and try again.',
+      );
     });
     expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
   });

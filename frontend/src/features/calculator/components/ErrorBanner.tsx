@@ -4,7 +4,6 @@ import styles from './ErrorBanner.module.css';
 
 interface ErrorBannerProps {
   error: CalculatorError;
-  /** Sends the same request again. Only offered when the error is one a retry can fix. */
   onRetry: () => void;
 }
 

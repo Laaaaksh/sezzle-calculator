@@ -4,7 +4,6 @@ import { defineConfig } from 'vitest/config';
 
 const DEFAULT_DEV_API_TARGET = 'http://localhost:8080';
 
-// https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const configured = env.VITE_DEV_API_TARGET;
@@ -27,8 +26,8 @@ export default defineConfig(({ mode }) => {
     },
     test: {
       environment: 'jsdom',
-      // Vitest blanks CSS by default, even with ?raw. The token and stylesheet tests read the real
-      // files to check contrast ratios, the two dark theme copies, focus rings and touch sizes.
+      // Vitest blanks CSS by default, even with ?raw. The token and breakpoint tests read the real
+      // files to check contrast ratios and breakpoints.
       // Only ?raw imports are opened up. Applying stylesheets to every component test would make
       // jsdom hide the history button, because it ignores media queries and treats them as true.
       css: { include: [/\.css\?raw/] },

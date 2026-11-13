@@ -18,7 +18,7 @@ test-coverage: backend-test-coverage frontend-test-coverage ## Test everything a
 build: backend-build frontend-build ## Build everything
 
 # Each backend-* target delegates to the matching target in backend/Makefile.
-.PHONY: backend-deps backend-fmt backend-lint backend-mock backend-test backend-test-coverage backend-build backend-run backend-clean
+.PHONY: backend-deps backend-fmt backend-lint backend-mock backend-test backend-test-coverage backend-build backend-run backend-fuzz backend-clean
 backend-deps: ## Backend: download modules and install tools
 	$(MAKE) -C backend deps
 
@@ -42,6 +42,9 @@ backend-build: ## Backend: build bin/api
 
 backend-run: ## Backend: run the API locally
 	$(MAKE) -C backend run
+
+backend-fuzz: ## Backend: fuzz the operations against the exact reference
+	$(MAKE) -C backend fuzz
 
 backend-clean: ## Backend: remove build and coverage output
 	$(MAKE) -C backend clean

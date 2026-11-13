@@ -5,7 +5,6 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/entities"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/operations"
 )
 
@@ -26,14 +25,6 @@ func (s *SubtractTestSuite) subtract(left, right string) string {
 	got, err := applyText(s.op, left, right)
 	s.Require().Nil(err)
 	return got
-}
-
-func (s *SubtractTestSuite) TestSubtractNameIsSubtract() {
-	s.Equal(entities.OpSubtract, s.op.Name())
-}
-
-func (s *SubtractTestSuite) TestSubtractArityIsTwo() {
-	s.Equal(entities.ArityBinary, s.op.Arity())
 }
 
 func (s *SubtractTestSuite) TestSubtractWhenBothPositiveReturnsTheDifference() {

@@ -5,5 +5,4 @@
  */
 export const WIDE_LAYOUT_MIN_WIDTH_PX = 900;
 
-/** The matchMedia query for the wide layout, built from the one constant above. */
 export const WIDE_LAYOUT_QUERY = `(min-width: ${WIDE_LAYOUT_MIN_WIDTH_PX}px)`;

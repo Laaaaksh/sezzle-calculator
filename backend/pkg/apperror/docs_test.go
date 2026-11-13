@@ -15,10 +15,7 @@ import (
 	"github.com/Laaaaksh/sezzle-calculator/backend/pkg/apperror"
 )
 
-// errorCodesDoc is the repo-relative path of the table clients and the README reuse.
-var errorCodesDoc = filepath.Join("..", "..", "..", "docs", "ERROR_CODES.md")
-
-// apiDoc is the REST contract. Its error table must agree with the code, so a
+// apiDoc is the REST contract. Its error tables must agree with the code, so a
 // status changed in one place cannot drift from the other.
 var apiDoc = filepath.Join("..", "..", "..", "docs", "API.md")
 
@@ -27,8 +24,7 @@ var rowPattern = regexp.MustCompile("(?m)^\\| `([A-Z_]+)` \\| (\\d{3}) \\|")
 
 type ErrorCodesDocTestSuite struct {
 	suite.Suite
-	statusByCode map[apperror.Code]string
-	apiStatuses  map[apperror.Code]string
+	apiStatuses map[apperror.Code]string
 }
 
 func TestErrorCodesDocTestSuite(t *testing.T) {
@@ -36,9 +32,6 @@ func TestErrorCodesDocTestSuite(t *testing.T) {
 }
 
 func (s *ErrorCodesDocTestSuite) SetupTest() {
-	raw, err := os.ReadFile(errorCodesDoc)
-	s.Require().NoError(err)
-	s.statusByCode = tableRows(raw)
 	api, err := os.ReadFile(apiDoc)
 	s.Require().NoError(err)
 	s.apiStatuses = tableRows(api)
@@ -50,23 +43,6 @@ func tableRows(raw []byte) map[apperror.Code]string {
 		rows[apperror.Code(match[1])] = match[2]
 	}
 	return rows
-}
-
-func (s *ErrorCodesDocTestSuite) TestEveryCodeIsDocumentedWithItsHTTPStatus() {
-	for _, code := range apperror.Codes() {
-		s.Equal(fmt.Sprint(code.HTTPStatus()), s.statusByCode[code], "code %s", code)
-	}
-}
-
-func (s *ErrorCodesDocTestSuite) TestEveryDocumentedCodeExists() {
-	known := map[apperror.Code]bool{}
-	for _, code := range apperror.Codes() {
-		known[code] = true
-	}
-
-	for code := range s.statusByCode {
-		s.True(known[code], "documented code %s is not defined", code)
-	}
 }
 
 func (s *ErrorCodesDocTestSuite) TestAPIDocListsEveryCodeWithItsHTTPStatus() {

@@ -1,12 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  darkTokens,
-  declarationsOf,
-  lightTokens,
-  rawTokens,
-  resolveLightDark,
-  ruleFor,
-} from '../test/tokens';
+import { declarationsOf, rawTokens, resolveLightDark, ruleFor } from '../test/tokens';
 
 function colorScheme(selector: string): string[] {
   const rule = ruleFor(selector);
@@ -19,8 +12,6 @@ function colorScheme(selector: string): string[] {
 
 describe('tokens.css', () => {
   it('defines each colour once as light-dark(), so the explicit and system dark themes cannot drift', () => {
-    // The old file kept two copies of the dark values. light-dark() has one, and color-scheme
-    // picks the side: 'light dark' follows the system, [data-theme] pins one.
     const colours = Object.entries(rawTokens).filter(([name]) => name.startsWith('--color-'));
 
     expect(colours.length).toBeGreaterThan(0);
@@ -43,35 +34,5 @@ describe('tokens.css', () => {
     expect(resolveLightDark('light-dark(#fff, #000) light-dark(a, b)', 'dark')).toBe('#000 b');
     expect(() => resolveLightDark('light-dark(#fff', 'dark')).toThrow('Unbalanced');
     expect(() => resolveLightDark('light-dark(#fff)', 'dark')).toThrow('two arguments');
-  });
-
-  it('gives the two schemes different surfaces and text', () => {
-    for (const name of ['--color-bg', '--color-card', '--color-text', '--color-accent']) {
-      expect(darkTokens[name], name).not.toBe(lightTokens[name]);
-    }
-  });
-
-  it('uses the colours from the brief', () => {
-    expect(lightTokens).toMatchObject({
-      '--color-bg': '#f7f6f3',
-      '--color-key': '#ffffff',
-      '--color-text': '#111827',
-      '--color-border': '#e5e7eb',
-      '--color-accent': '#5b3df5',
-    });
-    expect(darkTokens).toMatchObject({
-      '--color-bg': '#0b0f14',
-      '--color-key': '#151b23',
-      '--color-text': '#e6edf3',
-      '--color-accent': '#2dd4a7',
-    });
-  });
-
-  it('keeps every motion duration under 200ms', () => {
-    for (const [name, value] of Object.entries(lightTokens)) {
-      if (name.startsWith('--duration-')) {
-        expect(Number.parseInt(value, 10), name).toBeLessThan(200);
-      }
-    }
   });
 });

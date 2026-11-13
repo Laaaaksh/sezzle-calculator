@@ -55,7 +55,6 @@ const (
 	wantPercentageDescription = "Returns the first operand percent of the second."
 )
 
-// Constants for the printed-length budget tests of power, divide and sqrt.
 const (
 	testTenToTheSixHundredLen   = 601
 	testTenToTheLastAllowed     = "639"
@@ -80,7 +79,6 @@ const (
 	digitEight = "8"
 )
 
-// Constants for the shared result-size helpers.
 const (
 	sizeZero               = "0"
 	sizeThousand           = "1000"

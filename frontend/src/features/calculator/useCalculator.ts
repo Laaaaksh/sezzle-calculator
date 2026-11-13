@@ -19,28 +19,19 @@ import {
 } from './state';
 
 export interface UseCalculatorOptions {
-  /**
-   * Longest operand the server accepts (from its limits). Defaults to MAX_OPERAND_LENGTH, which
-   * is also what applies when the server does not report a limit.
-   */
+  /** Longest operand the server accepts; falls back to MAX_OPERAND_LENGTH when it reports none. */
   maxOperandLength?: number | undefined;
 }
 
 export interface UseCalculatorResult {
   state: CalculatorState;
-  /** Newest first, capped at HISTORY_LIMIT. Lives in memory only. */
   history: readonly HistoryEntry[];
   /** True while a request is in flight. Equals and the other keys are ignored until it ends. */
   isPending: boolean;
   dispatch: Dispatch<CalculatorAction>;
-  /** Puts a history entry's result back on the display. */
   reuse: (entry: HistoryEntry) => void;
 }
 
-/**
- * Wires the reducer to the API: it sends what the reducer asks for and reports the outcome.
- * The client comes from ApiClientContext.
- */
 export function useCalculator({
   maxOperandLength = MAX_OPERAND_LENGTH,
 }: UseCalculatorOptions = {}): UseCalculatorResult {

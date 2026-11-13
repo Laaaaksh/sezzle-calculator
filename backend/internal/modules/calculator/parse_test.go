@@ -19,7 +19,6 @@ func TestParseOperandsTestSuite(t *testing.T) {
 	suite.Run(t, new(ParseOperandsTestSuite))
 }
 
-// parsed parses one operand and returns its canonical text.
 func (s *ParseOperandsTestSuite) parsed(text string) string {
 	got, err := calculator.ParseOperands([]string{text}, testDefaultMaxLength)
 	s.Require().Nil(err)
@@ -27,8 +26,6 @@ func (s *ParseOperandsTestSuite) parsed(text string) string {
 	return got[0].String()
 }
 
-// rejected parses one operand that must be refused as INVALID_OPERAND and
-// returns the reason.
 func (s *ParseOperandsTestSuite) rejected(text string) any {
 	_, err := calculator.ParseOperands([]string{text}, testDefaultMaxLength)
 	s.Require().NotNil(err)

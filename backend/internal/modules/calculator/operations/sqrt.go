@@ -13,10 +13,8 @@ const (
 	// sqrtGuardDigits are extra decimal places carried through Newton's method
 	// so the final rounding to the configured precision sees the true tail.
 	sqrtGuardDigits = 10
-	// sqrtMaxIterations caps the loop. Newton's method from the starting guess
-	// below needs about 20 steps for the widest inputs (about 110 digits of
-	// working precision), so 200 is a ceiling that is never reached in
-	// practice and exists so the loop can never hang.
+	// sqrtMaxIterations caps the loop. Newton's method needs about 20 steps for the widest inputs, so 200 is never reached
+	// in practice and exists only so the loop cannot hang.
 	sqrtMaxIterations = 200
 	// halfUnitDigit is the digit 5 that, one place past the precision, marks a
 	// rounding tie.
@@ -26,19 +24,11 @@ const (
 	rootDigitDivisor = 2
 )
 
-// Sqrt is the square root of one operand.
-//
-// It uses Newton's method on decimals: g' = (g + x/g) / 2, with every division
-// truncated at the working scale. That is the integer-square-root iteration on
-// numbers scaled by 10^scale, so it ends exactly at floor(sqrt(x) * 10^scale)
-// and a perfect square comes out exact (sqrt(144) is 12, not 11.99999...).
-// The guess starts at or above the root and falls each step; the loop stops
-// when it stops falling, or after a fixed number of iterations.
-//
-// The root is computed with guard digits, then rounded half-even to the
-// configured precision. A tie is only a tie when the root is exact; a root
-// that merely looks like ...5000000000 within the guard digits is slightly
-// above it and rounds up.
+// Sqrt is the square root of one operand. Newton's method on decimals, g' = (g + x/g) / 2 with divisions truncated at the
+// working scale, is the integer-square-root iteration on numbers scaled by 10^scale. It ends exactly at
+// floor(sqrt(x) * 10^scale), so a perfect square is exact (sqrt(144) is 12, not 11.99999...). The root is carried with
+// guard digits, then rounded half-even: a tie is real only when the root is exact, and one that merely looks like
+// ...5000000000 within the guard digits is slightly above it and rounds up.
 type Sqrt struct {
 	descriptor
 	precision     int32
@@ -67,13 +57,9 @@ func NewBoundedSqrt(precision, maxIterations int) *Sqrt {
 	}
 }
 
-// Apply returns the square root of operands[0], NEGATIVE_SQUARE_ROOT for a
-// negative operand, REQUEST_TIMEOUT if ctx ends mid-loop, or INTERNAL if the
-// iteration cap is hit.
-//
-// The root has at most half the integer digits of the operand plus the
-// configured precision decimals, so its printed length is far below the power
-// result budget (see the sqrt result size test).
+// Apply returns the square root of operands[0], NEGATIVE_SQUARE_ROOT for a negative operand, REQUEST_TIMEOUT if ctx ends
+// mid-loop, or INTERNAL if the iteration cap is hit. The root is far shorter than the power result budget (see the
+// sqrt result size test).
 func (s *Sqrt) Apply(ctx context.Context, operands []decimal.Decimal) (decimal.Decimal, apperror.IError) {
 	x := operands[0]
 	if x.IsNegative() {

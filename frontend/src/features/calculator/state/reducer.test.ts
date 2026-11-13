@@ -24,7 +24,6 @@ function run(state: CalculatorState, ...actions: CalculatorAction[]): Calculator
   return actions.reduce(calculatorReducer, state);
 }
 
-/** Turns "12.5" style text into the actions a user would press. */
 function keys(text: string): CalculatorAction[] {
   const actions: CalculatorAction[] = [];
   for (const char of text) {
@@ -54,7 +53,6 @@ const BACKSPACE: CalculatorAction = { type: 'backspace' };
 const TOGGLE: CalculatorAction = { type: 'toggle_sign' };
 const SQRT: CalculatorAction = { type: 'unary', operation: 'sqrt' };
 
-/** "12 + 7" typed and submitted: waiting on request 1. */
 function waitingState(): CalculatorState {
   return run(typed('12'), op('add'), ...keys('7'), EQUALS);
 }

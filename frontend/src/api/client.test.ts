@@ -29,7 +29,6 @@ function errorBody(overrides: Partial<ApiErrorBody['error']> = {}): ApiErrorBody
   };
 }
 
-/** Runs a call that must reject and returns what it rejected with. */
 async function rejectionOf(call: Promise<unknown>): Promise<unknown> {
   try {
     await call;
@@ -93,6 +92,7 @@ describe('calculate', () => {
     [400, 'BAD_REQUEST'],
     [413, 'PAYLOAD_TOO_LARGE'],
     [415, 'UNSUPPORTED_MEDIA_TYPE'],
+    [429, 'RATE_LIMITED'],
     [500, 'INTERNAL'],
     [503, 'SERVICE_UNAVAILABLE'],
   ] as const)('throws ApiError for HTTP %i with code %s', async (status, code) => {

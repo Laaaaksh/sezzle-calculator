@@ -26,7 +26,6 @@ const (
 
 var errTestDial = errors.New("connection refused")
 
-// roundTripFunc stubs the HTTP transport so the tests open no sockets.
 type roundTripFunc func(*http.Request) (*http.Response, error)
 
 func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
@@ -48,8 +47,6 @@ func (s *HealthcheckTestSuite) SetupTest() {
 	s.requested = ""
 }
 
-// clientAnswering returns a client whose transport replies with status and
-// records the URL it was asked for.
 func (s *HealthcheckTestSuite) clientAnswering(status int) *http.Client {
 	return &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
 		s.requested = r.URL.String()

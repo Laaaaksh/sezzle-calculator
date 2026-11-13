@@ -44,7 +44,6 @@ const (
 	testWordsText     = "abc"
 )
 
-// Constants for the HTTP handler tests.
 const (
 	testRequestID = "req-calc-1"
 
@@ -128,7 +127,6 @@ const (
 	secretCause    = "pq: connection refused to db-7"
 )
 
-// Constants for the shared result-size guard in the core.
 const (
 	testResultDigits      = 640
 	testSmallResultDigits = 5

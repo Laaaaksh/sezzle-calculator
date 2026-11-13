@@ -21,31 +21,11 @@ const (
 
 var one = decimal.NewFromInt(1)
 
-// Power raises the first operand (the base) to the second (the exponent).
-//
-// Only whole-number exponents are accepted. A fractional exponent such as 0.5
-// has no exact decimal answer in general (2^0.5 is irrational), and computing
-// it would need a float or an approximation the caller never asked for, so it
-// fails with INVALID_EXPONENT instead of returning a quietly inexact number.
-//
-// The exponent must lie between -MaxExponent and +MaxExponent (EXPONENT_TOO_LARGE
-// otherwise). Anything to the power 0 is 1, including 0^0. Zero to a negative
-// power is a division by zero. A negative exponent is 1 / base^|exponent| using
-// the same half-even division as Divide, at the configured precision.
-//
-// Size guard: the result may hold at most the shared digit budget of digits,
-// counting integer and fraction digits (10^1000 has 1001, 0.1^1000 has 1000).
-// The checks use whole-number arithmetic only, and run before the multiplication
-// they would make expensive:
-//   - the digits the shift of the decimal point adds (n*x for |base| = c*10^x)
-//     are known without multiplying, so 10^1000 and 0.1^1000 fail at once;
-//   - while c^n is built, each product of two numbers a and b has at least
-//     digits(a)+digits(b)-1 digits, so a product that must exceed the budget is
-//     refused before it is computed, and no multiplication ever sees an operand
-//     longer than the budget;
-//   - the finished result is counted exactly by the shared CheckResultSize.
-//
-// 2^1000 (302 digits) fits the default budget of 640.
+// Power raises the first operand to the second. Only whole exponents within +-MaxExponent are accepted
+// (EXPONENT_TOO_LARGE otherwise); 2^0.5 has no exact decimal answer, so a fraction fails with INVALID_EXPONENT instead
+// of returning a quietly inexact number. x^0 is 1 (including 0^0), zero to a negative power is a division by zero, and a
+// negative exponent is 1 / base^|n| with Divide's half-even rounding. Results are held to the shared digit budget
+// (2^1000 has 302 digits, the default budget is 640), checked with whole-number arithmetic before the costly step.
 type Power struct {
 	descriptor
 	precision       int32
@@ -128,17 +108,11 @@ func (p *Power) wholeExponent(exponent decimal.Decimal) (int64, apperror.IError)
 	return exponent.IntPart(), nil
 }
 
-// checkShift rejects a power whose result must exceed the digit budget just
-// from where the decimal point lands. base has no trailing zeros in its
-// coefficient, so |base| = c * 10^x and base^n = c^n * 10^(n*x). With shift =
-// n*x and c^n at least one digit long:
-//   - shift >= 0: the zeros extend the integer part, so there are at least
-//     shift+1 digits (10^1000 has 1001);
-//   - shift < 0: the result has -shift fraction digits (0.1^1000 has 1000).
-//
-// A negative exponent divides 1 by that number and rounds to the precision, so
-// its size is only known after the division. reciprocal bounds the integer part
-// before dividing and CheckResultSize counts the whole result afterwards.
+// checkShift rejects a power whose result must exceed the digit budget from where the decimal point lands alone. base has
+// no trailing zeros in its coefficient, so base = c*10^x and base^n = c^n * 10^(n*x). With shift = n*x: shift >= 0 gives
+// at least shift+1 digits (10^1000 has 1001); shift < 0 gives -shift fraction digits (0.1^1000 has 1000). A negative
+// exponent's size is only known after the division, so reciprocal bounds the integer part first and CheckResultSize
+// counts the whole result after.
 func (p *Power) checkShift(base decimal.Decimal, n int64, negativeExponent bool) apperror.IError {
 	if negativeExponent {
 		return nil
@@ -154,11 +128,9 @@ func (p *Power) checkShift(base decimal.Decimal, n int64, negativeExponent bool)
 	return nil
 }
 
-// reciprocal returns 1 / divisor rounded half-even to the precision. divisor is
-// c * 10^shift with c < 10^digits(c), so the quotient exceeds 10^(-shift-digits)
-// and has at least -shift-digits+1 integer digits. If that lower bound is over
-// the budget the division is skipped, so a tiny base such as 0.1 never has its
-// huge reciprocal built just to be refused.
+// reciprocal returns 1 / divisor rounded half-even to the precision. divisor is c*10^shift with c < 10^digits(c), so the
+// quotient has at least -shift-digits+1 integer digits. If that bound is over the budget the division is skipped, so a
+// tiny base such as 0.1 never has its huge reciprocal built just to be refused.
 func (p *Power) reciprocal(divisor decimal.Decimal) (decimal.Decimal, apperror.IError) {
 	integerDigits := -int64(divisor.Exponent()) - coefficientDigits(divisor) + 1
 	if integerDigits > p.maxResultDigits {
@@ -167,12 +139,9 @@ func (p *Power) reciprocal(divisor decimal.Decimal) (decimal.Decimal, apperror.I
 	return divideHalfEven(one, divisor, p.precision), nil
 }
 
-// checkProduct refuses a product of a and b before it is computed. A product
-// has at least digits(a)+digits(b)-1 digits, so if even that lower bound is over
-// the budget the final power certainly is: every later step only multiplies
-// this number in again. Because each factor passed the same check earlier, no
-// multiplication ever starts from an operand longer than the budget, which
-// keeps the work bounded.
+// checkProduct refuses a product of a and b before computing it. A product has at least digits(a)+digits(b)-1 digits and
+// later steps only multiply it in again, so a lower bound over budget dooms the result. Every factor passed this check
+// earlier, so no multiplication starts from an operand longer than the budget and the work stays bounded.
 func (p *Power) checkProduct(a, b decimal.Decimal) apperror.IError {
 	if coefficientDigits(a)+coefficientDigits(b)-1 > p.maxResultDigits {
 		return ResultTooLarge(p.maxResultDigits)
@@ -180,11 +149,9 @@ func (p *Power) checkProduct(a, b decimal.Decimal) apperror.IError {
 	return nil
 }
 
-// boundedPower is exponentiation by squaring, O(log n) exact multiplications,
-// with checkProduct run before each one. The final squaring is skipped so the
-// base is never squared past what the result needs. It returns base^n for n > 0
-// and RESULT_TOO_LARGE as soon as the coefficient cannot fit the budget; this
-// applies to a negative exponent too, whose divisor is this same number.
+// boundedPower is exponentiation by squaring with checkProduct before each multiplication. The last squaring is skipped
+// so the base is never squared past what the result needs. It returns base^n for n > 0, or RESULT_TOO_LARGE as soon as
+// the coefficient cannot fit; a negative exponent's divisor is this same number.
 func (p *Power) boundedPower(ctx context.Context, base decimal.Decimal, n int64) (decimal.Decimal, apperror.IError) {
 	result := one
 	for n > 0 {

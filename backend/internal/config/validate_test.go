@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -36,6 +37,11 @@ func (s *ValidateTestSuite) SetupTest() {
 			MaxOperandLength: validMaxOperand,
 			MaxExponent:      validMaxExponent,
 			DecimalPrecision: validDecimalPrecision,
+		},
+		RateLimit: config.RateLimitConfig{
+			Enabled:           true,
+			RequestsPerSecond: validRateLimitRate,
+			Burst:             validRateLimitBurst,
 		},
 	}
 }
@@ -249,4 +255,46 @@ func (s *ValidateTestSuite) TestValidateErrorMessageNamesTheOffendingKey() {
 	s.cfg.Calculator.MaxExponent = invalidExponentLow
 
 	s.Contains(s.cfg.Validate().Error(), wantExponentMessageFormat)
+}
+
+func (s *ValidateTestSuite) TestValidateWhenRateLimitRateIsZeroReturnsError() {
+	s.cfg.RateLimit.RequestsPerSecond = 0
+
+	err := s.cfg.Validate()
+
+	s.ErrorIs(err, config.ErrRateLimitRateOutOfRange)
+	s.Contains(err.Error(), constants.KeyRateLimitRequestsPerSecond)
+}
+
+func (s *ValidateTestSuite) TestValidateWhenRateLimitRateAboveRangeReturnsError() {
+	s.cfg.RateLimit.RequestsPerSecond = invalidRateLimitRate
+
+	s.ErrorIs(s.cfg.Validate(), config.ErrRateLimitRateOutOfRange)
+}
+
+func (s *ValidateTestSuite) TestValidateWhenRateLimitRateIsNaNReturnsError() {
+	s.cfg.RateLimit.RequestsPerSecond = math.NaN()
+
+	s.ErrorIs(s.cfg.Validate(), config.ErrRateLimitRateOutOfRange)
+}
+
+func (s *ValidateTestSuite) TestValidateWhenRateLimitBurstIsZeroReturnsError() {
+	s.cfg.RateLimit.Burst = 0
+
+	err := s.cfg.Validate()
+
+	s.ErrorIs(err, config.ErrRateLimitBurstOutOfRange)
+	s.Contains(err.Error(), constants.KeyRateLimitBurst)
+}
+
+func (s *ValidateTestSuite) TestValidateWhenRateLimitBurstAboveRangeReturnsError() {
+	s.cfg.RateLimit.Burst = invalidRateLimitBurst
+
+	s.ErrorIs(s.cfg.Validate(), config.ErrRateLimitBurstOutOfRange)
+}
+
+func (s *ValidateTestSuite) TestValidateWhenRateLimitDisabledIgnoresItsNumbers() {
+	s.cfg.RateLimit = config.RateLimitConfig{Enabled: false}
+
+	s.NoError(s.cfg.Validate())
 }

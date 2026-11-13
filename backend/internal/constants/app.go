@@ -12,9 +12,7 @@ const (
 	ExitCodeConfigInvalid = 2
 )
 
-// MsgConfigLoadFailed is printed to stderr when startup configuration is
-// unusable. The logger is not built yet at that point, so plain stderr is the
-// only reliable channel.
+// MsgConfigLoadFailed goes to stderr because the logger is not built yet when configuration is unusable.
 const MsgConfigLoadFailed = "failed to load configuration: %v\n"
 
 // Startup failures after configuration loads. The logger may be unusable at

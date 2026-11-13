@@ -12,17 +12,10 @@ import (
 // percentShift moves the decimal point two places left: dividing by 100.
 const percentShift = -2
 
-// Percentage is "x percent of y": percentage(x, y) = x / 100 * y.
-//
-// So percentage(20, 50) is 10, the same as "20% of 50". "Percentage" is
-// ambiguous in everyday use (it can also mean "what percent is x of y", or "x
-// increased by y percent"); this operation is only the first meaning, and the
-// operand order is the percent first, the base second.
-//
-// The result is exact and needs no rounding: dividing by 100 only moves the
-// decimal point, so it always terminates, and multiplying decimals is exact.
-// No precision setting is involved. The API docs (docs/API.md) carry this
-// definition for clients.
+// Percentage is "x percent of y": x / 100 * y, so percentage(20, 50) is 10. The other readings (what percent x is of y,
+// x increased by y percent) are not supported. The percent is the first operand, the base the second.
+// The result is exact: dividing by 100 only moves the decimal point, so no rounding or precision applies.
+// docs/API.md carries this definition for clients.
 type Percentage struct{ descriptor }
 
 var _ Operation = (*Percentage)(nil)

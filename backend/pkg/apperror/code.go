@@ -1,5 +1,4 @@
-// Package apperror is the single error model of the service: a typed code, a
-// safe public message, an HTTP status and structured fields for logs.
+// Package apperror is the single error model: a typed code, a safe public message, an HTTP status and log fields.
 package apperror
 
 import (
@@ -28,6 +27,7 @@ const (
 	CodeInternal             Code = "INTERNAL"
 	CodeServiceUnavailable   Code = "SERVICE_UNAVAILABLE"
 	CodeRequestTimeout       Code = "REQUEST_TIMEOUT"
+	CodeRateLimited          Code = "RATE_LIMITED"
 )
 
 // definition is what a code means to a client: its HTTP status and default
@@ -58,6 +58,7 @@ var (
 		// was fine and our own deadline ran out, so "temporarily unavailable, try
 		// again" (503) is the honest signal and clients already retry it.
 		CodeRequestTimeout: {http.StatusServiceUnavailable, MsgRequestTimeout},
+		CodeRateLimited:    {http.StatusTooManyRequests, MsgRateLimited},
 	}
 )
 
@@ -99,7 +100,7 @@ func (c Code) DefaultMessage() string {
 	return MsgInternal
 }
 
-// Codes lists every registered code in alphabetical order. docs/ERROR_CODES.md
+// Codes lists every registered code in alphabetical order. docs/API.md
 // is checked against it in a test, so a new code cannot ship undocumented. It
 // sees a feature's codes only once that feature's package has been imported.
 func Codes() []Code {

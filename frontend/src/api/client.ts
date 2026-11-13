@@ -17,26 +17,21 @@ import {
 } from './types';
 
 export interface RequestOptions {
-  /** Aborts the request. The call then rejects with a CanceledError. */
   signal?: AbortSignal | undefined;
-  /** Overrides the client's time limit for this one call. */
   timeoutMs?: number | undefined;
 }
 
 export interface ApiClientConfig {
   /** Prefix for every path. Empty means same origin. A trailing slash is ignored. */
   baseUrl?: string | undefined;
-  /** Default time limit per request in milliseconds. */
   timeoutMs?: number | undefined;
 }
 
 export interface ApiClient {
   calculate: (request: CalculateRequest, options?: RequestOptions) => Promise<CalculateResponse>;
-  /** The operations list, plus the server's input limits when it sends them. */
   getOperations: (options?: RequestOptions) => Promise<OperationsResponse>;
 }
 
-/** Turns the raw env value into a base URL: unset or blank becomes the default, no trailing slash. */
 export function resolveBaseUrl(raw: string | undefined): string {
   const trimmed = (raw ?? '').trim();
   return (trimmed === '' ? DEFAULT_API_BASE_URL : trimmed).replace(/\/+$/, '');
@@ -91,12 +86,10 @@ function buildInvalidResponseError(response: Response): ApiError {
   });
 }
 
-/** What to send: everything that differs between endpoints. */
 interface RequestSpec<T> {
   path: string;
   method: string;
   body?: string | undefined;
-  /** Runtime check for the parsed body. A body that fails it is an INVALID_RESPONSE error. */
   isExpected: (value: unknown) => value is T;
 }
 
@@ -133,7 +126,6 @@ function createAbortScope(callerSignal: AbortSignal | undefined, timeoutMs: numb
   };
 }
 
-/** Sends the request and reads the whole body as text, all under one abort signal. */
 async function fetchText(
   url: string,
   spec: Pick<RequestSpec<unknown>, 'method' | 'body'>,
@@ -153,7 +145,6 @@ async function fetchText(
   return { response, text };
 }
 
-/** Names a failed fetch: timeout, the caller's cancel, or a plain network failure. */
 function classifyFetchFailure(
   cause: unknown,
   scope: AbortScope,
@@ -169,7 +160,6 @@ function classifyFetchFailure(
   return new NetworkError({ cause });
 }
 
-/** Turns a received response into the typed body, or throws the matching ApiError. */
 function readBody<T>(
   { response, text }: { response: Response; text: string },
   isExpected: RequestSpec<T>['isExpected'],
@@ -229,5 +219,4 @@ export function createApiClient(config: ApiClientConfig = {}): ApiClient {
   };
 }
 
-/** The client the app uses. Components read it through ApiClientContext, which defaults to this. */
 export const defaultApiClient = createApiClient({ baseUrl: import.meta.env.VITE_API_BASE_URL });

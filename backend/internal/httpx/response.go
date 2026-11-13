@@ -1,5 +1,4 @@
-// Package httpx writes every JSON response the service sends, so the success
-// and error wire formats are defined in exactly one place.
+// Package httpx writes every JSON response, so the success and error wire formats live in one place.
 package httpx
 
 import (
@@ -35,10 +34,8 @@ type ErrorBody struct {
 const fallbackBody = `{"error":{"code":"` + string(apperror.CodeInternal) +
 	`","message":"` + apperror.MsgInternal + `"}}`
 
-// WriteJSON writes v as JSON with status. The body is encoded before anything
-// is sent, so an unencodable value becomes a clean 500 instead of a truncated
-// 200. ctx is the request context, so an encode failure is logged with the
-// request ID.
+// WriteJSON encodes v before sending anything, so an unencodable value becomes a clean 500, not a truncated 200.
+// ctx carries the request ID for the failure log.
 func WriteJSON(ctx context.Context, w http.ResponseWriter, status int, v any) {
 	body, err := json.Marshal(v)
 	if err != nil {
@@ -56,11 +53,8 @@ func WriteJSON(ctx context.Context, w http.ResponseWriter, status int, v any) {
 	_, _ = w.Write(body)
 }
 
-// WriteError logs err in full (code, cause, fields) and sends the code, the
-// public message and the error's fields. The cause is never sent. Fields are
-// built deliberately by the code that raises the error and hold only
-// client-safe context (operand_index, reason, limit, the request method and
-// path); anything internal belongs in the cause, which stays in the log.
+// WriteError logs err in full and sends only the code, public message and fields. Fields hold client-safe context built
+// by the code that raised the error; anything internal stays in the cause, which is never sent.
 func WriteError(ctx context.Context, w http.ResponseWriter, err apperror.IError) {
 	logError(ctx, err)
 	public := apperror.ToPublic(err)

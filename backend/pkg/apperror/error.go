@@ -9,15 +9,12 @@ import (
 // IError is the contract every service error satisfies.
 type IError interface {
 	error
-	// Code is the machine-readable error class.
 	Code() Code
 	// PublicMessage is safe to show a client; it never contains the cause.
 	PublicMessage() string
-	// HTTPStatus is the response status for this error.
 	HTTPStatus() int
 	// Fields returns a copy of the structured context for logging.
 	Fields() map[string]any
-	// Unwrap exposes the cause to errors.Is and errors.As.
 	Unwrap() error
 	// WithField returns a new error with the extra field; the receiver is unchanged.
 	WithField(key string, value any) IError

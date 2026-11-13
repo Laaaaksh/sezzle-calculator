@@ -12,14 +12,10 @@ type descriptor struct {
 	description string
 }
 
-// Name is the registry key and the name clients send.
 func (d descriptor) Name() entities.OperationType { return d.name }
 
-// Arity is the exact number of operands the operation needs.
 func (d descriptor) Arity() int { return d.arity }
 
-// Symbol is the short display symbol.
 func (d descriptor) Symbol() string { return d.symbol }
 
-// Description is the one-line help text.
 func (d descriptor) Description() string { return d.description }

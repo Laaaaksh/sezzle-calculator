@@ -110,7 +110,6 @@ const (
 	wantExponentMessageFormat = "calculator.max_exponent"
 )
 
-// Values for hand-built Config structs passed to Validate.
 const (
 	validPort             = 8080
 	validTimeout          = 5 * time.Second
@@ -143,4 +142,11 @@ const (
 	originUnparsable      = "http://[::1"
 	originWithCredentials = "https://user:pass@calculator.example.com"
 	originWithFragment    = "https://calculator.example.com#frag"
+)
+
+const (
+	validRateLimitRate    = 10.0
+	validRateLimitBurst   = 20
+	invalidRateLimitRate  = 10001.0
+	invalidRateLimitBurst = 10001
 )

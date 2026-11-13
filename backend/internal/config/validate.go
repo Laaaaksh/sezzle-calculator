@@ -16,6 +16,7 @@ func (c Config) Validate() error {
 	errs = append(errs, c.Server.validate()...)
 	errs = append(errs, c.CORS.validate()...)
 	errs = append(errs, c.Calculator.validate()...)
+	errs = append(errs, c.RateLimit.validate()...)
 	return errors.Join(errs...)
 }
 
@@ -69,6 +70,22 @@ func (c CalculatorConfig) validate() []error {
 	return errs
 }
 
+// validate skips the numbers when the limiter is off, so a disabled section
+// does not need valid values it will never use.
+func (r RateLimitConfig) validate() []error {
+	if !r.Enabled {
+		return nil
+	}
+	var errs []error
+	if !(r.RequestsPerSecond > 0 && r.RequestsPerSecond <= constants.RateLimitRateMax) {
+		errs = append(errs, withValue(ErrRateLimitRateOutOfRange, r.RequestsPerSecond))
+	}
+	if r.Burst < constants.RateLimitBurstMin || r.Burst > constants.RateLimitBurstMax {
+		errs = append(errs, withValue(ErrRateLimitBurstOutOfRange, r.Burst))
+	}
+	return errs
+}
+
 // validateOrigin rejects "*" explicitly: a wildcard origin would let any site
 // call the API from a visitor's browser, so it gets its own clear message.
 func validateOrigin(origin string) error {
@@ -82,9 +99,8 @@ func validateOrigin(origin string) error {
 	return nil
 }
 
-// isPlainOrigin reports whether u is exactly scheme://host[:port]: http(s)
-// only, no credentials, query, fragment or path beyond the root. Split out of
-// validateOrigin to keep its cyclomatic complexity under the gocyclo limit.
+// isPlainOrigin reports whether u is exactly scheme://host[:port]: http(s) only, no credentials, query, fragment or
+// path beyond the root. Split from validateOrigin to stay under the gocyclo limit.
 func isPlainOrigin(u *url.URL) bool {
 	if u.Scheme != constants.SchemeHTTP && u.Scheme != constants.SchemeHTTPS {
 		return false

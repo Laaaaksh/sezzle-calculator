@@ -25,3 +25,14 @@ allowed_origins = ["http://localhost:5173"]
 max_operand_length = 64
 max_exponent = 1000
 decimal_precision = 20
+
+[rate_limit]
+# Per client IP limit on POST /api/v1/calculate: a bucket of `burst` requests that refills
+# at `requests_per_second`. Over the limit the API answers 429 RATE_LIMITED with Retry-After.
+# State is in memory, so each instance counts on its own.
+enabled = true
+requests_per_second = 10.0
+burst = 20
+# Header that holds the client IP behind a proxy, for example "X-Real-IP". Empty uses the
+# connection address. Set it only when the proxy overwrites the header on every request.
+client_ip_header = ""

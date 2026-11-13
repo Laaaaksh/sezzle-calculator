@@ -5,7 +5,6 @@ import { darkTokens, lightTokens, type TokenMap } from '../test/tokens';
 const TEXT_MINIMUM = 4.5;
 const UI_MINIMUM = 3;
 
-/** [foreground token, background token, what it is]. Text first, then non-text parts. */
 const TEXT_PAIRS: readonly [string, string, string][] = [
   ['--color-text', '--color-bg', 'body text on the page'],
   ['--color-text', '--color-card', 'text on the card'],
@@ -28,7 +27,6 @@ const TEXT_PAIRS: readonly [string, string, string][] = [
   ['--color-text-muted', '--color-card', 'unselected theme option'],
 ];
 
-/** Parts of the interface that are not text: focus ring and the active operator ring. */
 const UI_PAIRS: readonly [string, string, string][] = [
   ['--color-focus', '--color-bg', 'focus ring on the page'],
   ['--color-focus', '--color-card', 'focus ring on the card'],

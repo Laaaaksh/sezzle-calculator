@@ -5,16 +5,12 @@ import type { CalculatorAction } from './state';
 export type KeyKind = 'digit' | 'operator' | 'function' | 'equals';
 
 export interface KeyDefinition {
-  /** Unique, stable, used as the React key. */
   id: string;
-  /** What the key shows. */
   label: string;
   /** Required for every symbol key, because a screen reader cannot say "÷" or "⌫" well. */
   ariaLabel?: string;
   action: CalculatorAction;
-  /** Styling hook only. */
   kind: KeyKind;
-  /** Takes two columns of the four-column grid. */
   wide?: boolean;
   /** Extra help shown as a tooltip and read after the name, for a key whose meaning is not obvious. */
   hint?: string;
@@ -102,7 +98,6 @@ export const KEYS: readonly KeyDefinition[] = [
   symbol('equals', '=', 'Equals', { type: 'equals' }, 'equals'),
 ];
 
-/** The backend operation an action needs, or null for actions that never call the server. */
 export function operationForAction(action: CalculatorAction): OperationType | null {
   switch (action.type) {
     case 'operator':

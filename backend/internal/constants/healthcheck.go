@@ -5,8 +5,7 @@ package constants
 const (
 	// HealthcheckHost is loopback: the probe always asks the process in its own container.
 	HealthcheckHost = "127.0.0.1"
-	// HealthcheckScheme and HealthcheckURLFmt build the probe URL from the host, the
-	// configured port and the liveness path.
+	// HealthcheckScheme and HealthcheckURLFmt build the probe URL.
 	HealthcheckScheme = "http"
 	HealthcheckURLFmt = "%s://%s:%d%s"
 	// HealthcheckTimeoutSeconds is below the Docker healthcheck timeout so the probe

@@ -42,8 +42,7 @@ func NewRegistry(ops ...Operation) *Registry {
 	return &Registry{byName: byName, ordered: slices.Clone(ops)}
 }
 
-// Lookup returns the operation for name. Anything unregistered, including the
-// empty name, is UNKNOWN_OPERATION.
+// Lookup returns the operation for name; anything unregistered, including the empty name, is UNKNOWN_OPERATION.
 func (r *Registry) Lookup(name entities.OperationType) (Operation, apperror.IError) {
 	op, ok := r.byName[name]
 	if !ok {

@@ -23,8 +23,8 @@ const SHORTCUT_KEYS = {
 } as const;
 
 /**
- * What a key press means for the calculator, or null when the key is not a shortcut.
- * Letters are matched without regard to case so Caps Lock does not break x and r.
+ * Null when the key is not a shortcut. Letters match without case so Caps Lock does not break
+ * x and r.
  */
 export function actionForKey(key: string): CalculatorAction | null {
   const digit = DIGITS.find((candidate) => candidate === key);

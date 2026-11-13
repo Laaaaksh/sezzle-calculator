@@ -63,7 +63,7 @@ linters:
           - gosec
         text: "G112"
       # G304 flags reading a path held in a variable. The docs test reads a fixed
-      # repo file (docs/ERROR_CODES.md) to check it against the code list.
+      # repo file (docs/API.md) to check it against the code list.
       - path: _test\.go
         linters:
           - gosec

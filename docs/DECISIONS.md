@@ -74,7 +74,7 @@ One entry per decision. Each has the context, the decision and the trade-off.
 
 - Context: A calculator is used by keyboard as much as by touch, and some users depend on screen readers.
 - Decision: Every key works from the keyboard. Errors use `role="alert"`. The active operator uses `aria-pressed` and a ring, not colour alone. Touch targets are at least 44px. Contrast is tested for both themes, and axe runs in the component tests.
-- Trade-off: More tests and more CSS rules to maintain. A regression now fails the build. Details are in [ACCESSIBILITY.md](ACCESSIBILITY.md).
+- Trade-off: More tests and more CSS rules to maintain. A regression now fails the build. Details are in the [Accessibility](#accessibility) section below.
 
 ## 13. Go with chi, zap and viper
 
@@ -93,3 +93,184 @@ One entry per decision. Each has the context, the decision and the trade-off.
 - Context: On shutdown the backend turns readiness to 503, keeps serving for `shutdown_drain_delay`, then waits up to `shutdown_grace_period` for open requests. Docker sends SIGKILL once `stop_grace_period` ends. A kill in the middle of a drain drops live requests.
 - Decision: `stop_grace_period` in `docker-compose.yml` must be longer than `shutdown_drain_delay + shutdown_grace_period`. Production uses 5s + 10s, so compose sets 20s for the backend. If you raise either config value, raise `stop_grace_period` with it.
 - Trade-off: A slow stop takes up to 20s in the worst case. A normal stop ends as soon as the last request finishes after the drain delay.
+
+## 16. Money versus calculator numbers
+
+- Context: This API does arithmetic on whatever a user types. A real buy now, pay later amount API is a different problem.
+- A money API would send integer minor units plus an ISO 4217 currency code, for example `{"amount": 1999, "currency": "USD"}`.
+- Rounding would follow the currency, since JPY has no minor unit and KWD has three, instead of one global 20 places.
+- It would also refuse floats and exponent notation, refuse sums across currencies, and say how the odd cent is shared when a total splits into instalments.
+- Decision: The calculator takes arbitrary-precision decimal strings with no currency, because the brief asks for a general calculator with division, roots and powers.
+- Trade-off: `1/3` as `0.33333333333333333333` suits a calculator and is wrong for a ledger. Do not reuse this contract to move money.
+
+## 17. Rate limiting per client IP
+
+- Context: `POST /api/v1/calculate` runs real work, and `power` and `sqrt` loop. One client in a tight loop should not starve the rest.
+- Decision: A token bucket per client IP guards `POST /api/v1/calculate` only. The defaults are 10 requests a second with a burst of 20. Over the limit the API answers `429 RATE_LIMITED` with a `Retry-After` header. The limiter is about 80 lines in `internal/ratelimit` with an injected clock, so tests need no sleeping. A bucket that has refilled is dropped, so memory follows the clients active in the last few seconds.
+- Behind nginx every request arrives from nginx, so compose sets `client_ip_header` to `X-Real-IP`, which nginx overwrites with the real address. Set the header only when a proxy does the same.
+- Trade-off: State lives in one process. Several instances would each allow the full rate and need a shared store such as Redis, or a limit at the gateway. Clients behind one NAT share a bucket. IPv6 clients are keyed by their /64, since one client controls the whole prefix and could rotate addresses for fresh buckets; IPv4-mapped IPv6 counts as IPv4.
+
+## 18. Known audit note
+
+- Context: `npm audit` reports 7 moderate advisories in `minimatch`, reached through `typescript-eslint`.
+- Decision: I left them. They sit in lint tooling that never ships, and `npm audit --omit=dev`, which CI runs, reports 0. Forcing an override of `minimatch` could break the linter, so I wait for a `typescript-eslint` release that updates it.
+- Trade-off: A full `npm audit` is not clean. A developer machine that runs the linter carries the advisory, the production bundle does not.
+
+## Architecture
+
+The system is two containers. nginx serves the React bundle and forwards API calls to a Go service. The Go service holds all the arithmetic. There is no database.
+
+### Request flow
+
+```mermaid
+flowchart TD
+    B[Browser] -->|"GET /, /assets/*"| N[nginx]
+    B -->|"POST /api/v1/calculate"| N
+    N -->|static files, index.html fallback| B
+    N -->|"proxy /api and /health"| R[chi router]
+
+    subgraph Backend [Go backend]
+        R --> M1[1. Request ID]
+        M1 --> M2[2. Recovery]
+        M2 --> M3[3. Access log]
+        M3 --> M4[4. CORS]
+        M4 --> M5[5. Body limit]
+        M5 --> M6[6. Timeout]
+        M6 --> RL[Rate limit, calculate only]
+        RL --> H[Calculator handler]
+        H -->|"decode, validate, parse operands"| C[Core]
+        C -->|"lookup, arity, limits"| OP[Operation]
+        OP -->|"Apply"| C
+        C -->|"normalise result"| H
+    end
+
+    H -->|"JSON result or error"| B
+```
+
+Read the diagram from top to bottom. The same path carries the response back to the browser.
+
+### Backend
+
+The router lives in `backend/internal/boot/router.go`. The middleware order matters, so the code comments each position. The rate limiter is not in this list. It wraps only `POST /api/v1/calculate`, inside the timeout.
+
+| Step | Middleware | Reason for the position |
+| --- | --- | --- |
+| 1 | Request ID | First, so every later log line and error body carries the ID. |
+| 2 | Recovery | Before the access log, so a panic still gets a 500 and a log line. |
+| 3 | Access log | Wraps everything below, to time the real work. |
+| 4 | CORS | Before the limits, so a rejected preflight costs nothing. |
+| 5 | Body limit | Before any handler reads the body. |
+| 6 | Timeout | Innermost, so the deadline covers only handler work. |
+
+The calculator module has three layers.
+
+- Handler (`server.go`, `keys.go`, `parse.go`). The handler checks the media type and rejects repeated or wrongly cased top-level keys. Then it decodes the JSON, checks the required fields and the operand and name length bounds, and parses each operand string into a decimal. The handler knows HTTP and nothing about arithmetic.
+- Core (`core.go`, `validate.go`). The core looks up the operation, checks the operand count (`checkArity`), checks the limits (`checkLimits`), applies the operation and normalises the result. The core knows arithmetic rules and nothing about HTTP.
+- Operations (`operations/`). Each operation is one small type with `Name`, `Arity`, `Symbol`, `Description` and `Apply`. The registry maps names to operations and keeps their order.
+
+Other packages:
+
+| Path | Role |
+| --- | --- |
+| `cmd/api` | The service entry point |
+| `cmd/healthcheck` | A tiny probe binary for the Docker healthcheck |
+| `internal/boot` | Wiring: config, logger, registry, modules, router, graceful shutdown |
+| `internal/config` | Layered TOML config with environment overrides (viper) |
+| `internal/constants` | Shared names, so no string appears twice |
+| `internal/interceptors` | The six middleware and the rate limit |
+| `internal/ratelimit` | The in-memory token bucket behind the rate limit |
+| `internal/httpx` | JSON writers, and the 404 and 405 handlers (the echoed path is cut to 256 bytes) |
+| `internal/logger` | Structured logging (zap) |
+| `internal/modules/calculator` | The calculator module |
+| `internal/modules/health` | Liveness and readiness probes |
+| `pkg/apperror` | The generic error codes, a registry with `Register`, and the client-safe error body |
+
+Error codes are layered. `pkg/apperror` knows only the generic codes (`BAD_REQUEST`, `NOT_FOUND`, and so on). The calculator codes live in `internal/modules/calculator/entities/codes.go` and register themselves with `apperror.Register` in package `init`, so `pkg/apperror` never learns calculator vocabulary and a second module could add its own codes the same way.
+
+Every failure becomes an `apperror` with a code. One function maps the code to the HTTP status and builds the response body, so no handler writes an error by hand.
+
+### Frontend
+
+The frontend has three layers, and each one only talks to the layer below.
+
+```mermaid
+flowchart TD
+    UI["components: Calculator, Display, Keypad, HistoryDrawer, ErrorBanner"] --> HK[useCalculator hook]
+    HK --> RD["reducer: pure state transitions"]
+    HK --> API["api client: calculate, getOperations"]
+    API -->|fetch| NG[nginx and backend]
+```
+
+- Components in `src/features/calculator/components` draw the state and send actions. They hold no logic.
+- `useCalculator` owns the state and the history. The hook sends a request when you press equals, when you chain a second operator onto a pending operation, and when you press the square root key.
+- The reducer in `state/` is a pure function. The reducer applies typing rules such as one decimal point and a length cap.
+- The API client in `src/api` wraps `fetch`, checks response shapes and turns error bodies into typed errors.
+
+The keypad is a static key list. The hook also fetches `GET /api/v1/operations` once. Keys for operations the server does not report are disabled, and `limits.maxOperandLength` caps the operand length. If the request fails, every key stays enabled and the server still validates each calculation.
+
+The frontend never computes a result. The frontend builds an operation name and operand strings, sends them and shows the reply.
+
+### Deployment
+
+`docker-compose.yml` starts `backend` and `frontend`. The frontend waits until the backend health check passes. Only the frontend publishes a port (8080). The backend image is a static Go binary on distroless, running as a non-root user. The frontend image is Node for the build and unprivileged nginx for serving.
+
+nginx does three jobs. nginx serves hashed assets with a one-year immutable cache, falls back to `index.html` for the single page app and proxies `/api` and `/health` to the backend with `Cache-Control: no-store`.
+
+Docker stops each container with SIGTERM and kills it when `stop_grace_period` ends. The backend needs `shutdown_drain_delay + shutdown_grace_period` to stop cleanly (5s + 10s in prod), so compose gives it 20s. Keep the stop period longer than this sum. See decision 15 above.
+
+## Accessibility
+
+This is the result of the accessibility pass. Each section names the check, what changed and why. Every check a machine runs is a test, so a regression fails the build.
+
+### Contrast
+
+- Check: text needs 4.5 to 1, interface parts (focus ring, active operator ring) need 3 to 1, in both themes.
+- Change: `src/styles/contrast.test.ts` reads the colours from `src/styles/tokens.css` and computes the WCAG ratio for 25 text and interface pairs in each theme. The smallest text ratio is 4.7 (operator label on a hovered key, light theme). The smallest interface ratio is 5.3 (active fill next to a tinted key, light theme).
+- Why: axe cannot check contrast in jsdom, because jsdom has no layout and no real styles. The axe helper turns off only that rule and says so in a comment. The token test covers the gap.
+- Decision: key borders use the brief's `#E5E7EB`, which is about 1.2 to 1 against a white card. Every key carries a text label, so the border is not what identifies it. WCAG 1.4.11 does not ask for 3 to 1 on a border in that case.
+
+### Focus ring
+
+- Check: every interactive element shows a visible focus ring.
+- Change: all controls use a 2px outline in `--color-focus`, set to the text colour so it has the highest contrast on each surface and cannot be mistaken for the accent ring. Review catches a removed outline.
+- Fix found: the focus outline sat on top of the active operator ring and hid it. A focused active operator now moves its outline out by 5px, so both show.
+
+### Tab order
+
+- Check: Tab visits controls in reading order.
+- Change: none needed. The page order is theme options, keys in keypad order, then the History button. `App.test.tsx` tabs through the page and checks each stop, and checks that no element uses a positive `tabindex`.
+- Note: the History panel hides with `display: none` when closed on narrow screens, so its entries stay out of the tab order until you open it.
+
+### Touch targets
+
+- Check: every control is at least 44px tall and wide.
+- Change: `--size-touch` is 2.75rem (44px) and keys use `--size-key` at 3.5rem. The theme options, the History button, the history entries and the Retry button all use these. Keys stay 57px wide at a 320px screen.
+- Fix found: the Retry button and the history entries were under 44px tall. Both now meet it.
+
+### Active operator
+
+- Check: the active operator is not shown by colour alone.
+- Change: the key gets an accent fill, a two-part ring (a gap, then a 2px accent line) and `aria-pressed="true"`, so screen readers announce it too. In Windows high contrast mode `box-shadow` is dropped, so the ring is repeated as an outline there. Tests check the `aria-pressed` values.
+- Fix found: the ring would have vanished in forced-colors mode, so the outline fallback was added.
+
+### Errors
+
+- Check: errors are announced.
+- Change: the error message is now a `role="alert"` paragraph outside the polite status region. Before, it sat inside the polite region and queued behind the result and expression updates. Alerts are read at once. The Retry button stays outside the alert so only the message is spoken. Tests check the alert role and that the status region does not contain it.
+
+### Zoom and reflow
+
+- Check: zoom is not blocked and the layout holds at 200 percent.
+- Change: `index.html` keeps `width=device-width, initial-scale=1.0` with no `user-scalable` or `maximum-scale`. `index.html.test.ts` fails if either is added. Sizes use rem, so text zoom scales the layout. The grid collapses to one column below 900px, so 200 percent zoom on a laptop gives the narrow layout. Long results shrink with the card width and wrap as a last resort, so nothing scrolls sideways down to 320px.
+- Not automated: layout at zoom needs a real browser. The browser check (prompt 23 in [PROMPTS.md](PROMPTS.md)) covers it.
+
+### axe in the component tests
+
+- `src/test/axe.ts` runs axe-core on a rendered container and fails with the rule ids and elements.
+- It runs on the calculator when idle, with a result, with an active operator, with a network error and Retry, with a divide by zero error, and with the history drawer open. It also runs on the theme toggle and on the whole app.
+- `src/test/axe.test.tsx` proves the helper fails on a button with no name.
+
+### Other guards
+
+- `tokens.test.ts` checks that every colour is defined once with `light-dark()`, so the system dark theme and the explicit dark theme cannot drift.
+- `breakpoints.test.ts` checks that every media query repeats the breakpoint constant used in code.

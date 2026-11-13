@@ -3,6 +3,7 @@ package boot
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -12,24 +13,18 @@ import (
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/interceptors"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/health"
+	"github.com/Laaaaksh/sezzle-calculator/backend/internal/ratelimit"
 )
 
-// Modules is every feature module the router needs. Adding a feature means
-// adding a field here and registering its routes in NewRouter.
+// Modules is every feature module the router needs.
 type Modules struct {
 	Health     health.IModule
 	Calculator calculator.IModule
 }
 
-// NewRouter assembles the middleware chain and routes. Middleware order
-// matters:
-//
-//	request ID  first, so every later log line and error body carries it
-//	recovery    before the log, so a panic still gets a 500 and an access line
-//	access log  wraps everything below, to time the real work
-//	CORS        before the limits, so a rejected preflight costs nothing
-//	body limit  before handlers read
-//	timeout     innermost, so the deadline covers only handler work
+// NewRouter assembles the middleware chain and routes. Order matters: request ID first, so every log line and error
+// carries it; recovery outside the access log, so a panic still gets a 500 and a log line; CORS before the body limit
+// and timeout, so a rejected preflight costs nothing; timeout innermost, so the deadline covers only handler work.
 func NewRouter(cfg *config.Config, modules Modules) chi.Router {
 	r := chi.NewRouter()
 	r.Use(
@@ -47,11 +42,19 @@ func NewRouter(cfg *config.Config, modules Modules) chi.Router {
 
 	modules.Health.GetHandler().RegisterRoutes(r)
 
-	// Feature modules register their routes on this sub-router.
 	r.Route(constants.APIBasePath, func(api chi.Router) {
-		modules.Calculator.GetHandler().RegisterRoutes(api)
+		modules.Calculator.GetHandler().RegisterRoutes(api, rateLimitGuards(cfg.RateLimit)...)
 	})
 	return r
+}
+
+// rateLimitGuards returns nothing when the limit is off. The limiter is built once, so all requests share one set of buckets.
+func rateLimitGuards(cfg config.RateLimitConfig) []func(http.Handler) http.Handler {
+	if !cfg.Enabled {
+		return nil
+	}
+	limiter := ratelimit.New(cfg.RequestsPerSecond, cfg.Burst, time.Now)
+	return []func(http.Handler) http.Handler{interceptors.RateLimit(limiter, cfg.ClientIPHeader)}
 }
 
 // routableMethods are the methods probed to build the Allow header of a 405.
@@ -67,10 +70,8 @@ var routableMethods = []string{
 	http.MethodTrace,
 }
 
-// methodNotAllowed answers with the JSON 405 and the Allow header RFC 9110
-// requires. chi only sets Allow in its own default responder and drops the
-// allowed methods once a custom responder is installed, so the root router is
-// probed for every method that does match the path.
+// methodNotAllowed sends the JSON 405 with the Allow header RFC 9110 requires. chi drops the allowed methods once a
+// custom responder is installed, so the root router is probed for every method that matches the path.
 func methodNotAllowed(root chi.Routes) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.RawPath

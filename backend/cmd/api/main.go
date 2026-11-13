@@ -17,9 +17,7 @@ func main() {
 	os.Exit(run(context.Background(), os.Stderr))
 }
 
-// run builds the app, serves until shutdown and maps the outcome to an exit
-// code. It returns the code instead of calling os.Exit so the logic stays
-// testable. Wiring lives in internal/boot; this function only translates.
+// run returns the exit code instead of calling os.Exit, so tests can call it.
 func run(ctx context.Context, stderr io.Writer) int {
 	app, err := boot.Initialize(ctx)
 	if err != nil {
@@ -37,8 +35,7 @@ func run(ctx context.Context, stderr io.Writer) int {
 	return code
 }
 
-// reportStartupFailure picks the message and exit code by the stage that
-// failed. The logger may not exist yet, so everything goes to stderr.
+// reportStartupFailure writes to stderr because the logger may not exist yet.
 func reportStartupFailure(stderr io.Writer, err error) int {
 	switch {
 	case errors.Is(err, boot.ErrConfigLoad):

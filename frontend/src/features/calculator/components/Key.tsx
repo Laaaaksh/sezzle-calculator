@@ -41,7 +41,6 @@ export function Key({
         type="button"
         className={className}
         aria-label={ariaLabel}
-        // Only operators can be "on", so only they announce a pressed state.
         aria-pressed={kind === 'operator' ? active : undefined}
         disabled={disabled}
         // aria-disabled, not disabled: the key stays in the tab order, so a keyboard or screen

@@ -25,18 +25,18 @@ type HTTPHandler struct {
 	limits entities.Limits
 }
 
-// NewHTTPHandler returns a handler backed by core. limits supplies the operand
-// length the parser enforces before core sees the input, and is published by
-// the operations endpoint.
+// NewHTTPHandler returns a handler backed by core. limits supplies the operand length the parser enforces before core
+// sees the input, and is published by the operations endpoint.
 func NewHTTPHandler(core ICore, limits entities.Limits) *HTTPHandler {
 	return &HTTPHandler{core: core, limits: limits}
 }
 
 // RegisterRoutes mounts the calculator endpoints on r, the versioned API
 // router. Routes are flat so any other method on a path gets the router's JSON
-// 405.
-func (h *HTTPHandler) RegisterRoutes(r chi.Router) {
-	r.Post(entities.PathCalculate, h.Calculate)
+// 405. calculateGuards wrap POST /calculate only (for example the rate limit),
+// because the other routes are cheap.
+func (h *HTTPHandler) RegisterRoutes(r chi.Router, calculateGuards ...func(http.Handler) http.Handler) {
+	r.With(calculateGuards...).Post(entities.PathCalculate, h.Calculate)
 	r.Get(entities.PathOperations, h.Operations)
 }
 
@@ -154,12 +154,10 @@ func decodeFailure(err error) apperror.IError {
 	return apperror.New(apperror.CodeBadRequest, err)
 }
 
-// invalidFields names each required field the request leaves out, and an
-// operation name over the length bound, and an operand list longer than any
-// operation takes. An empty operands array is not
-// missing: it is present with the wrong count, which the core reports as
-// INVALID_OPERAND_COUNT. The length bound runs before the core so a huge name
-// never reaches an error field or the logs.
+// invalidFields names each required field the request leaves out, an operation name over the length bound, and an
+// operand list longer than any operation takes. An empty operands array is not missing: it has the wrong count, which
+// the core reports as INVALID_OPERAND_COUNT. The length bound runs before the core so a huge name never reaches an
+// error field or the logs.
 func invalidFields(req entities.CalculateRequest) map[string]string {
 	problems := map[string]string{}
 	if req.Operation == "" {
@@ -175,8 +173,6 @@ func invalidFields(req entities.CalculateRequest) map[string]string {
 	return problems
 }
 
-// validationFailed builds the error for invalid fields. The problems become
-// the error fields, which reach both the client and the log.
 func validationFailed(problems map[string]string) apperror.IError {
 	aerr := apperror.New(apperror.CodeValidationFailed, ErrMissingRequestField)
 	for field, problem := range problems {

@@ -21,6 +21,9 @@ services:
     environment:
       # The browser talks to nginx on this origin, so CORS is not exercised, but the value stays correct.
       APP_CORS_ALLOWED_ORIGINS: http://localhost:8080
+      # Behind nginx every request comes from nginx's address. nginx overwrites X-Real-IP with the
+      # real client, so the rate limit keys on that header instead.
+      APP_RATE_LIMIT_CLIENT_IP_HEADER: X-Real-IP
     healthcheck:
       test: ["CMD", "/app/healthcheck"]
       interval: 10s

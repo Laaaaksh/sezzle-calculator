@@ -8,7 +8,6 @@ import {
 } from '../../../api';
 import { CLIENT_FAILURE_CODE, type CalculatorError } from './types';
 
-/** Server-side failures that may clear up on their own, so sending the same request again can work. */
 const TRANSIENT_API_CODES: ReadonlySet<ApiErrorCode> = new Set<ApiErrorCode>([
   ERROR_CODE.INTERNAL,
   ERROR_CODE.SERVICE_UNAVAILABLE,
@@ -16,9 +15,8 @@ const TRANSIENT_API_CODES: ReadonlySet<ApiErrorCode> = new Set<ApiErrorCode>([
 ]);
 
 /**
- * Turns whatever the API client threw into the one error shape the reducer stores.
  * Anything unrecognised becomes UNKNOWN, so the reducer never holds a raw Error.
- * CanceledError is not handled here on purpose: the hook swallows it before it gets this far.
+ * CanceledError is not handled here: the hook swallows it first.
  */
 export function toCalculatorError(error: unknown): CalculatorError {
   if (error instanceof ApiError) {

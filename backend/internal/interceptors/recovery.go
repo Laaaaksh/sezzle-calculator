@@ -11,10 +11,8 @@ import (
 	"github.com/Laaaaksh/sezzle-calculator/backend/pkg/apperror"
 )
 
-// Recovery turns a handler panic into a logged stack and a JSON INTERNAL
-// error, so one bad request cannot crash the process or leak a stack trace.
-// If the response had already started, the panic is logged and the connection
-// is aborted with http.ErrAbortHandler.
+// Recovery turns a handler panic into a logged stack and a JSON INTERNAL error. If the response had already started,
+// the connection is aborted with http.ErrAbortHandler instead.
 func Recovery(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rw := wrapWriter(w)

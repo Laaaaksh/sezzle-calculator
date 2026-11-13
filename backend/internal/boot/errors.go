@@ -18,5 +18,4 @@ type stageError struct {
 
 func (e *stageError) Error() string { return e.cause.Error() }
 
-// Unwrap exposes both the stage and the cause to errors.Is and errors.As.
 func (e *stageError) Unwrap() []error { return []error{e.stage, e.cause} }

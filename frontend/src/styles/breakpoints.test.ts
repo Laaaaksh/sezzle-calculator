@@ -20,7 +20,6 @@ interface WidthCondition {
   value: string;
 }
 
-/** Every min-width and max-width condition in an @media rule, read from the parsed stylesheets. */
 const widthConditions: WidthCondition[] = Object.entries(stylesheets).flatMap(([file, css]) => {
   const conditions: WidthCondition[] = [];
   postcss.parse(css, { from: file }).walkAtRules('media', (rule: AtRule) => {

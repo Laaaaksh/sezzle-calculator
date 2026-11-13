@@ -12,6 +12,7 @@ const (
 	MsgInternal             = "An internal error occurred."
 	MsgServiceUnavailable   = "The service is temporarily unavailable."
 	MsgRequestTimeout       = "The request took too long to process."
+	MsgRateLimited          = "Too many requests. Please wait and try again."
 )
 
 // Formats for the internal Error() string, which is for logs only.

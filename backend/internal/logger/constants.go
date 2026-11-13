@@ -15,7 +15,6 @@ const (
 	levelDev  = zapcore.DebugLevel
 )
 
-// timeKey names the timestamp field in JSON output.
 const timeKey = "time"
 
 // ErrFmtBuild wraps a zap build failure so the caller can tell which stage failed.
@@ -28,8 +27,6 @@ const ErrFmtUnknownEnv = "%w: %q"
 // encoder for, so a typo fails loudly instead of silently picking a format.
 var ErrUnknownEnvironment = errors.New("logger: unknown environment")
 
-// harmlessSyncErrnos are what Sync reports when stderr is a terminal or pipe
-// that cannot be fsynced. They carry no lost data, so they must not fail shutdown.
-// EBADF is what macOS returns when fsync is called on a pipe (seen when the
-// binary runs with stderr piped, as in CI and shell pipelines).
+// harmlessSyncErrnos are what Sync reports when stderr is a terminal or pipe that cannot be fsynced. No data is lost,
+// so they must not fail shutdown. EBADF is what macOS returns for a pipe (CI, shell pipelines).
 var harmlessSyncErrnos = []syscall.Errno{syscall.ENOTTY, syscall.EINVAL, syscall.EBADF}

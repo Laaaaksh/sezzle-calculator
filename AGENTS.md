@@ -6,7 +6,7 @@ Calculator take-home: a Go REST API (`backend/`) and a React TypeScript UI (`fro
 
 - `backend/`: Go. Entry points in `cmd/`, feature code in `internal/modules/<name>/` (server, core, entities, operations), shared error type in `pkg/apperror`.
 - `frontend/`: Vite, React, TypeScript. Feature code in `src/features/calculator/`, API client in `src/api/`.
-- `docs/`: `API.md`, `ERROR_CODES.md`, `DECISIONS.md`, `ARCHITECTURE.md`, `ACCESSIBILITY.md`, `REQUIREMENTS.md`, `PROMPTS.md`.
+- `docs/`: `API.md`, `DECISIONS.md`, `PROCESS.md`, `PROMPTS.md`.
 
 ## Checks
 
@@ -26,7 +26,5 @@ Run these before every commit. All must pass.
 ## Commits and writing
 
 - One step per commit, as a Conventional Commit (`feat:`, `fix:`, `docs:`, `test:`, `build:`, `chore:`).
-- Never add an agent as co-author or add any AI attribution line to a commit or pull request.
 - Never use the em dash (Unicode U+2014), in code, docs or commit messages. Use a plain dash "-".
-- Log every user prompt word for word in `docs/PROMPTS.md`, with one line on what it produced.
-- Track the assignment requirements in `docs/REQUIREMENTS.md`.
+- Track the assignment requirements in `docs/PROCESS.md`.

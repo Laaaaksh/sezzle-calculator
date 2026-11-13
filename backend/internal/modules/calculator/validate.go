@@ -8,7 +8,6 @@ import (
 	"github.com/Laaaaksh/sezzle-calculator/backend/pkg/apperror"
 )
 
-// checkArity rejects a wrong operand count with INVALID_OPERAND_COUNT.
 func checkArity(operation operations.Operation, operands []decimal.Decimal) apperror.IError {
 	if len(operands) == operation.Arity() {
 		return nil

@@ -11,8 +11,7 @@ import (
 // better than failing the request.
 const requestIDFallback = "unavailable"
 
-// panicMessageFmt builds the internal cause for a recovered panic. It is for
-// logs only and never reaches a response.
+// panicMessageFmt builds the cause of a recovered panic; it is for logs only and never sent.
 const panicMessageFmt = "panic: %v"
 
 // corsAllowedMethods and the header lists below are the API contract, not

@@ -1,13 +1,4 @@
-// Package calculator is the calculator domain: operations, the registry that
-// resolves them, the parser for operand strings and the core service that
-// validates and normalises results.
-//
-// Operands cross the API as strings ("0.1"), never as JSON numbers (0.1).
-// Most JSON clients, JavaScript included, parse a JSON number into a float64
-// before the service sees it, and a float64 cannot hold 0.1 or a 20-digit
-// integer exactly: the digits are already lost on the client. A string reaches
-// the service untouched, so ParseOperands can turn exactly what the user typed
-// into a decimal and 0.1 + 0.2 can be exactly 0.3.
+// Package calculator is the calculator domain: operations, registry, operand parser and the core service.
 package calculator
 
 import (
@@ -44,16 +35,10 @@ func NewCore(registry operations.IRegistry, limits entities.Limits) *Core {
 	return &Core{registry: registry, limits: limits}
 }
 
-// Calculate runs the pipeline: look up the operation, check the operand count,
-// check each operand against the limits, apply, check the result size, then
-// normalise. The size check is here, not in each operation, so every operation
-// shares one digit budget and a new operation cannot forget it. The checks run
-// before Apply so an operation never sees input it was not written for.
-//
-// ctx is honoured at three points: before any work, inside Apply (the loops in
-// power and square root check it every iteration) and after Apply, so a result
-// finished past the deadline is dropped and the client gets REQUEST_TIMEOUT,
-// never a late answer it has already given up on.
+// Calculate checks the operand count and limits, applies the operation, checks the result size, then normalises, so an
+// operation never sees input it was not written for. The size check lives here, not in each operation, so all share one
+// digit budget. ctx is checked before work, inside Apply and after it: a result finished past the deadline is dropped
+// and the client gets REQUEST_TIMEOUT, never a late answer.
 func (c *Core) Calculate(ctx context.Context, op entities.OperationType, operands []decimal.Decimal) (entities.Result, apperror.IError) {
 	if aerr := operations.CheckContext(ctx); aerr != nil {
 		return entities.Result{}, aerr
@@ -81,10 +66,8 @@ func (c *Core) Calculate(ctx context.Context, op entities.OperationType, operand
 	return normalise(value), nil
 }
 
-// ListOperations describes each registered operation, in registration order.
-// The list lets a client discover the supported operations and their arity; the
-// web keypad itself is static and uses the list only to disable keys the
-// server does not support.
+// ListOperations lists registered operations in registration order. The web keypad is static and uses the list only to
+// disable keys the server does not support.
 func (c *Core) ListOperations(_ context.Context) []entities.OperationInfo {
 	registered := c.registry.List()
 	infos := make([]entities.OperationInfo, len(registered))

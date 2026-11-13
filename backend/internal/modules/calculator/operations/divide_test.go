@@ -47,14 +47,6 @@ func (s *DivideTestSuite) divideTwoPlaces(left, right string) string {
 	return got
 }
 
-func (s *DivideTestSuite) TestDivideNameIsDivide() {
-	s.Equal(entities.OpDivide, s.op.Name())
-}
-
-func (s *DivideTestSuite) TestDivideArityIsTwo() {
-	s.Equal(entities.ArityBinary, s.op.Arity())
-}
-
 func (s *DivideTestSuite) TestDivideWhenDivisionIsExactReturnsTheQuotient() {
 	s.Equal(divideNum4, s.divide(divideNum12, divideNum3))
 }

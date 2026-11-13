@@ -11,7 +11,6 @@ export function isThemePreference(value: unknown): value is ThemePreference {
   return THEME_PREFERENCES.some((preference) => preference === value);
 }
 
-/** The saved choice, or the default when nothing valid is saved or storage is blocked. */
 export function readStoredTheme(): ThemePreference {
   try {
     const stored = window.localStorage.getItem(THEME_STORAGE_KEY);

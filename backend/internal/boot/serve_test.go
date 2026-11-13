@@ -34,14 +34,12 @@ const (
 
 var errTestAccept = errors.New("accept exploded")
 
-// pipeAddr is the address of an in-memory listener.
 type pipeAddr struct{}
 
 func (pipeAddr) Network() string { return "pipe" }
 func (pipeAddr) String() string  { return "pipe" }
 
-// pipeListener serves connections created by dial over net.Pipe, so the HTTP
-// server runs without binding a real port.
+// pipeListener serves net.Pipe connections, so the HTTP server runs without binding a real port.
 type pipeListener struct {
 	conns chan net.Conn
 	done  chan struct{}
@@ -78,7 +76,6 @@ func (l *pipeListener) dial(ctx context.Context, _, _ string) (net.Conn, error) 
 	}
 }
 
-// failingListener returns a permanent error from Accept.
 type failingListener struct{ *pipeListener }
 
 func (l *failingListener) Accept() (net.Conn, error) { return nil, errTestAccept }
@@ -108,7 +105,6 @@ func (s *ServeTestSuite) TearDownTest() {
 	s.client.CloseIdleConnections()
 }
 
-// writeConfig writes the default file with the given grace period line.
 func (s *ServeTestSuite) writeConfig(graceLine string) {
 	body := strings.Replace(fixtureDefaultToml, serveGraceDefault, graceLine, 1)
 	s.Require().NoError(os.WriteFile(filepath.Join(s.dir, fileDefault), []byte(body), 0o600))
@@ -134,8 +130,7 @@ func (s *ServeTestSuite) status(path string) int {
 	return resp.StatusCode
 }
 
-// readyStatus asks the app's own router for /health/ready, so the test reads
-// readiness through the public contract and needs no package-level module.
+// readyStatus reads readiness through the public contract, so the test needs no package-level module.
 func (s *ServeTestSuite) readyStatus(app *boot.App) int {
 	rec := httptest.NewRecorder()
 	app.Handler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, testReadyPath, nil))

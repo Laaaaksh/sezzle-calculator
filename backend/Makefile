@@ -55,6 +55,15 @@ test-coverage: mock ## Like test, plus coverage.out and coverage.html and the to
 	go tool cover -html=$(COVERAGE_OUT) -o $(COVERAGE_HTML)
 	go tool cover -func=$(COVERAGE_OUT) | tail -1
 
+# Runs each native fuzz target for FUZZTIME against the math/big reference. CI only runs the seed corpus.
+FUZZTIME ?= 20s
+FUZZ_PKG := ./internal/modules/calculator/operations
+.PHONY: fuzz
+fuzz: ## Fuzz divide, multiply, sqrt and power against the exact reference (FUZZTIME=20s each)
+	@for target in FuzzDivide FuzzMultiply FuzzSqrt FuzzPower; do \
+		go test $(FUZZ_PKG) -run '^$$' -fuzz "^$$target\$$" -fuzztime $(FUZZTIME) || exit 1; \
+	done
+
 .PHONY: build
 build: ## Build the API binary into bin/api
 	go build -trimpath -ldflags="-s -w" -o $(API_BIN) ./cmd/api

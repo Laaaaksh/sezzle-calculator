@@ -81,10 +81,9 @@
 }
 
 /*
- * In the drawer the toggle already says "History", so a visible heading right below it repeats
- * it. Hide it on screen but keep it for screen readers. Same declarations as the global
- * .visually-hidden class, repeated because a media query cannot apply a class. HistoryTape
- * receives this class as a prop, so the drawer styles its child without reaching into it.
+ * In the drawer the toggle already says "History", so the heading is hidden on screen but kept for
+ * screen readers. Same declarations as global .visually-hidden, repeated because a media query
+ * cannot apply a class. HistoryTape takes this class as a prop.
  */
 @media (max-width: 899.98px) {
   .panelHeading {

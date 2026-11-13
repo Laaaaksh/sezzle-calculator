@@ -20,9 +20,8 @@ function isActivatingButton(event: KeyboardEvent): boolean {
 }
 
 /**
- * Turns key presses on the page into calculator actions.
- * It stays out of the way whenever the browser already handles the key, so nothing fires twice:
- * typing in a text field, Enter or Space on a focused button, and shortcuts like Ctrl+R.
+ * Stays out of the way when the browser already handles the key, so nothing fires twice: typing in
+ * a text field, Enter or Space on a focused button, and shortcuts like Ctrl+R.
  */
 export function useCalculatorKeyboard(
   onAction: (action: CalculatorAction) => void,
