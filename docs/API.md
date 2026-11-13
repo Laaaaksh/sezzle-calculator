@@ -106,7 +106,7 @@ Operands are used in the order given.
 | `subtract` | 2 | `-` | `a - b` |
 | `multiply` | 2 | `*` | `a * b` |
 | `divide` | 2 | `/` | `a / b`, rounded to `decimal_precision` places. `b = 0` is `DIVISION_BY_ZERO`. |
-| `power` | 2 | `^` | `a` raised to `b`. `b` must be a whole number, so `2.0` is accepted and `0.5` is `INVALID_EXPONENT`. Anything to the power 0 is 1, including `0^0`. `0` to a negative power is `DIVISION_BY_ZERO`. A negative exponent is `1 / a^|b|`, rounded like divide. |
+| `power` | 2 | `^` | `a` raised to `b`. `b` must be a whole number, so `2.0` is accepted and `0.5` is `INVALID_EXPONENT`. Anything to the power 0 is 1, including `0^0`. `0` to a negative power is `DIVISION_BY_ZERO`. A negative exponent is `1 / a^(-b)`, rounded like divide. |
 | `sqrt` | 1 | `√` | The square root of `a`. A negative `a` is `NEGATIVE_SQUARE_ROOT`. A perfect square is exact: `sqrt(144)` is `12`. |
 | `percentage` | 2 | `%` | `a` percent of `b`, which is `a / 100 * b`. So `percentage(20, 50)` is `10`. |
 
