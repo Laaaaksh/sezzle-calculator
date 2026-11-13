@@ -262,7 +262,7 @@ An operand over the length limit says which one and what the limit is:
 | `enabled` | true | Turns the limit off for load tests. |
 | `requests_per_second` | 10.0 | Refill rate, above 0 and at most 10000. |
 | `burst` | 20 | Bucket size, from 1 to 10000. |
-| `client_ip_header` | empty | Header that holds the client IP behind a proxy, for example `X-Real-IP`. Empty uses the connection address. Set it only when the proxy overwrites the header, or a caller could pick its own bucket. The compose stack sets it to `X-Real-IP`, which nginx overwrites. |
+| `client_ip_header` | empty | Header that holds the client IP behind a proxy, for example `X-Real-IP`. Empty uses the connection address. Set it only when the proxy overwrites the header, or a caller could pick its own bucket. The compose stack sets it to `X-Real-IP`, which nginx overwrites with `$remote_addr`. Do not use `X-Forwarded-For`: its first entry comes from the caller. If another proxy sits in front of nginx, nginx must be told to trust it, or every client shares that proxy's bucket. |
 
 An invalid value stops the service at startup. A request over the limit gets `429 RATE_LIMITED`, the normal error body with `fields.retryAfterSeconds`, and a `Retry-After` header holding the same number of seconds (rounded up, at least 1). Idle clients are dropped from memory once their bucket is full again, so memory follows the number of recently active clients.
 

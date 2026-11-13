@@ -46,9 +46,11 @@ func retryAfterSeconds(wait time.Duration) int {
 	return max(constants.RetryAfterMinSeconds, int(math.Ceil(wait.Seconds())))
 }
 
-// clientKey takes the first address of the configured proxy header (the
-// original client in X-Forwarded-For), then falls back to the connection's
-// host so a missing header never lets a client skip the limit.
+// clientKey takes the first address of the configured proxy header, then falls
+// back to the connection's host so a missing header never lets a client skip
+// the limit. Only point the header at one the proxy overwrites (X-Real-IP): the
+// first X-Forwarded-For entry is whatever the caller sent, so keying on it
+// would let a client pick its own bucket.
 func clientKey(r *http.Request, header string) string {
 	if header != "" {
 		first, _, _ := strings.Cut(r.Header.Get(header), ",")
