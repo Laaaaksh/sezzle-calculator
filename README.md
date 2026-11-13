@@ -119,7 +119,7 @@ The brief asked for a working calculator, clear code and tests. I added a few pr
 
 ## AI usage
 
-AI wrote much of the code, mainly Claude Code, under my step-by-step direction. I set the rules, gave one prompt per step and reviewed each result before the next. Every prompt is in [docs/PROMPTS.md](docs/PROMPTS.md), in order, with a line on what each produced. An automated review pipeline and CI checked each pull request.
+AI wrote much of the code, mainly Claude Code, under my step-by-step direction. I set the rules, gave one prompt per step and reviewed each result before the next. The 26 build prompts and 3 operational entries are in [docs/PROMPTS.md](docs/PROMPTS.md), in order, with a line on what each produced. An automated review pipeline and CI checked each pull request.
 
 `AGENTS.md` and `CLAUDE.md` hold the working rules I gave the AI tools. They are not part of the app.
 
@@ -135,7 +135,7 @@ Decided before any code:
 
 Rejected or overruled:
 
-- Generating the app from one big prompt. I split the work into 26 steps. Each one stopped for proof and a commit.
+- Generating the app from one big prompt. I split the work into 26 build steps, plus 3 operational entries. Each build step stopped for proof and a commit.
 - Letting the builder review its own work. A fresh, separate review audited the code and I fixed every finding.
 - A later hiring-style review found real gaps. Fresh clones failed `go test`, only power had a result-size limit, the `%` key was ambiguous and the README was bloated. I fixed all four.
 - Deleting tests to look leaner. I kept them.

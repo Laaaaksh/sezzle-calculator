@@ -1,6 +1,6 @@
 # Prompt log
 
-Every prompt I sent to the AI assistant while building this project, in order and word for word. Entries 27 and 29 were operational instructions about running the plan, not design prompts. I summarise them in square brackets instead of quoting them. Entry 28 is edited for grammar only, with the meaning unchanged. Every other entry is verbatim. Each entry ends with one line on what it produced.
+Entries 1 to 26 are the build prompts I sent to the AI assistant, in order and verbatim. Entries 27 to 29 are operational instructions. Entries 27 and 29 are summarised in square brackets instead of quoted. Entry 28 is edited for grammar only, with the meaning unchanged. Each entry ends with one line on what it produced.
 
 ---
 

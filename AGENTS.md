@@ -26,7 +26,5 @@ Run these before every commit. All must pass.
 ## Commits and writing
 
 - One step per commit, as a Conventional Commit (`feat:`, `fix:`, `docs:`, `test:`, `build:`, `chore:`).
-- Never add an agent as co-author or add any AI attribution line to a commit or pull request.
 - Never use the em dash (Unicode U+2014), in code, docs or commit messages. Use a plain dash "-".
-- Log every user prompt word for word in `docs/PROMPTS.md`, with one line on what it produced.
 - Track the assignment requirements in `docs/REQUIREMENTS.md`.
