@@ -255,7 +255,7 @@ An operand over the length limit says which one and what the limit is:
 
 ### Rate limit
 
-`POST /api/v1/calculate` is limited per client IP with a token bucket. Each client starts with `burst` requests and earns `requests_per_second` more every second. `GET /api/v1/operations` and the health probes are not limited. These come from the `[rate_limit]` section of the config.
+`POST /api/v1/calculate` is limited per client IP with a token bucket. IPv6 clients are limited per /64 prefix, because one client can use every address in it; IPv4 clients are limited per address. Each client starts with `burst` requests and earns `requests_per_second` more every second. `GET /api/v1/operations` and the health probes are not limited. These come from the `[rate_limit]` section of the config.
 
 | Key | Default | Meaning |
 | --- | --- | --- |

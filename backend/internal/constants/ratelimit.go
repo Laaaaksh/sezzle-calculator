@@ -24,3 +24,8 @@ const RetryAfterMinSeconds = 1
 
 // ErrFmtRateLimitRate is the message for a rate that is zero, negative or too big.
 const ErrFmtRateLimitRate = "%s must be greater than zero and at most %d"
+
+// RateLimitIPv6PrefixBits is how much of an IPv6 address names the client. A
+// subscriber is routinely given a whole /64, so keying on the full address
+// would let one client rotate through 2^64 addresses for fresh buckets.
+const RateLimitIPv6PrefixBits = 64

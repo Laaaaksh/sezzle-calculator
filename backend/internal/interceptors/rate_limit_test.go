@@ -28,6 +28,12 @@ const (
 	rateWaitTiny        = 20 * time.Millisecond
 	rateWantRetryTwo    = "2"
 	rateWantRetryOne    = "1"
+	rateV6SamePrefixA   = "2001:db8:1:2::1"
+	rateV6SamePrefixB   = "2001:db8:1:2:ffff:ffff:ffff:ffff"
+	rateV6OtherPrefix   = "2001:db8:1:3::1"
+	rateV6BucketKey     = "2001:db8:1:2::/64"
+	rateV6OtherKey      = "2001:db8:1:3::/64"
+	rateV4Mapped        = "::ffff:198.51.100.4"
 )
 
 type RateLimitTestSuite struct {
@@ -138,6 +144,66 @@ func (s *RateLimitTestSuite) TestRateLimitWhenRemoteAddrHasNoPortUsesItWhole() {
 	s.limiter.EXPECT().Allow(rateRemoteHost).Return(true, time.Duration(0)).Times(1)
 
 	s.handler("").ServeHTTP(s.recorder, s.request)
+
+	s.True(s.reached)
+}
+
+func (s *RateLimitTestSuite) TestRateLimitWhenIPv6AddressesShareAPrefixTheyShareABucket() {
+	s.request.RemoteAddr = "[" + rateV6SamePrefixA + "]:51234"
+	other := httptest.NewRequest(http.MethodPost, testPath, nil)
+	other.RemoteAddr = "[" + rateV6SamePrefixB + "]:40000"
+	s.limiter.EXPECT().Allow(rateV6BucketKey).Return(true, time.Duration(0)).Times(2)
+
+	s.handler("").ServeHTTP(s.recorder, s.request)
+	s.handler("").ServeHTTP(httptest.NewRecorder(), other)
+
+	s.True(s.reached)
+}
+
+func (s *RateLimitTestSuite) TestRateLimitWhenIPv6PrefixesDifferTheyGetSeparateBuckets() {
+	s.request.RemoteAddr = "[" + rateV6SamePrefixA + "]:51234"
+	other := httptest.NewRequest(http.MethodPost, testPath, nil)
+	other.RemoteAddr = "[" + rateV6OtherPrefix + "]:51234"
+	s.limiter.EXPECT().Allow(rateV6BucketKey).Return(true, time.Duration(0)).Times(1)
+	s.limiter.EXPECT().Allow(rateV6OtherKey).Return(true, time.Duration(0)).Times(1)
+
+	s.handler("").ServeHTTP(s.recorder, s.request)
+	s.handler("").ServeHTTP(httptest.NewRecorder(), other)
+
+	s.True(s.reached)
+}
+
+func (s *RateLimitTestSuite) TestRateLimitWhenIPv4KeepsTheFullAddress() {
+	s.limiter.EXPECT().Allow(rateRemoteHost).Return(true, time.Duration(0)).Times(1)
+
+	s.handler("").ServeHTTP(s.recorder, s.request)
+
+	s.True(s.reached)
+}
+
+func (s *RateLimitTestSuite) TestRateLimitWhenIPv4MappedIPv6ItSharesTheIPv4Bucket() {
+	s.request.Header.Set(rateProxyHeader, rateV4Mapped)
+	s.limiter.EXPECT().Allow(rateRemoteHost).Return(true, time.Duration(0)).Times(1)
+
+	s.handler(rateProxyHeader).ServeHTTP(s.recorder, s.request)
+
+	s.True(s.reached)
+}
+
+func (s *RateLimitTestSuite) TestRateLimitWhenIPv6ComesFromProxyHeaderItIsKeyedByPrefix() {
+	s.request.Header.Set(rateProxyHeader, rateV6SamePrefixB)
+	s.limiter.EXPECT().Allow(rateV6BucketKey).Return(true, time.Duration(0)).Times(1)
+
+	s.handler(rateProxyHeader).ServeHTTP(s.recorder, s.request)
+
+	s.True(s.reached)
+}
+
+func (s *RateLimitTestSuite) TestRateLimitWhenHeaderValueIsNotAnIPItIsKeptAsIs() {
+	s.request.Header.Set(rateProxyHeader, "not-an-ip")
+	s.limiter.EXPECT().Allow("not-an-ip").Return(true, time.Duration(0)).Times(1)
+
+	s.handler(rateProxyHeader).ServeHTTP(s.recorder, s.request)
 
 	s.True(s.reached)
 }

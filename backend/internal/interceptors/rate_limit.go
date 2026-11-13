@@ -4,6 +4,7 @@ import (
 	"math"
 	"net"
 	"net/http"
+	"net/netip"
 	"strconv"
 	"strings"
 	"time"
@@ -55,12 +56,32 @@ func clientKey(r *http.Request, header string) string {
 	if header != "" {
 		first, _, _ := strings.Cut(r.Header.Get(header), ",")
 		if value := strings.TrimSpace(first); value != "" {
-			return value
+			return bucketKey(value)
 		}
 	}
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
-		return r.RemoteAddr
+		return bucketKey(r.RemoteAddr)
 	}
-	return host
+	return bucketKey(host)
+}
+
+// bucketKey groups IPv6 clients by their /64 so rotating addresses inside it
+// does not buy a fresh bucket. IPv4-mapped IPv6 is unmapped first so the same
+// client is not split across two spellings. Anything that does not parse is
+// returned as given, which keeps the old per-string behaviour.
+func bucketKey(value string) string {
+	addr, err := netip.ParseAddr(value)
+	if err != nil {
+		return value
+	}
+	addr = addr.Unmap().WithZone("")
+	if addr.Is4() {
+		return addr.String()
+	}
+	prefix, err := addr.Prefix(constants.RateLimitIPv6PrefixBits)
+	if err != nil {
+		return value
+	}
+	return prefix.String()
 }

@@ -108,7 +108,7 @@ One entry per decision. Each has the context, the decision and the trade-off.
 - Context: `POST /api/v1/calculate` runs real work, and `power` and `sqrt` loop. One client in a tight loop should not starve the rest.
 - Decision: A token bucket per client IP guards `POST /api/v1/calculate` only. The defaults are 10 requests a second with a burst of 20. Over the limit the API answers `429 RATE_LIMITED` with a `Retry-After` header. The limiter is about 80 lines in `internal/ratelimit` with an injected clock, so tests need no sleeping. A bucket that has refilled is dropped, so memory follows the clients active in the last few seconds.
 - Behind nginx every request arrives from nginx, so compose sets `client_ip_header` to `X-Real-IP`, which nginx overwrites with the real address. Set the header only when a proxy does the same.
-- Trade-off: State lives in one process. Several instances would each allow the full rate and need a shared store such as Redis, or a limit at the gateway. Clients behind one NAT share a bucket.
+- Trade-off: State lives in one process. Several instances would each allow the full rate and need a shared store such as Redis, or a limit at the gateway. Clients behind one NAT share a bucket. IPv6 clients are keyed by their /64, since one client controls the whole prefix and could rotate addresses for fresh buckets; IPv4-mapped IPv6 counts as IPv4.
 
 ## 18. Known audit note
 
