@@ -1,6 +1,6 @@
 # Prompt log
 
-Every prompt I sent to the AI assistant while building this project, in order and word for word. Entries 27 and 29 were operational instructions about running the plan, not design prompts. I summarise them in square brackets instead of quoting them. Every other entry is verbatim. Each entry ends with one line on what it produced.
+Every prompt I sent to the AI assistant while building this project, in order and word for word. Entries 27 and 29 were operational instructions about running the plan, not design prompts. I summarise them in square brackets instead of quoting them. Entry 28 is edited for grammar only, with the meaning unchanged. Every other entry is verbatim. Each entry ends with one line on what it produced.
 
 ---
 
@@ -472,7 +472,7 @@ Produced: each phase shipped as its own pull request through an automated review
 ## 28. Independent code quality audit
 
 ```
-Want I want is in an entire new subagent tell to to check the code quality standards way of coding everything and tell it to find all the flaws and let it come back with the report please do that. Let it check the entire code each and every thing.
+Start a completely new subagent and have it check the code quality, the coding standards and the overall approach. Tell it to find every flaw and come back with a report. It should check the entire codebase, every single file.
 ```
 
 Produced: a fresh, read-only review of every file against the Go and frontend coding standards. No critical defects. Main findings: docs that contradicted the code (a keypad described as server driven, stale example output), untested entry points, domain error codes in a generic package, magic values and dead code, and missing CI gates.
