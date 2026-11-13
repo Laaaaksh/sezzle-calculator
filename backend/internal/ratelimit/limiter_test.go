@@ -1,6 +1,8 @@
 package ratelimit_test
 
 import (
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -20,6 +22,7 @@ const (
 	testStart       = "2026-01-01T00:00:00Z"
 	testTrackedNone = 0
 	testTrackedOne  = 1
+	testCallers     = 50
 )
 
 type LimiterTestSuite struct {
@@ -113,4 +116,22 @@ func (s *LimiterTestSuite) TestAllowWhenBucketNotYetFullKeepsKey() {
 
 func (s *LimiterTestSuite) TestTrackedWhenNothingSeenReturnsZero() {
 	s.Equal(testTrackedNone, s.limiter.Tracked())
+}
+
+// Under -race this also proves the mutex guards the map and the buckets.
+func (s *LimiterTestSuite) TestAllowWhenCalledConcurrentlyNeverExceedsBurst() {
+	var allowedCount atomic.Int64
+	var wg sync.WaitGroup
+	for range testCallers {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if allowed, _ := s.limiter.Allow(testClientA); allowed {
+				allowedCount.Add(1)
+			}
+		}()
+	}
+	wg.Wait()
+
+	s.Equal(int64(testBurst), allowedCount.Load())
 }
