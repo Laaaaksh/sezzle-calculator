@@ -50,7 +50,7 @@ make test             # backend (race detector) and frontend
 make test-coverage    # both layers, with coverage reports
 ```
 
-Backend: <!--cov-backend-->97.5%<!--/cov-backend--> coverage, with division, multiplication, square root and power also checked against an exact `math/big` reference. Frontend: <!--cov-frontend-->506<!--/cov-frontend--> tests at 100% coverage. CI runs lint, tests, `govulncheck`, `npm audit` and a Docker smoke test.
+Backend: <!--cov-backend-->97.5%<!--/cov-backend--> coverage, with division, multiplication, square root and power also checked against an exact `math/big` reference. Frontend: <!--cov-frontend-->506<!--/cov-frontend--> tests at 100% coverage. CI runs lint, tests, `govulncheck`, `npm audit` and a Docker smoke test. The dev-only advisories a full `npm audit` still shows are in [DECISIONS.md](docs/DECISIONS.md#18-known-audit-note).
 
 ## AI usage
 

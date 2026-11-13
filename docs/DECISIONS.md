@@ -110,6 +110,12 @@ One entry per decision. Each has the context, the decision and the trade-off.
 - Behind nginx every request arrives from nginx, so compose sets `client_ip_header` to `X-Real-IP`, which nginx overwrites with the real address. Set the header only when a proxy does the same.
 - Trade-off: State lives in one process. Several instances would each allow the full rate and need a shared store such as Redis, or a limit at the gateway. Clients behind one NAT share a bucket.
 
+## 18. Known audit note
+
+- Context: `npm audit` reports 7 moderate advisories in `minimatch`, reached through `typescript-eslint`.
+- Decision: I left them. They sit in lint tooling that never ships, and `npm audit --omit=dev`, which CI runs, reports 0. Forcing an override of `minimatch` could break the linter, so I wait for a `typescript-eslint` release that updates it.
+- Trade-off: A full `npm audit` is not clean. A developer machine that runs the linter carries the advisory, the production bundle does not.
+
 ## Architecture
 
 The system is two containers. nginx serves the React bundle and forwards API calls to a Go service. The Go service holds all the arithmetic. There is no database.
