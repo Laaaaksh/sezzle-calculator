@@ -12,8 +12,6 @@ function colorScheme(selector: string): string[] {
 
 describe('tokens.css', () => {
   it('defines each colour once as light-dark(), so the explicit and system dark themes cannot drift', () => {
-    // The old file kept two copies of the dark values. light-dark() has one, and color-scheme
-    // picks the side: 'light dark' follows the system, [data-theme] pins one.
     const colours = Object.entries(rawTokens).filter(([name]) => name.startsWith('--color-'));
 
     expect(colours.length).toBeGreaterThan(0);

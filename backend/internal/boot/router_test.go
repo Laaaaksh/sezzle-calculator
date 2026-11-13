@@ -66,8 +66,6 @@ func (s *RouterTestSuite) TearDownTest() {
 	s.ctrl.Finish()
 }
 
-// carriesRequestID matches the request context the router hands a handler: the
-// request-ID middleware must have stored a non-empty ID in it.
 func (s *RouterTestSuite) carriesRequestID() gomock.Matcher {
 	return gomock.Cond(func(x any) bool {
 		ctx, ok := x.(context.Context)

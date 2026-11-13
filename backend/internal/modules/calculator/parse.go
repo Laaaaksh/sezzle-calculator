@@ -11,7 +11,6 @@ import (
 	"github.com/Laaaaksh/sezzle-calculator/backend/pkg/apperror"
 )
 
-// Literals the rejection rules look for.
 const (
 	plusSign        = "+"
 	minusSign       = "-"
@@ -24,15 +23,11 @@ const (
 	separatorMarks  = ",_"
 )
 
-// operandPattern is the whole grammar of an operand: an optional leading
-// minus, then digits with at most one decimal point. Both "1." and ".5" are
-// accepted (they are unambiguous and users type them); "-0" and leading zeros
-// ("007") are accepted too and read as 0 and 7. \d matches ASCII digits only
-// in Go, so fullwidth and Arabic-Indic digits are rejected. $ matches only at
-// the very end of the text, so a trailing newline does not slip through.
+// operandPattern is the whole operand grammar: an optional minus, then digits with at most one decimal point. "1.", ".5",
+// "-0" and "007" are accepted. \d matches ASCII digits only in Go, so other scripts' digits fail, and $ matches only at the
+// very end, so a trailing newline does not slip through.
 var operandPattern = regexp.MustCompile(`^-?(\d+(\.\d*)?|\.\d+)$`)
 
-// rejection pairs a reason with the test that recognises it.
 type rejection struct {
 	reason  string
 	matches func(text string) bool
@@ -54,21 +49,10 @@ var rejections = []rejection{
 	{entities.ReasonMultiplePoints, func(t string) bool { return strings.Count(t, decimalPoint) > 1 }},
 }
 
-// ParseOperands turns operand strings into decimals under strict rules, so
-// nothing is guessed or silently repaired. See the package comment for why
-// operands are strings.
-//
-// Accepted: an optional leading minus, digits and at most one decimal point.
-// Rejected with INVALID_OPERAND, with the operand_index and a reason in the
-// error fields: empty, whitespace, a plus sign, exponent notation, hex,
-// NaN, Infinity, thousands separators, more than one decimal point and any
-// other shape.
-//
-// The length check comes first and counts bytes, not characters. An operand
-// longer than maxLen fails with OPERAND_TOO_LARGE before any parsing, so a
-// huge string costs one comparison and not a scan or an allocation. Operands
-// are checked in order and the first failure is returned. The error carries
-// only the index and the reason, never the offending text.
+// ParseOperands turns operand strings into decimals under strict rules; nothing is guessed or repaired. Anything
+// outside the grammar fails with INVALID_OPERAND carrying operand_index and a reason, never the offending text. The
+// length check comes first and counts bytes, so a huge string costs one comparison, not a scan or an allocation.
+// Operands are checked in order and the first failure is returned. See CalculateRequest for why operands are strings.
 func ParseOperands(raw []string, maxLen int) ([]decimal.Decimal, apperror.IError) {
 	operands := make([]decimal.Decimal, len(raw))
 	for i, text := range raw {
@@ -105,7 +89,6 @@ func invalidOperand(index int, reason string) apperror.IError {
 		WithField(entities.FieldReason, reason)
 }
 
-// rejectionReason names why text failed operandPattern.
 func rejectionReason(text string) string {
 	for _, rule := range rejections {
 		if rule.matches(text) {
@@ -125,7 +108,6 @@ func hasPrefixFold(text, prefix string) bool {
 	return len(text) >= len(prefix) && strings.EqualFold(text[:len(prefix)], prefix)
 }
 
-// isInfinity matches "inf" and "infinity" in any case, with an optional minus.
 func isInfinity(text string) bool {
 	body := unsigned(text)
 	return strings.EqualFold(body, infText) || strings.EqualFold(body, infinityText)

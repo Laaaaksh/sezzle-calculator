@@ -12,17 +12,10 @@ import (
 // requestKeys are the only spellings of the request fields the API accepts.
 var requestKeys = []string{entities.FieldNameOperation, entities.FieldNameOperands}
 
-// checkKeys rejects a top-level key that is repeated, or that matches a field
-// name in a different case, with BAD_REQUEST naming the key. encoding/json
-// matches struct fields case-insensitively and keeps the last of two
-// duplicates, so {"operands":["1","2"],"OPERANDS":["9","9"]} would silently
-// compute on the second list. Exact lowercase names are the only valid
-// spelling ("Operation" is refused, not accepted): one spelling per field
-// leaves no ambiguity for a proxy or a log reader to resolve differently.
-//
-// Anything it cannot read as an object is left to the main decode, which
-// reports the syntax or shape error; unknown keys likewise (the decoder
-// refuses them). Only the keys of the top-level object are checked.
+// checkKeys rejects a repeated top-level key, or one matching a field name in a different case, with BAD_REQUEST.
+// encoding/json matches fields case-insensitively and keeps the last duplicate, so {"operands":[..],"OPERANDS":[..]}
+// would silently compute on the second list. One exact spelling per field leaves nothing for a proxy or log reader to
+// resolve differently. Non-objects and unknown keys are left to the main decode, which reports them.
 func checkKeys(raw []byte) apperror.IError {
 	decoder := json.NewDecoder(bytes.NewReader(raw))
 	if first, err := decoder.Token(); err != nil || first != json.Delim('{') {

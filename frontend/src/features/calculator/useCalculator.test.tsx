@@ -20,7 +20,6 @@ const client = createApiClient({ baseUrl: BASE_URL });
 
 type CalculatorClient = Pick<ApiClient, 'calculate'>;
 
-/** Provides `override` on top of the real client, through the context the app reads. */
 function wrapperFor(override: Partial<ApiClient> = client) {
   const value: ApiClient = { ...client, ...override };
   return function Wrapper({ children }: { children: ReactNode }) {
@@ -41,7 +40,6 @@ function op(operator: BinaryOperation): CalculatorAction {
   return { type: 'operator', operator };
 }
 
-/** Presses "a op b" without pressing equals. */
 function expression(a: string, operator: BinaryOperation, b: string): CalculatorAction[] {
   return [...digitsOf(a), op(operator), ...digitsOf(b)];
 }

@@ -22,9 +22,8 @@ import (
 	"github.com/Laaaaksh/sezzle-calculator/backend/pkg/apperror"
 )
 
-// CalculateE2ETestSuite drives the real router, the real handler and the real
-// core with the default operations. Nothing is mocked, so it proves the pieces
-// agree with each other and with docs/API.md.
+// CalculateE2ETestSuite uses the real router, handler and core with no mocks, so it proves they agree with each other
+// and with docs/API.md.
 type CalculateE2ETestSuite struct {
 	suite.Suite
 	router   chi.Router

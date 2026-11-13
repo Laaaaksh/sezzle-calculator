@@ -35,10 +35,8 @@ const (
 
 var slowLimits = entities.Limits{MaxOperandLength: 64, MaxExponent: 1000, DecimalPrecision: 20, MaxResultDigits: 640}
 
-// spinOperation works until its context ends, the way power and square root
-// do. It can only return once the request deadline cancels the context, so
-// the test needs no stopwatch: if the timeout never reached the work, the run
-// would hang and the test binary's own timeout would fail it.
+// spinOperation works until its context ends, as power and square root do. If the timeout never reached the work,
+// the run would hang and the test binary's own timeout would fail it, so no stopwatch is needed.
 type spinOperation struct{}
 
 func (spinOperation) Name() entities.OperationType { return slowOperationName }
@@ -54,10 +52,7 @@ func (spinOperation) Apply(ctx context.Context, _ []decimal.Decimal) (decimal.De
 	}
 }
 
-// SlowCalculationTimeoutE2ETestSuite drives the real router, with its real
-// Timeout interceptor, real handler and real core, into an operation that
-// never finishes by itself, and checks the work is stopped with the JSON
-// REQUEST_TIMEOUT error.
+// SlowCalculationTimeoutE2ETestSuite checks the real stack stops a never-ending operation with the JSON REQUEST_TIMEOUT error.
 type SlowCalculationTimeoutE2ETestSuite struct {
 	suite.Suite
 	router chi.Router

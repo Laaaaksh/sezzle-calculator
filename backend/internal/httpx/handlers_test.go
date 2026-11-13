@@ -71,7 +71,6 @@ func (s *HandlersTestSuite) TestMethodNotAllowedWritesJSONMethodNotAllowed() {
 	s.Equal(apperror.MsgMethodNotAllowed, got.Error.Message)
 }
 
-// echoedPath returns the "path" field of the error body the handler wrote.
 func (s *HandlersTestSuite) echoedPath() string {
 	var got httpx.ErrorResponse
 	s.Require().NoError(json.Unmarshal(s.recorder.Body.Bytes(), &got))

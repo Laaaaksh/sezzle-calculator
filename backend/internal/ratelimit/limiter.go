@@ -15,13 +15,9 @@ type bucket struct {
 	last   time.Time
 }
 
-// Limiter gives each key a bucket that holds up to burst tokens and refills at
-// rate tokens per second. A request spends one token.
-//
-// Memory stays bounded because a bucket that has refilled to full is the same
-// as no bucket, so Allow drops those on a sweep. Only keys that spent tokens
-// within the last burst/rate seconds are held. State is per process: running
-// several instances needs a shared store such as Redis.
+// Limiter gives each key a bucket that holds up to burst tokens and refills at rate tokens per second. A request spends
+// one token. A bucket refilled to full is the same as no bucket, so Allow sweeps those away and memory stays bounded.
+// State is per process: several instances need a shared store such as Redis.
 type Limiter struct {
 	mu        sync.Mutex
 	rate      float64

@@ -1,5 +1,4 @@
-// Package logger builds the service's structured zap logger and hands out
-// request-scoped copies of it.
+// Package logger builds the service's zap logger and request-scoped copies of it.
 package logger
 
 import (
@@ -108,12 +107,8 @@ func isHarmlessSyncError(err error) bool {
 	return false
 }
 
-// SetForTest swaps the base logger and returns a function that restores the
-// previous one. It exists so tests can capture output with an observer core.
-// It stays exported on purpose: the tests that need it live in other packages
-// (httpx, interceptors), which an export_test.go file of this package cannot
-// reach. The whole package is under internal/, so no code outside this module
-// can call it.
+// SetForTest swaps the base logger and returns a function that restores it. It is exported because tests in other
+// packages (httpx, interceptors) need it; internal/ keeps it out of reach of outside code.
 func SetForTest(l *zap.SugaredLogger) (restore func()) {
 	prev := base.Swap(l)
 	return func() { base.Store(prev) }

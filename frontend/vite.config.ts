@@ -4,7 +4,6 @@ import { defineConfig } from 'vitest/config';
 
 const DEFAULT_DEV_API_TARGET = 'http://localhost:8080';
 
-// https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const configured = env.VITE_DEV_API_TARGET;

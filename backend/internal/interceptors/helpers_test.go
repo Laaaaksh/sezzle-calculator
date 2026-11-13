@@ -13,14 +13,11 @@ import (
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/logger"
 )
 
-// captureLogs swaps the base logger for an in-memory observer and returns the
-// observed entries plus a function that restores the previous logger.
 func captureLogs() (*observer.ObservedLogs, func()) {
 	core, observed := observer.New(zapcore.DebugLevel)
 	return observed, logger.SetForTest(zap.New(core).Sugar())
 }
 
-// okHandler answers 200 with no body.
 var okHandler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 })
@@ -30,8 +27,7 @@ type pipeAddr struct{}
 func (pipeAddr) Network() string { return "pipe" }
 func (pipeAddr) String() string  { return "pipe" }
 
-// pipeListener serves connections created by dial over net.Pipe, so a real
-// HTTP server runs without binding a port.
+// pipeListener serves net.Pipe connections, so a real HTTP server runs without binding a port.
 type pipeListener struct {
 	conns chan net.Conn
 	done  chan struct{}
@@ -68,8 +64,6 @@ func (l *pipeListener) dial(ctx context.Context, _, _ string) (net.Conn, error) 
 	}
 }
 
-// startPipeServer runs h on a real net/http server over a pipeListener and
-// returns a client wired to it plus a stop function.
 func startPipeServer(h http.Handler) (*http.Client, func()) {
 	ln := newPipeListener()
 	server := &http.Server{Handler: h}

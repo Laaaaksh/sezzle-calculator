@@ -18,26 +18,19 @@ import (
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/health"
 )
 
-// App is the assembled service: configuration, HTTP server and the modules
-// whose state boot controls.
+// App is the assembled service: config, HTTP server and the modules whose state boot controls.
 type App struct {
 	cfg    *config.Config
 	server *http.Server
 	health health.IModule
-	// listen binds the address. It is a field, not a direct net.Listen call,
-	// so a test can drive Run with an in-memory listener and never need a real
-	// port (a sandbox or CI job may forbid binding one).
+	// listen is a field so tests can inject an in-memory listener; a sandbox or CI job may forbid binding a port.
 	listen listenFunc
 }
 
-// listenFunc has the shape of net.Listen.
 type listenFunc func(network, address string) (net.Listener, error)
 
-// Initialize wires the service in a fixed order: configuration, logger,
-// modules, router. The order is a dependency chain: the logger needs the
-// environment from the config, modules log, and the router needs modules.
-// It returns early on the first failure, tagged with ErrConfigLoad or
-// ErrLoggerInit so the caller can pick an exit code.
+// Initialize wires config, logger, modules and router in dependency order.
+// The first failure is tagged ErrConfigLoad or ErrLoggerInit so main can pick an exit code.
 func Initialize(ctx context.Context) (*App, error) {
 	cfg, err := config.Load()
 	if err != nil {
@@ -63,8 +56,7 @@ func Initialize(ctx context.Context) (*App, error) {
 	return app, nil
 }
 
-// newServer applies the configured timeouts. ReadHeaderTimeout reuses the read
-// timeout so a client dribbling headers (slowloris) cannot hold a connection.
+// ReadHeaderTimeout reuses the read timeout so a client dribbling headers (slowloris) cannot hold a connection.
 func newServer(cfg *config.Config, handler http.Handler) *http.Server {
 	return &http.Server{
 		Addr:              fmt.Sprintf(constants.ListenAddrFmt, cfg.Server.Port),
@@ -79,9 +71,7 @@ func newServer(cfg *config.Config, handler http.Handler) *http.Server {
 // Handler returns the root HTTP handler, for tests and embedding.
 func (a *App) Handler() http.Handler { return a.server.Handler }
 
-// Run binds the configured address and serves until ctx is cancelled or
-// SIGINT/SIGTERM arrives, then shuts the server down within the configured
-// grace period. A clean shutdown returns nil.
+// Run serves until ctx is cancelled or SIGINT/SIGTERM arrives, then shuts down within the grace period.
 func (a *App) Run(ctx context.Context) error {
 	ctx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -98,9 +88,7 @@ func (a *App) Run(ctx context.Context) error {
 	return a.Serve(ctx, listener)
 }
 
-// Serve runs the server on listener until ctx is done, then shuts down
-// gracefully. It is split from Run so tests can supply an in-memory listener
-// and never need a real port.
+// Serve is split from Run so tests can supply an in-memory listener.
 func (a *App) Serve(ctx context.Context, listener net.Listener) error {
 	logger.Ctx(ctx).Infow(constants.LogMsgServerStarting, constants.LogKeyAddr, listener.Addr().String())
 
@@ -115,7 +103,6 @@ func (a *App) Serve(ctx context.Context, listener net.Listener) error {
 	return a.shutdown(ctx, serveErr)
 }
 
-// serveFailed handles Serve returning before any shutdown was requested.
 func (a *App) serveFailed(ctx context.Context, err error) error {
 	a.health.GetCore().SetReady(false)
 	if errors.Is(err, http.ErrServerClosed) {
@@ -125,11 +112,8 @@ func (a *App) serveFailed(ctx context.Context, err error) error {
 	return fmt.Errorf(constants.ErrFmtServe, err)
 }
 
-// shutdown flips readiness first and keeps serving for the drain delay, so
-// load balancers polling readiness stop sending traffic before the listener
-// closes. It then lets in-flight requests finish within the grace period. If
-// they do not, connections are closed so the process never hangs past the
-// deadline.
+// shutdown flips readiness first and keeps serving for the drain delay, so load balancers stop routing before the
+// listener closes. Connections are closed at the grace deadline so the process never hangs.
 func (a *App) shutdown(ctx context.Context, serveErr <-chan error) error {
 	log := logger.Ctx(ctx)
 	log.Infow(constants.LogMsgShutdownStarted)
@@ -142,7 +126,6 @@ func (a *App) shutdown(ctx context.Context, serveErr <-chan error) error {
 
 	if err := a.server.Shutdown(graceCtx); err != nil {
 		log.Errorw(constants.LogMsgShutdownFailed, constants.LogKeyError, err.Error())
-		// Close is best effort after a failed graceful stop.
 		_ = a.server.Close()
 		return fmt.Errorf(constants.ErrFmtShutdown, err)
 	}

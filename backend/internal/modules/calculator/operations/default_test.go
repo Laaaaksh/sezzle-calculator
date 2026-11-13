@@ -169,7 +169,6 @@ func (s *DefaultRegistryTestSuite) listed(name entities.OperationType) operation
 	return nil
 }
 
-// maxArity is the widest arity among the registered operations.
 func (s *DefaultRegistryTestSuite) maxArity() int {
 	widest := 0
 	for _, op := range s.registry.List() {

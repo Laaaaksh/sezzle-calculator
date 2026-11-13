@@ -18,10 +18,8 @@ const (
 	seededSmallShift = 1000
 )
 
-// ReferenceTestSuite runs the same checks as the fuzz targets on a fixed
-// pseudo-random sample, so every CI run covers a few thousand cases and a
-// failure repeats exactly. Operands mix full-range int64 values with small
-// ones, because small values are where ties and exact quotients occur.
+// ReferenceTestSuite runs the fuzz targets' checks on a fixed pseudo-random sample, so CI covers thousands of cases and a
+// failure repeats. Operands mix full-range int64 values with small ones, where ties and exact quotients occur.
 type ReferenceTestSuite struct {
 	suite.Suite
 	rng *rand.Rand

@@ -32,8 +32,6 @@ func pow10(n int) *big.Int {
 	return new(big.Int).Exp(bigTen, big.NewInt(int64(n)), nil)
 }
 
-// operandOf builds the operand coefficient * 10^-scale as the decimal under
-// test and as an exact rational. scale is folded into 0..refMaxScale.
 func operandOf(coefficient int64, scale int) (decimal.Decimal, *big.Rat) {
 	places := scale % (refMaxScale + 1)
 	exact := new(big.Rat).SetFrac(big.NewInt(coefficient), pow10(places))
@@ -49,7 +47,6 @@ func ratOfResult(t testing.TB, result decimal.Decimal) *big.Rat {
 	return exact
 }
 
-// roundHalfEven rounds r to places decimal places, sending an exact tie to the even neighbour.
 func roundHalfEven(r *big.Rat, places int) *big.Rat {
 	factor := pow10(places)
 	scaled := new(big.Rat).Mul(r, new(big.Rat).SetInt(factor))

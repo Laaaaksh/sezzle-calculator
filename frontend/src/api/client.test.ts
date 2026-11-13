@@ -29,7 +29,6 @@ function errorBody(overrides: Partial<ApiErrorBody['error']> = {}): ApiErrorBody
   };
 }
 
-/** Runs a call that must reject and returns what it rejected with. */
 async function rejectionOf(call: Promise<unknown>): Promise<unknown> {
   try {
     await call;

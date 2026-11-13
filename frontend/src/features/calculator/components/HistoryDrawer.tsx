@@ -5,14 +5,13 @@ import styles from './HistoryDrawer.module.css';
 import { HistoryTape } from './HistoryTape';
 
 interface HistoryDrawerProps {
-  /** Newest first. */
   entries: readonly HistoryEntry[];
   onReuse: (entry: HistoryEntry) => void;
 }
 
 /**
- * Wide screens show the tape beside the keypad and hide the button. Narrow screens hide the tape
- * behind it. The stylesheet decides which, so the two layouts never fight over state.
+ * Wide screens show the tape beside the keypad; narrow ones hide it behind the button. The
+ * stylesheet decides which, so the two layouts never fight over state.
  */
 export function HistoryDrawer({ entries, onReuse }: HistoryDrawerProps) {
   const [open, setOpen] = useState(false);

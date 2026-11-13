@@ -11,24 +11,21 @@ import {
   type WaitingState,
 } from './types';
 
-/** Operand text when nothing has been typed. Shown as 0 and sent as "0". */
 const EMPTY_OPERAND = '';
 const ZERO = '0';
 const DECIMAL_POINT = '.';
 const MINUS = '-';
 
 /**
- * A decimal point needs room for itself plus one digit after it (an empty operand becomes "0.",
- * two characters), so it is refused when fewer than this many characters remain.
+ * A decimal point needs itself plus one digit ("0." when empty), so it is refused when fewer than
+ * this many characters remain.
  */
 const DECIMAL_POINT_RESERVE = 2;
 
 /** Any non-zero digit. Not global, so .test() keeps no state between calls. */
 const NON_ZERO_DIGIT = /[1-9]/;
 
-/** Limits the reducer enforces. The server can report different values than the built-ins. */
 export interface ReducerLimits {
-  /** Longest operand, counting "-" and ".". */
   maxOperandLength: number;
 }
 
@@ -43,7 +40,6 @@ export const initialState: CalculatorState = createInitialState();
 // Operands are strings from start to end. A float cannot hold what the user typed
 // (see "Numbers are strings" in docs/API.md), so nothing here calls Number() or parseFloat().
 
-/** Adds one character to an operand, or returns the operand unchanged when the rule forbids it. */
 function appendChar(operand: string, char: string, max: number): string {
   if (char === DECIMAL_POINT) {
     if (operand.includes(DECIMAL_POINT) || operand.length + DECIMAL_POINT_RESERVE > max) {
@@ -65,14 +61,13 @@ function appendChar(operand: string, char: string, max: number): string {
   return `${operand}${char}`;
 }
 
-/** True when the operand has no non-zero digit, so "0", "-0" and "0.00" all count. */
 function isZero(operand: string): boolean {
   return !NON_ZERO_DIGIT.test(operand);
 }
 
 /**
- * Flips the sign. A zero stays unsigned, and the limit still counts the added "-":
- * an operand already at the limit comes back unchanged, which callers treat as a refusal.
+ * Flips the sign. Zero stays unsigned; the added "-" counts toward the limit, so an operand at the
+ * limit comes back unchanged, which callers treat as a refusal.
  */
 function negate(operand: string, max: number): string {
   if (isZero(operand)) {
@@ -84,7 +79,6 @@ function negate(operand: string, max: number): string {
   return operand.length >= max ? operand : `${MINUS}${operand}`;
 }
 
-/** The operand as it is sent: no dangling ".", and an empty or "-0" operand is 0. */
 function finalizeOperand(operand: string): string {
   const trimmed = operand.endsWith(DECIMAL_POINT) ? operand.slice(0, -1) : operand;
   return trimmed === EMPTY_OPERAND || trimmed === `${MINUS}${ZERO}` ? ZERO : trimmed;
@@ -95,7 +89,6 @@ function removeLastChar(operand: string): string {
   return shorter === MINUS ? EMPTY_OPERAND : shorter;
 }
 
-/** True when a result is longer than the server accepts as an operand (OPERAND_TOO_LARGE). */
 function tooLongToReuse(result: string, max: number): boolean {
   return result.length > max;
 }
@@ -140,7 +133,6 @@ function typeChar(state: CalculatorState, char: string, max: number): Calculator
       };
     case 'showing_result':
     case 'error':
-      // Typing after an answer starts a new calculation.
       return {
         status: 'entering_first',
         lastRequestId: state.lastRequestId,
@@ -167,7 +159,6 @@ function chooseOperator(
     case 'operator_chosen':
       return state.operator === operator ? state : { ...state, operator };
     case 'entering_second':
-      // Like a desk calculator: compute what is entered, then continue from its result.
       return startRequest(state, {
         operation: state.operator,
         operands: [state.left, finalizeOperand(state.operand)],
@@ -191,7 +182,6 @@ function chooseOperator(
 function applyUnary(state: CalculatorState, operation: 'sqrt', max: number): CalculatorState {
   switch (state.status) {
     case 'entering_first':
-      // Nothing typed means nothing to compute.
       return state.operand === EMPTY_OPERAND
         ? state
         : startRequest(state, {
@@ -227,7 +217,6 @@ function backspace(state: CalculatorState): CalculatorState {
         ? state
         : { ...state, operand: removeLastChar(state.operand) };
     case 'operator_chosen':
-      // Removing the operator goes back to editing the first operand.
       return {
         status: 'entering_first',
         lastRequestId: state.lastRequestId,
@@ -348,15 +337,14 @@ function reuse(state: CalculatorState, result: string, max: number): CalculatorS
 }
 
 /**
- * Builds the reducer for a set of limits. The limits are fixed per reducer, so the hook builds a
- * new one when the server reports different values; state itself never carries them.
+ * Limits are fixed per reducer, so the hook builds a new one when the server reports different
+ * values.
  */
 export function createCalculatorReducer({ maxOperandLength }: ReducerLimits) {
   return (state: CalculatorState, action: CalculatorAction): CalculatorState =>
     reduce(state, action, maxOperandLength);
 }
 
-/** The reducer with the built-in limits (MAX_OPERAND_LENGTH). */
 export const calculatorReducer = createCalculatorReducer(DEFAULT_LIMITS);
 
 function reduce(state: CalculatorState, action: CalculatorAction, max: number): CalculatorState {

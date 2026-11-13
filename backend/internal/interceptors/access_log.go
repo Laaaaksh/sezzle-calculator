@@ -8,9 +8,7 @@ import (
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/logger"
 )
 
-// AccessLog writes one structured line per request: method, path, status and
-// duration. The request ID is attached by the logger from the context. Only
-// the path is logged, never the query string, which may carry user data.
+// AccessLog writes one structured line per request. Only the path is logged, never the query string, which may carry user data.
 func AccessLog(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()

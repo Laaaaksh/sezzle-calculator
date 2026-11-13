@@ -1,7 +1,4 @@
-// Command healthcheck probes the API's liveness endpoint and exits 0 when it
-// answers 200, 1 otherwise. It exists because the distroless runtime image has
-// no shell or curl, so a Docker HEALTHCHECK needs a binary to run. It reads the
-// port through the same config loader as the API, so the two can never disagree.
+// Command healthcheck is the Docker HEALTHCHECK probe; the distroless image has no shell or curl, so it ships as a binary.
 package main
 
 import (
@@ -22,9 +19,7 @@ func main() {
 	os.Exit(run(context.Background(), client, os.Stderr))
 }
 
-// run maps the probe outcome to an exit code. It returns the code instead of
-// calling os.Exit so the logic stays testable. The client is injected so tests
-// can stub the transport without opening a socket.
+// run returns the exit code, with the client injected, so tests need no socket and no os.Exit.
 func run(ctx context.Context, client *http.Client, stderr io.Writer) int {
 	cfg, err := config.Load()
 	if err != nil {
@@ -40,8 +35,7 @@ func run(ctx context.Context, client *http.Client, stderr io.Writer) int {
 	return constants.ExitCodeOK
 }
 
-// probe sends one GET and succeeds only on 200. The client timeout set in main
-// guarantees a hung server fails the check instead of hanging it.
+// probe succeeds only on 200; the client timeout makes a hung server fail the check instead of hanging it.
 func probe(ctx context.Context, client *http.Client, url string) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {

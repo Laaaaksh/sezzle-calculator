@@ -1,9 +1,7 @@
 package entities
 
-// CalculateResponse is the 200 body of POST /api/v1/calculate. Operation and
-// Operands repeat the request exactly as sent, so a client can show the
-// expression beside the result without keeping its own state. Result is the
-// normalised string from Result.Text.
+// CalculateResponse is the 200 body of POST /api/v1/calculate. Operation and Operands repeat the request as sent, so a
+// client can show the expression beside Result, the normalised string from Result.Text.
 type CalculateResponse struct {
 	Operation OperationType `json:"operation"`
 	Operands  []string      `json:"operands"`

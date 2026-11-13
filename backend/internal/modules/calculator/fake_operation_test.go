@@ -12,8 +12,7 @@ import (
 
 var errFakeCause = errors.New("fake operation failed")
 
-// fakeOperation is a configurable stand-in for a real operation. It records the
-// operands it was given so tests can prove Apply was (or was not) reached.
+// fakeOperation records its operands so tests can prove Apply was (or was not) reached.
 type fakeOperation struct {
 	name    entities.OperationType
 	arity   int

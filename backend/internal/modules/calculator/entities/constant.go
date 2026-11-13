@@ -24,10 +24,8 @@ const (
 	ArityBinary = 2
 )
 
-// Display symbols, as listed by GET /api/v1/operations. They are for showing
-// an expression; clients always send the operation name, never a symbol. The
-// multiply and divide symbols are plain ASCII so they survive any font or
-// terminal; a frontend may draw "*" as a multiplication sign.
+// Display symbols, as listed by GET /api/v1/operations. Clients always send the operation name, never a symbol.
+// Multiply and divide use plain ASCII so they survive any font; a frontend may draw "*" as a multiplication sign.
 const (
 	SymbolAdd        = "+"
 	SymbolSubtract   = "-"
@@ -64,18 +62,13 @@ const (
 	ProblemTooMany     = "too many"
 )
 
-// MaxOperandCount is a cheap pre-parse bound, deliberately well above any
-// operation's arity. The handler refuses a longer list before parsing a single
-// operand, so a request cannot make the service parse thousands of strings
-// only for the arity check to reject them. It is generous on purpose: a list
-// within it but of the wrong size still reaches the core and gets the precise
-// INVALID_OPERAND_COUNT. A test keeps it at or above the widest arity.
+// MaxOperandCount is a cheap pre-parse bound, well above any arity, so a request cannot make the service parse
+// thousands of strings only for the arity check to reject them. A list within it but of the wrong size still reaches
+// the core and gets INVALID_OPERAND_COUNT. A test keeps it at or above the widest arity.
 const MaxOperandCount = 16
 
-// MaxOperationNameLength is the longest operation name, in bytes, the API
-// accepts or echoes back. The longest real name is "percentage" (10); this
-// leaves headroom. Without a bound, a client could make every error response
-// and warn log line as large as the request body cap.
+// MaxOperationNameLength is the longest operation name, in bytes, the API accepts or echoes back (the longest real
+// name is "percentage", 10). Without a bound, every error response and warn log line could be as large as the body cap.
 const MaxOperationNameLength = 32
 
 // Error field keys attached to calculator errors, so logs and clients can say

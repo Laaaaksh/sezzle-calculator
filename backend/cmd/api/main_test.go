@@ -50,8 +50,7 @@ func (s *RunTestSuite) SetupTest() {
 	s.T().Setenv(constants.EnvVarConfigDir, testConfigDir)
 }
 
-// freePort reserves a port and releases it for the app to take. Where binding
-// is not permitted the test is skipped rather than failed.
+// freePort reserves a port and releases it for the app; the test is skipped where binding is not permitted.
 func (s *RunTestSuite) freePort() int {
 	listener, err := net.Listen(constants.ListenNetwork, testListenHost)
 	if err != nil {
@@ -62,8 +61,7 @@ func (s *RunTestSuite) freePort() int {
 	return port
 }
 
-// runBounded calls run under a context that ends after testRunLimit and fails
-// the test, instead of hanging it, if run has not returned shortly after.
+// runBounded fails the test, instead of hanging it, if run does not return shortly after testRunLimit.
 func (s *RunTestSuite) runBounded(ctx context.Context) int {
 	ctx, cancel := context.WithTimeout(ctx, testRunLimit)
 	defer cancel()

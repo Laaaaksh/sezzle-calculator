@@ -99,9 +99,8 @@ func validateOrigin(origin string) error {
 	return nil
 }
 
-// isPlainOrigin reports whether u is exactly scheme://host[:port]: http(s)
-// only, no credentials, query, fragment or path beyond the root. Split out of
-// validateOrigin to keep its cyclomatic complexity under the gocyclo limit.
+// isPlainOrigin reports whether u is exactly scheme://host[:port]: http(s) only, no credentials, query, fragment or
+// path beyond the root. Split from validateOrigin to stay under the gocyclo limit.
 func isPlainOrigin(u *url.URL) bool {
 	if u.Scheme != constants.SchemeHTTP && u.Scheme != constants.SchemeHTTPS {
 		return false

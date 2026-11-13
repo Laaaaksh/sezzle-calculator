@@ -3,9 +3,7 @@ import { formatExpression, formatPendingExpression } from './expression';
 import type { CalculatorState } from './state';
 
 export interface DisplayLines {
-  /** Small line above the value: what is being calculated. Empty when there is nothing yet. */
   expression: string;
-  /** Big line: what is being typed, or the result. */
   value: string;
 }
 
@@ -13,7 +11,6 @@ const ZERO = '0';
 const EQUALS_SIGN = '=';
 export const ERROR_VALUE = 'Error';
 
-/** What the display shows for a state. Pure, so each state is easy to test. */
 export function describeDisplay(state: CalculatorState): DisplayLines {
   switch (state.status) {
     case 'entering_first':
@@ -45,7 +42,6 @@ export function describeDisplay(state: CalculatorState): DisplayLines {
   }
 }
 
-/** The operator waiting for its second operand, so its key can show it is the active one. */
 export function activeOperatorOf(state: CalculatorState): BinaryOperation | null {
   return state.status === 'operator_chosen' || state.status === 'entering_second'
     ? state.operator

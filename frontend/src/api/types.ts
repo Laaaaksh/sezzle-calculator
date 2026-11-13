@@ -17,7 +17,6 @@ export const OPERATION_TYPES = [
 
 export type OperationType = (typeof OPERATION_TYPES)[number];
 
-/** Every error code the server can send (the "Error codes and HTTP statuses" table), by name. */
 export const ERROR_CODE = {
   BAD_REQUEST: 'BAD_REQUEST',
   VALIDATION_FAILED: 'VALIDATION_FAILED',
@@ -40,7 +39,6 @@ export const ERROR_CODE = {
   NEGATIVE_SQUARE_ROOT: 'NEGATIVE_SQUARE_ROOT',
 } as const;
 
-/** The same codes as a list, for runtime checks. */
 export const ERROR_CODES = Object.values(ERROR_CODE);
 
 export type ErrorCode = (typeof ERROR_CODE)[keyof typeof ERROR_CODE];
@@ -61,21 +59,18 @@ export type ClientErrorCode = (typeof CLIENT_ERROR_CODE)[keyof typeof CLIENT_ERR
 export type ApiErrorCode = ErrorCode | ClientErrorCode;
 
 export interface CalculateRequest {
-  /** One of the names from GET /api/v1/operations. */
   operation: string;
   /** Decimal strings, never JSON numbers: a float cannot hold what the user typed. */
   operands: string[];
 }
 
 export interface CalculateResponse {
-  /** Repeats the request exactly as sent. */
   operation: string;
   operands: string[];
   result: string;
 }
 
 export interface OperationInfo {
-  /** The value to send as CalculateRequest.operation. */
   name: string;
   arity: number;
   /** For display only. Clients send the name, never the symbol. */
@@ -84,8 +79,8 @@ export interface OperationInfo {
 }
 
 /**
- * The server's input limits, sent with the operations list. The UI uses maxOperandLength to stop
- * typing at the same length the server accepts. The other two are carried for completeness.
+ * The server's input limits. The UI stops typing at maxOperandLength; the other two are carried
+ * only.
  */
 export interface OperationLimits {
   maxOperandLength: number;

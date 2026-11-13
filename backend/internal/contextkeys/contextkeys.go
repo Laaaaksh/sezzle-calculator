@@ -1,5 +1,4 @@
-// Package contextkeys owns the keys under which request-scoped values travel
-// in a context.Context.
+// Package contextkeys owns the keys for request-scoped values in a context.Context.
 package contextkeys
 
 import "context"

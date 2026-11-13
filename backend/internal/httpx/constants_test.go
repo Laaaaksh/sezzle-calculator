@@ -35,11 +35,8 @@ const (
 )
 
 var (
-	// testLongPath is far over the cap and made of single-byte characters.
-	testLongPath = testPathPrefix + strings.Repeat("a", httpx.MaxEchoedPathBytes+testPathOverrunByte)
-	// testMultiBytePath is over the cap and has a rune straddling it.
-	testMultiBytePath = testPathPrefix + strings.Repeat(testMultiByteRune, testMultiByteRunes)
-	// testMultiBytePathCut is the longest whole-rune prefix of testMultiBytePath within the cap.
+	testLongPath         = testPathPrefix + strings.Repeat("a", httpx.MaxEchoedPathBytes+testPathOverrunByte)
+	testMultiBytePath    = testPathPrefix + strings.Repeat(testMultiByteRune, testMultiByteRunes)
 	testMultiBytePathCut = testPathPrefix + strings.Repeat(testMultiByteRune, (httpx.MaxEchoedPathBytes-1)/2)
 )
 

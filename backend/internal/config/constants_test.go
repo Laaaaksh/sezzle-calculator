@@ -110,7 +110,6 @@ const (
 	wantExponentMessageFormat = "calculator.max_exponent"
 )
 
-// Values for hand-built Config structs passed to Validate.
 const (
 	validPort             = 8080
 	validTimeout          = 5 * time.Second

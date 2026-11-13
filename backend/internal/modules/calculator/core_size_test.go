@@ -14,8 +14,6 @@ import (
 	"github.com/Laaaaksh/sezzle-calculator/backend/pkg/apperror"
 )
 
-// ResultSizeTestSuite covers the one digit budget the core applies to the
-// result of every operation.
 type ResultSizeTestSuite struct {
 	suite.Suite
 	ctx context.Context
@@ -38,13 +36,11 @@ func (s *ResultSizeTestSuite) limits(budget int) entities.Limits {
 	}
 }
 
-// realCore is a core over the default registry with the given digit budget.
 func (s *ResultSizeTestSuite) realCore(budget int) *calculator.Core {
 	limits := s.limits(budget)
 	return calculator.NewCore(operations.NewDefaultRegistry(limits), limits)
 }
 
-// fakeCore is a core over one fake operation that returns result as is.
 func (s *ResultSizeTestSuite) fakeCore(result string) *calculator.Core {
 	fake := &fakeOperation{name: testOpFake, arity: entities.ArityBinary, result: mustDecimal(result)}
 	return calculator.NewCore(operations.NewRegistry(fake), s.limits(testSmallResultDigits))

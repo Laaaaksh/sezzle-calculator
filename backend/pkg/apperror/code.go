@@ -1,5 +1,4 @@
-// Package apperror is the single error model of the service: a typed code, a
-// safe public message, an HTTP status and structured fields for logs.
+// Package apperror is the single error model: a typed code, a safe public message, an HTTP status and log fields.
 package apperror
 
 import (

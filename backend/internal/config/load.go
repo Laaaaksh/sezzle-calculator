@@ -11,14 +11,9 @@ import (
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/constants"
 )
 
-// Load builds the configuration from default.toml, layers the file for the
-// active environment on top, applies APP_ environment variable overrides and
-// validates the result. Precedence, lowest to highest: default file,
-// environment file, environment variables.
-//
-// Viper's default decode hooks turn "5s" into a time.Duration and a
-// comma-separated string into a slice, which is what lets APP_CORS_ALLOWED_ORIGINS
-// carry a list.
+// Load reads default.toml, layers the active environment's file, applies APP_ overrides and validates. Precedence,
+// lowest to highest: default file, environment file, environment variables. Viper's decode hooks turn "5s" into a
+// Duration and a comma-separated string into a slice, so APP_CORS_ALLOWED_ORIGINS can carry a list.
 func Load() (*Config, error) {
 	env, err := resolveEnvironment(os.Getenv(constants.EnvVarEnvironment))
 	if err != nil {

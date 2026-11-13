@@ -11,7 +11,6 @@ import { ErrorBanner } from './ErrorBanner';
 import { HistoryDrawer } from './HistoryDrawer';
 import { Keypad } from './Keypad';
 
-/** Reads its API client from ApiClientContext, which defaults to the real client. */
 export function Calculator() {
   const { supported: supportedOperations, limits } = useOperationsCatalog();
   const { state, history, isPending, dispatch, reuse } = useCalculator({

@@ -9,7 +9,6 @@ export interface ApiErrorInit {
   fields?: ErrorFields | undefined;
 }
 
-/** The server answered with an error, or with a body that breaks the contract. */
 export class ApiError extends Error {
   override readonly name = 'ApiError';
   readonly code: ApiErrorCode;
@@ -27,7 +26,6 @@ export class ApiError extends Error {
   }
 }
 
-/** No response arrived: the server is down, the connection dropped, or the browser is offline. */
 export class NetworkError extends Error {
   override readonly name = 'NetworkError';
 
@@ -36,7 +34,6 @@ export class NetworkError extends Error {
   }
 }
 
-/** The request ran longer than its time limit and was cancelled by the client. */
 export class TimeoutError extends Error {
   override readonly name = 'TimeoutError';
   readonly timeoutMs: number;
@@ -47,10 +44,7 @@ export class TimeoutError extends Error {
   }
 }
 
-/**
- * The caller aborted the request with its own AbortSignal. A typed error (not a DOMException)
- * so a UI can tell "I cancelled this" apart from a failure with one instanceof check.
- */
+/** A typed error, not a DOMException, so one instanceof tells a user cancel from a failure. */
 export class CanceledError extends Error {
   override readonly name = 'CanceledError';
 

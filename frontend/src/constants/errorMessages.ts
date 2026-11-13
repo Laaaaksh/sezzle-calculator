@@ -1,19 +1,15 @@
 import type { ApiErrorCode } from '../api';
 import type { CalculatorError, ClientFailureCode } from '../features/calculator/state';
 
-/**
- * The one place error copy lives. api/errors.ts, the API client and the UI all read from here,
- * so the same failure never gets two different sentences.
- */
+/** The one place error copy lives, so the same failure never gets two different sentences. */
 export const GENERIC_ERROR_MESSAGE = 'Something went wrong.';
 
 /** Used as the CanceledError message. Never shown: a cancelled request is not reported to users. */
 export const CANCELED_MESSAGE = 'The request was canceled.';
 
 /**
- * Codes with their own copy. UNKNOWN is left out on purpose: it has no meaning of its own, so it
- * takes the generic message with the request ID. Record<..., string> makes a code added to
- * ERROR_CODES without copy here a compile error.
+ * Codes with their own copy. UNKNOWN is left out: it takes the generic message with the request
+ * ID. Record<..., string> makes a code added to ERROR_CODES without copy here a compile error.
  */
 export const ERROR_MESSAGES: Record<
   Exclude<ApiErrorCode | ClientFailureCode, 'UNKNOWN'>,
@@ -49,8 +45,8 @@ function hasOwnMessage(code: string): code is keyof typeof ERROR_MESSAGES {
 }
 
 /**
- * The text to show for an error. A code without its own copy (UNKNOWN, or a code that slipped
- * past the types) gets the generic message plus the request ID, so a user can quote it to support.
+ * A code without its own copy (UNKNOWN, or one that slipped past the types) gets the generic
+ * message plus the request ID, so a user can quote it to support.
  */
 export function messageForError({ code, requestId }: CalculatorError): string {
   if (hasOwnMessage(code)) {

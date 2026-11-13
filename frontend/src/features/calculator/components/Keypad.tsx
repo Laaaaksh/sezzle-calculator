@@ -7,7 +7,6 @@ import styles from './Keypad.module.css';
 interface KeypadProps {
   /** While true, equals is disabled so a second request cannot be submitted. */
   isPending: boolean;
-  /** The operator waiting for its second operand, if any. */
   activeOperator?: BinaryOperation | null | undefined;
   /** Operations the server reports. Keys for any other operation are unavailable. Null = unknown. */
   supportedOperations?: ReadonlySet<string> | null | undefined;

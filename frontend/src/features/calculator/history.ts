@@ -9,7 +9,6 @@ export interface HistoryEntry {
   result: string;
 }
 
-/** Puts the new entry first and drops the oldest ones past the limit. Returns a new array. */
 export function addHistoryEntry(
   history: readonly HistoryEntry[],
   entry: HistoryEntry,

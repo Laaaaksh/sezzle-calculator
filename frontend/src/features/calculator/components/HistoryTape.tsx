@@ -4,10 +4,8 @@ import type { HistoryEntry } from '../history';
 import styles from './HistoryTape.module.css';
 
 interface HistoryTapeProps {
-  /** Newest first. */
   entries: readonly HistoryEntry[];
   onReuse: (entry: HistoryEntry) => void;
-  /** Extra class for the heading, so a parent can restyle it without a selector into this component. */
   headingClassName?: string | undefined;
 }
 

@@ -1,7 +1,6 @@
 import type { ApiErrorCode, OperationType } from '../../../api';
 import type { BinaryOperation, Digit, UnaryOperation } from '../../../constants/calculator';
 
-/** Codes the UI makes up for failures that have no server response. */
 export const CLIENT_FAILURE_CODE = {
   NETWORK_ERROR: 'NETWORK_ERROR',
   TIMEOUT: 'TIMEOUT',
@@ -15,17 +14,14 @@ export interface CalculatorError {
   code: ApiErrorCode | ClientFailureCode;
   /** Quote this to support. Absent when no response arrived. */
   requestId: string | undefined;
-  /** True when sending the same request again can succeed (network and timeout failures). */
   retryable: boolean;
 }
 
-/** What was calculated: the operation and its operands, exactly as sent to the server. */
 export interface CalculationRequest {
   operation: OperationType;
   operands: readonly string[];
 }
 
-/** A request the reducer wants sent. The hook sends it and reports back with the same id. */
 export interface PendingRequest extends CalculationRequest {
   /** Responses carry this id so a late answer to an older request can be ignored. */
   id: number;
@@ -40,7 +36,6 @@ interface StateBase {
 
 export interface EnteringFirstState extends StateBase {
   status: 'entering_first';
-  /** Digits typed so far. Empty means nothing typed yet (shown as 0). */
   operand: string;
 }
 
@@ -65,21 +60,16 @@ export interface WaitingState extends StateBase {
 
 export interface ShowingResultState extends StateBase {
   status: 'showing_result';
-  /** The server's string, never parsed into a JS number. */
   result: string;
   /** Null when the result was reused from history, so there is no expression to show. */
   request: CalculationRequest | null;
-  /**
-   * Why the last key was refused (a result too long to reuse). Cleared by the next transition,
-   * because every other transition builds a fresh state without it.
-   */
+  /** Why the last key was refused (result too long to reuse). The next transition clears it. */
   notice?: CalculatorError | undefined;
 }
 
 export interface ErrorState extends StateBase {
   status: 'error';
   error: CalculatorError;
-  /** The request that failed, kept so a retry can send it again. */
   pending: PendingRequest;
 }
 

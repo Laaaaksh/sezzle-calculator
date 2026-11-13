@@ -1,8 +1,7 @@
 package operations_test
 
-// Operand and result texts used by the subtract tests, named by value so an
-// assertion reads the same as the number it checks. A Long constant holds more
-// digits than a readable name can carry.
+// Operand and result texts named by value, so an assertion reads like the number it checks.
+// A Long constant holds more digits than a readable name can carry.
 const (
 	subtractLong1      = "99999999999999999999999999999999"
 	subtractLong2      = "100000000000000000000000000000000"

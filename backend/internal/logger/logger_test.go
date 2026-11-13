@@ -32,7 +32,6 @@ const (
 
 var errTestSync = errors.New("disk on fire")
 
-// errnoSyncer is a write syncer whose Sync returns a fixed error.
 type errnoSyncer struct{ err error }
 
 func (e errnoSyncer) Write(p []byte) (int, error) { return len(p), nil }
@@ -133,7 +132,6 @@ func syncErrLogger(err error) *zap.SugaredLogger {
 	return zap.New(core).Sugar()
 }
 
-// InitializeTestSuite starts from a clean slate: no base logger installed.
 type InitializeTestSuite struct {
 	suite.Suite
 	ctx     context.Context

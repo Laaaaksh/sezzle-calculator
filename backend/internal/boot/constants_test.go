@@ -81,7 +81,6 @@ func testAddOperands() []decimal.Decimal {
 	return []decimal.Decimal{decimal.NewFromInt(1), decimal.NewFromInt(2)}
 }
 
-// Constants for the end-to-end test through the real router and core.
 const (
 	e2eMaxOperandLength   = 64
 	e2eMaxExponent        = 1000

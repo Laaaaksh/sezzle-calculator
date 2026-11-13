@@ -22,19 +22,16 @@ function renderCalculator() {
   return userEvent.setup();
 }
 
-/** The whole display: expression and value. */
 function display() {
   return screen.getByRole('group', { name: 'Display' });
 }
 
-/** The live region, which holds the value only. */
 function liveRegion() {
   return screen.getByRole('status');
 }
 
 const OPERATIONS_URL = `${BASE_URL}/api/v1/operations`;
 
-/** Answers the operations lookup with only the named operations. */
 function reportOperations(...names: string[]) {
   server.use(
     http.get(OPERATIONS_URL, () =>
@@ -45,14 +42,12 @@ function reportOperations(...names: string[]) {
   );
 }
 
-/** Clicks keys by their accessible names, in order. */
 async function pressKeys(user: ReturnType<typeof userEvent.setup>, ...names: string[]) {
   for (const name of names) {
     await user.click(screen.getByRole('button', { name }));
   }
 }
 
-/** Records every request body and answers with the given response. */
 function recordCalculate(respond: (body: CalculateRequest, attempt: number) => Response) {
   const bodies: CalculateRequest[] = [];
   server.use(

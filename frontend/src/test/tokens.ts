@@ -6,10 +6,8 @@ export type Scheme = 'light' | 'dark';
 
 const LIGHT_DARK_CALL = 'light-dark(';
 
-/** tokens.css parsed by postcss, for tests that check its rules by meaning. */
 export const tokensRoot: Root = postcss.parse(tokensCss, { from: 'tokens.css' });
 
-/** The top-level rule with exactly this selector, or a thrown error naming it. */
 export function ruleFor(selector: string): Rule {
   const rule = tokensRoot.nodes.find(
     (node): node is Rule => node.type === 'rule' && node.selector === selector,
@@ -20,7 +18,6 @@ export function ruleFor(selector: string): Rule {
   return rule;
 }
 
-/** Every declaration of `prop` anywhere in tokens.css. */
 export function declarationsOf(prop: string): Declaration[] {
   const found: Declaration[] = [];
   tokensRoot.walkDecls(prop, (decl) => {
@@ -29,7 +26,6 @@ export function declarationsOf(prop: string): Declaration[] {
   return found;
 }
 
-/** Custom property declarations of a rule, with whitespace in values collapsed. */
 function customProperties(rule: Rule): TokenMap {
   const tokens: TokenMap = {};
   rule.each((node) => {
@@ -40,7 +36,6 @@ function customProperties(rule: Rule): TokenMap {
   return tokens;
 }
 
-/** Splits `a, b` at the one comma that is not inside parentheses. */
 function splitTopLevelComma(args: string): [string, string] {
   let depth = 0;
   for (let index = 0; index < args.length; index += 1) {
@@ -56,7 +51,6 @@ function splitTopLevelComma(args: string): [string, string] {
   throw new Error(`light-dark() needs two arguments, got "${args}"`);
 }
 
-/** Replaces every light-dark(a, b) in a value with the side that applies to `scheme`. */
 export function resolveLightDark(value: string, scheme: Scheme): string {
   const start = value.indexOf(LIGHT_DARK_CALL);
   if (start === -1) {
@@ -77,7 +71,6 @@ export function resolveLightDark(value: string, scheme: Scheme): string {
   return resolveLightDark(`${value.slice(0, start)}${chosen}${value.slice(end)}`, scheme);
 }
 
-/** Every token exactly as written in the :root block, light-dark() calls included. */
 export const rawTokens: TokenMap = customProperties(ruleFor(':root'));
 
 function resolveAll(scheme: Scheme): TokenMap {
@@ -86,6 +79,5 @@ function resolveAll(scheme: Scheme): TokenMap {
   );
 }
 
-/** Token values as the light and the dark scheme see them. */
 export const lightTokens: TokenMap = resolveAll('light');
 export const darkTokens: TokenMap = resolveAll('dark');
