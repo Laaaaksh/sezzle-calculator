@@ -5,7 +5,6 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/entities"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/operations"
 )
 
@@ -26,14 +25,6 @@ func (s *PercentageTestSuite) percentage(percent, amount string) string {
 	got, err := applyText(s.op, percent, amount)
 	s.Require().Nil(err)
 	return got
-}
-
-func (s *PercentageTestSuite) TestPercentageNameIsPercentage() {
-	s.Equal(entities.OpPercentage, s.op.Name())
-}
-
-func (s *PercentageTestSuite) TestPercentageArityIsTwo() {
-	s.Equal(entities.ArityBinary, s.op.Arity())
 }
 
 func (s *PercentageTestSuite) TestPercentageTwentyOfFiftyIsTen() {

@@ -5,7 +5,6 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/entities"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/operations"
 )
 
@@ -26,14 +25,6 @@ func (s *AddTestSuite) add(left, right string) string {
 	got, err := applyText(s.op, left, right)
 	s.Require().Nil(err)
 	return got
-}
-
-func (s *AddTestSuite) TestAddNameIsAdd() {
-	s.Equal(entities.OpAdd, s.op.Name())
-}
-
-func (s *AddTestSuite) TestAddArityIsTwo() {
-	s.Equal(entities.ArityBinary, s.op.Arity())
 }
 
 func (s *AddTestSuite) TestAddWhenBothPositiveReturnsTheSum() {

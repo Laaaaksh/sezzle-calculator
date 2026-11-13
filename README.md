@@ -83,8 +83,8 @@ make test-coverage             # both layers, with coverage reports
 
 | Layer | Result | HTML report |
 | --- | --- | --- |
-| Backend (Go) | <!--cov-backend-->98.0%<!--/cov-backend--> total coverage, race detector on, mocks excluded | `backend/coverage.html` |
-| Frontend (React) | <!--cov-frontend-->558<!--/cov-frontend--> tests, 100% statements, branches, functions and lines | `frontend/coverage/index.html` |
+| Backend (Go) | <!--cov-backend-->97.5%<!--/cov-backend--> total coverage, race detector on, mocks excluded | `backend/coverage.html` |
+| Frontend (React) | <!--cov-frontend-->506<!--/cov-frontend--> tests, 100% statements, branches, functions and lines | `frontend/coverage/index.html` |
 
 CI runs both suites on every push and pull request, regenerates the mocks and fails on any diff, then builds the Docker stack and smoke tests the full path through nginx. Lint gates: golangci-lint with 12 linters, ESLint in strict mode with jsx-a11y, Prettier, `govulncheck` and `npm audit` for production dependencies. axe-core checks the calculator in every state, and a token test guards WCAG contrast ([docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md)).
 

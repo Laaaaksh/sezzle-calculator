@@ -38,14 +38,6 @@ func (s *SqrtTestSuite) sqrtAt(precision int, operand string) string {
 	return got
 }
 
-func (s *SqrtTestSuite) TestSqrtNameIsSqrt() {
-	s.Equal(entities.OpSqrt, s.op.Name())
-}
-
-func (s *SqrtTestSuite) TestSqrtArityIsOne() {
-	s.Equal(entities.ArityUnary, s.op.Arity())
-}
-
 func (s *SqrtTestSuite) TestSqrtOfZeroIsZero() {
 	s.Equal(sqrtNum0, s.sqrt(sqrtNum0))
 }

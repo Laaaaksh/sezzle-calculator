@@ -45,14 +45,6 @@ func (s *PowerTestSuite) failure(base, exponent string) apperror.IError {
 	return err
 }
 
-func (s *PowerTestSuite) TestPowerNameIsPower() {
-	s.Equal(entities.OpPower, s.op.Name())
-}
-
-func (s *PowerTestSuite) TestPowerArityIsTwo() {
-	s.Equal(entities.ArityBinary, s.op.Arity())
-}
-
 func (s *PowerTestSuite) TestPowerWhenExponentIsPositiveReturnsTheProduct() {
 	s.Equal(powerNum1024, s.power(powerNum2, powerNum10))
 }

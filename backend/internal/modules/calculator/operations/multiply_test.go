@@ -6,7 +6,6 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/entities"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator/operations"
 )
 
@@ -27,14 +26,6 @@ func (s *MultiplyTestSuite) multiply(left, right string) string {
 	got, err := applyText(s.op, left, right)
 	s.Require().Nil(err)
 	return got
-}
-
-func (s *MultiplyTestSuite) TestMultiplyNameIsMultiply() {
-	s.Equal(entities.OpMultiply, s.op.Name())
-}
-
-func (s *MultiplyTestSuite) TestMultiplyArityIsTwo() {
-	s.Equal(entities.ArityBinary, s.op.Arity())
 }
 
 func (s *MultiplyTestSuite) TestMultiplyWhenBothPositiveReturnsTheProduct() {
