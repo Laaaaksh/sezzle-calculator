@@ -485,4 +485,4 @@ Produced: a fresh, read-only review of every file against the Go and frontend co
 [Operational instruction, summarised rather than quoted: fix every audit finding through the review pipeline, then run the app locally so I can try it.]
 ```
 
-Produced: PR #9 through the same review pipeline. Docs now match the code, duplicate or wrong-case JSON keys are rejected, `/operations` publishes limits that the UI uses, calculator error codes live in the calculator module, entry points are tested, dead code and magic values are gone, and CI pins Node and images and runs format, `npm audit` and `govulncheck` checks. Backend coverage 98.2%, frontend 547 tests at 100%.
+Produced: PR #9 through the same review pipeline. Docs now match the code, duplicate or wrong-case JSON keys are rejected, `/operations` publishes limits that the UI uses, calculator error codes live in the calculator module, entry points are tested, dead code and magic values are gone, and CI pins Node and images and runs format, `npm audit` and `govulncheck` checks. Backend coverage 98.2%, frontend 547 tests at 100% at that point.

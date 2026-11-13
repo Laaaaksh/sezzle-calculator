@@ -6,8 +6,6 @@ How I used AI on this project and how I checked the result. The prompts are in [
 
 AI wrote much of the code, mainly Claude Code, under my step-by-step direction. I set the rules, gave one prompt per step and reviewed each result before the next. The 26 build prompts and 3 operational entries are in [PROMPTS.md](PROMPTS.md), in order, with a line on what each produced. An automated review pipeline and CI checked each pull request.
 
-`AGENTS.md` and `CLAUDE.md` hold the working rules I gave the AI tools. They are not part of the app.
-
 ## How I directed this
 
 Decided before any code:
@@ -110,8 +108,8 @@ Optional items are marked (optional).
 |---|---|---|---|
 | I1 | AI tooling allowed (used, and disclosed in the README) | [x] | [AI usage](#ai-usage) |
 | I2 | Roughly 2 to 4 hours; correctness, clarity and maintainability over extra features | [x] | scope held to the brief, extras listed in DECISIONS.md |
-| I3 | Solution pushed to a Git host | [x] | [github.com/Laaaaksh/sezzle-calculator](https://github.com/Laaaaksh/sezzle-calculator), PRs #1 to #8 (and later PRs) each passed an automated review pipeline and CI |
-| I4 | Repository link shared with the reviewers | [ ] | |
+| I3 | Solution pushed to a Git host | [x] | [github.com/Laaaaksh/sezzle-calculator](https://github.com/Laaaaksh/sezzle-calculator), PRs #1 to #14 each passed an automated review pipeline and CI |
+| I4 | Repository link shared with the reviewers | [x] | Shared on submission via Greenhouse |
 | I5 | Prompts used are shared (docs/PROMPTS.md) | [x] | [PROMPTS.md](PROMPTS.md) |
 | I6 | README includes setup instructions | [x] | [README: run](../README.md#run) |
 | I7 | README includes how to run the frontend and backend | [x] | [README: run](../README.md#run) |
