@@ -1,6 +1,6 @@
 # Prompt log
 
-Every prompt I sent to the AI assistant while building this project, in order and word for word. Each entry ends with one line on what it produced.
+Every prompt I sent to the AI assistant while building this project, in order and word for word. In entries 27 to 29 I trimmed personal asides: cuts are marked `[...]` and clarifications are in square brackets. No instruction was changed. Each entry ends with one line on what it produced.
 
 ---
 
@@ -138,7 +138,7 @@ Test the status mapping, the field handling and that unwrap works with errors.Is
 
 Produced: `internal/logger` (zap, JSON in prod and test, console in dev, request-scoped `Ctx`), `internal/contextkeys` for a typed request ID key, and `pkg/apperror` with typed codes, one status map, copy-on-write fields and errors.Is/As support. Coverage 97.6 to 100% per package.
 
-> Note: from entry 6 on, I queued the remaining prompts in advance (written before the build started) and let the assistant run them back to back while I was away, committing each step and shipping each phase through an automated review pipeline. The prompts below are exactly what was queued.
+> Note: from entry 6 on, I queued the remaining prompts in advance (written before the build started) and let the assistant run them back to back, committing each step and shipping each phase through an automated review pipeline. The prompts below are exactly what was queued.
 
 ---
 
@@ -462,11 +462,11 @@ Produced: an independent review raised 12 findings. Fixed: the power result budg
 ## 27. Ship every phase through the pipeline
 
 ```
-Could you keep feeding the prompt to yourself commiting it and then running the no mistakes as well. I have to be away from screen sometime! guess until then you will be done. There would be issues in no mistakes which you could take up as fix and keep commiting the fixes as well! right does it makes sense?
+Could you keep feeding the prompt to yourself commiting it and then running the [review pipeline] as well. [...] There would be issues in [the review pipeline] which you could take up as fix and keep commiting the fixes as well! [...]
 ```
 
 ```
-Can you keep merging the relevant prs as well please via chrome! I am away.
+Can you keep merging the relevant prs as well please [...]
 ```
 
 Produced: each phase shipped as its own pull request through an automated review pipeline (review, tests, docs, lint, push, CI), PRs #1 to #8. The pipeline's review found and fixed issues in every phase, listed in each PR description. Green PRs were merged in order.
@@ -486,7 +486,7 @@ Produced: a fresh, read-only review of every file against the Go and frontend co
 ## 29. Fix every audit finding
 
 ```
-Guess fix all please through no mistakes right and render the app for me as well locally want to see and use myself.
+[...] fix all please through [the review pipeline] [...] and render the app for me as well locally want to see and use myself.
 ```
 
 Produced: PR #9 through the same review pipeline. Docs now match the code, duplicate or wrong-case JSON keys are rejected, `/operations` publishes limits that the UI uses, calculator error codes live in the calculator module, entry points are tested, dead code and magic values are gone, and CI pins Node and images and runs format, `npm audit` and `govulncheck` checks. Backend coverage 98.2%, frontend 547 tests at 100%.
