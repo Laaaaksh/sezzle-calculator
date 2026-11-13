@@ -23,12 +23,11 @@ Rejected or overruled:
 - Generating the app from one big prompt. I split the work into 26 build steps, plus 3 operational entries. Each build step stopped for proof and a commit.
 - Letting the builder review its own work. A fresh, separate review audited the code and I fixed every finding.
 - A later hiring-style review found real gaps. Fresh clones failed `go test`, only power had a result-size limit, the `%` key was ambiguous and the README was bloated. I fixed all four.
-- Deleting tests to look leaner. I kept them.
-- Tests that only restated constants. I removed them and kept the behaviour tests.
+- Cutting tests to look leaner. I kept every behaviour test and removed only the tests that restated constants or style values, because they could not fail for a real reason.
 
 Why this went past 2 to 4 hours: this is a payments role, so I wanted to show how I would ship to production. That means input limits, exact rounding, clear errors, CI and a container. AI made the breadth cheap to write. My time went into reviewing and deciding.
 
-In a strict 2 to 4 hours I would keep the decimal core, the parser, the API contract and the maths tests. I would cut the Docker hardening and nginx security policy, the custom healthcheck, the 100% frontend coverage gate, the CSS-parsing and constants tests, and the motion and design polish.
+In a strict 2 to 4 hours I would keep the decimal core, the parser, the API contract and the maths tests. I would cut the Docker hardening and nginx security policy, the custom healthcheck, the 100% frontend coverage gate, the axe accessibility pass on every state, the big.Rat property tests, and the motion and design polish.
 
 ## How correctness is checked
 
