@@ -7,4 +7,6 @@ const (
 	FieldMethod = "method"
 	FieldPath   = "path"
 	FieldLimit  = "limit"
+	// FieldRetryAfterSeconds repeats the Retry-After header for clients that only read the body.
+	FieldRetryAfterSeconds = "retryAfterSeconds"
 )

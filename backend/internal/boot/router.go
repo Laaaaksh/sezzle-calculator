@@ -3,6 +3,7 @@ package boot
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/interceptors"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/calculator"
 	"github.com/Laaaaksh/sezzle-calculator/backend/internal/modules/health"
+	"github.com/Laaaaksh/sezzle-calculator/backend/internal/ratelimit"
 )
 
 // Modules is every feature module the router needs. Adding a feature means
@@ -49,9 +51,20 @@ func NewRouter(cfg *config.Config, modules Modules) chi.Router {
 
 	// Feature modules register their routes on this sub-router.
 	r.Route(constants.APIBasePath, func(api chi.Router) {
-		modules.Calculator.GetHandler().RegisterRoutes(api)
+		modules.Calculator.GetHandler().RegisterRoutes(api, rateLimitGuards(cfg.RateLimit)...)
 	})
 	return r
+}
+
+// rateLimitGuards returns the limiter for POST /calculate, or nothing when the
+// limit is switched off. The limiter lives as long as the router, so all
+// requests share one set of buckets.
+func rateLimitGuards(cfg config.RateLimitConfig) []func(http.Handler) http.Handler {
+	if !cfg.Enabled {
+		return nil
+	}
+	limiter := ratelimit.New(cfg.RequestsPerSecond, cfg.Burst, time.Now)
+	return []func(http.Handler) http.Handler{interceptors.RateLimit(limiter, cfg.ClientIPHeader)}
 }
 
 // routableMethods are the methods probed to build the Allow header of a 405.

@@ -28,6 +28,7 @@ export const ERROR_MESSAGES: Record<
   INTERNAL: 'The server had a problem. Please try again in a moment.',
   SERVICE_UNAVAILABLE: 'The calculator is temporarily unavailable. Please try again soon.',
   REQUEST_TIMEOUT: 'The calculation took too long. Please try again.',
+  RATE_LIMITED: 'Too many calculations too quickly. Wait a few seconds and try again.',
   UNKNOWN_OPERATION: "The server doesn't support that operation.",
   INVALID_OPERAND_COUNT: 'That operation needs a different number of values.',
   OPERAND_TOO_LARGE: 'That number is too long.',

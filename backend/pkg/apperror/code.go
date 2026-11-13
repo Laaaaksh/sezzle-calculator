@@ -28,6 +28,7 @@ const (
 	CodeInternal             Code = "INTERNAL"
 	CodeServiceUnavailable   Code = "SERVICE_UNAVAILABLE"
 	CodeRequestTimeout       Code = "REQUEST_TIMEOUT"
+	CodeRateLimited          Code = "RATE_LIMITED"
 )
 
 // definition is what a code means to a client: its HTTP status and default
@@ -58,6 +59,7 @@ var (
 		// was fine and our own deadline ran out, so "temporarily unavailable, try
 		// again" (503) is the honest signal and clients already retry it.
 		CodeRequestTimeout: {http.StatusServiceUnavailable, MsgRequestTimeout},
+		CodeRateLimited:    {http.StatusTooManyRequests, MsgRateLimited},
 	}
 )
 

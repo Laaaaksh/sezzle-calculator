@@ -15,6 +15,7 @@ type Config struct {
 	Server     ServerConfig     `mapstructure:"server"`
 	CORS       CORSConfig       `mapstructure:"cors"`
 	Calculator CalculatorConfig `mapstructure:"calculator"`
+	RateLimit  RateLimitConfig  `mapstructure:"rate_limit"`
 }
 
 // AppConfig describes the running deployment. Env is derived from APP_ENV
@@ -58,4 +59,17 @@ type CalculatorConfig struct {
 	MaxOperandLength int `mapstructure:"max_operand_length"`
 	MaxExponent      int `mapstructure:"max_exponent"`
 	DecimalPrecision int `mapstructure:"decimal_precision"`
+}
+
+// RateLimitConfig sets the per-client limit on POST /api/v1/calculate. Each
+// client IP gets a token bucket of Burst tokens that refills at RequestsPerSecond.
+// ClientIPHeader names a header (for example X-Real-IP) that holds the client
+// address when the service sits behind a proxy. Leave it empty when clients
+// connect directly, and set it only when the proxy overwrites the header, or a
+// caller could pick its own bucket.
+type RateLimitConfig struct {
+	Enabled           bool    `mapstructure:"enabled"`
+	RequestsPerSecond float64 `mapstructure:"requests_per_second"`
+	Burst             int     `mapstructure:"burst"`
+	ClientIPHeader    string  `mapstructure:"client_ip_header"`
 }

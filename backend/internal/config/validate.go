@@ -16,6 +16,7 @@ func (c Config) Validate() error {
 	errs = append(errs, c.Server.validate()...)
 	errs = append(errs, c.CORS.validate()...)
 	errs = append(errs, c.Calculator.validate()...)
+	errs = append(errs, c.RateLimit.validate()...)
 	return errors.Join(errs...)
 }
 
@@ -65,6 +66,22 @@ func (c CalculatorConfig) validate() []error {
 	}
 	if c.DecimalPrecision < constants.DecimalPrecisionMin || c.DecimalPrecision > constants.DecimalPrecisionMax {
 		errs = append(errs, withValue(ErrDecimalPrecisionOutOfRange, c.DecimalPrecision))
+	}
+	return errs
+}
+
+// validate skips the numbers when the limiter is off, so a disabled section
+// does not need valid values it will never use.
+func (r RateLimitConfig) validate() []error {
+	if !r.Enabled {
+		return nil
+	}
+	var errs []error
+	if r.RequestsPerSecond <= 0 || r.RequestsPerSecond > constants.RateLimitRateMax {
+		errs = append(errs, withValue(ErrRateLimitRateOutOfRange, r.RequestsPerSecond))
+	}
+	if r.Burst < constants.RateLimitBurstMin || r.Burst > constants.RateLimitBurstMax {
+		errs = append(errs, withValue(ErrRateLimitBurstOutOfRange, r.Burst))
 	}
 	return errs
 }

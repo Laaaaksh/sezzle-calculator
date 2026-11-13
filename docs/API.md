@@ -253,6 +253,21 @@ An operand over the length limit says which one and what the limit is:
 
 `fields` values are strings or numbers. The set of keys is fixed per code. The internal cause of an error (driver text, stack details) is never sent; it stays in the server log with the request ID. `NOT_FOUND` and `METHOD_NOT_ALLOWED` echo the request `method` and `path` in `fields`, since the client sent both. The echoed `path` is cut to 256 bytes.
 
+### Rate limit
+
+`POST /api/v1/calculate` is limited per client IP with a token bucket. Each client starts with `burst` requests and earns `requests_per_second` more every second. `GET /api/v1/operations` and the health probes are not limited. These come from the `[rate_limit]` section of the config.
+
+| Key | Default | Meaning |
+| --- | --- | --- |
+| `enabled` | true | Turns the limit off for load tests. |
+| `requests_per_second` | 10.0 | Refill rate, above 0 and at most 10000. |
+| `burst` | 20 | Bucket size, from 1 to 10000. |
+| `client_ip_header` | empty | Header that holds the client IP behind a proxy, for example `X-Real-IP`. Empty uses the connection address. Set it only when the proxy overwrites the header, or a caller could pick its own bucket. The compose stack sets it to `X-Real-IP`, which nginx overwrites. |
+
+An invalid value stops the service at startup. A request over the limit gets `429 RATE_LIMITED`, the normal error body with `fields.retryAfterSeconds`, and a `Retry-After` header holding the same number of seconds (rounded up, at least 1). Idle clients are dropped from memory once their bucket is full again, so memory follows the number of recently active clients.
+
+The buckets live in the process. With several instances each one counts on its own, so the real limit is the sum across instances. A multi-instance deployment needs a shared store such as Redis, or a limit at the gateway.
+
 ### Error codes and HTTP statuses
 
 | Code | HTTP status | When |
@@ -266,6 +281,7 @@ An operand over the length limit says which one and what the limit is:
 | `INTERNAL` | 500 | An unexpected server fault. The cause is logged and never sent. |
 | `SERVICE_UNAVAILABLE` | 503 | The readiness probe while the service is not ready. |
 | `REQUEST_TIMEOUT` | 503 | The calculation was still running when `request_timeout` expired, or the client went away. |
+| `RATE_LIMITED` | 429 | The client IP used up its bucket on `POST /api/v1/calculate`. Wait `Retry-After` seconds. |
 | `UNKNOWN_OPERATION` | 422 | `operation` is not a name from `GET /api/v1/operations`. The name is echoed in `fields.operation` only when it fits the 32 byte limit. |
 | `INVALID_OPERAND_COUNT` | 422 | The number of operands does not match the operation's arity, for example 3 operands to `add`. More than 16 operands is `VALIDATION_FAILED` instead. |
 | `OPERAND_TOO_LARGE` | 422 | An operand is longer than `max_operand_length`. |

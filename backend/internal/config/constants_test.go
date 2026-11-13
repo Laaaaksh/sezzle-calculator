@@ -144,3 +144,10 @@ const (
 	originWithCredentials = "https://user:pass@calculator.example.com"
 	originWithFragment    = "https://calculator.example.com#frag"
 )
+
+const (
+	validRateLimitRate    = 10.0
+	validRateLimitBurst   = 20
+	invalidRateLimitRate  = 10001.0
+	invalidRateLimitBurst = 10001
+)

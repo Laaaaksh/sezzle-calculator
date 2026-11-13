@@ -34,9 +34,10 @@ func NewHTTPHandler(core ICore, limits entities.Limits) *HTTPHandler {
 
 // RegisterRoutes mounts the calculator endpoints on r, the versioned API
 // router. Routes are flat so any other method on a path gets the router's JSON
-// 405.
-func (h *HTTPHandler) RegisterRoutes(r chi.Router) {
-	r.Post(entities.PathCalculate, h.Calculate)
+// 405. calculateGuards wrap POST /calculate only (for example the rate limit),
+// because the other routes are cheap.
+func (h *HTTPHandler) RegisterRoutes(r chi.Router, calculateGuards ...func(http.Handler) http.Handler) {
+	r.With(calculateGuards...).Post(entities.PathCalculate, h.Calculate)
 	r.Get(entities.PathOperations, h.Operations)
 }
 

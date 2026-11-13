@@ -13,6 +13,7 @@ const EXPECTED_ERROR_CODES: Record<ErrorCode, true> = {
   INTERNAL: true,
   SERVICE_UNAVAILABLE: true,
   REQUEST_TIMEOUT: true,
+  RATE_LIMITED: true,
   UNKNOWN_OPERATION: true,
   INVALID_OPERAND_COUNT: true,
   OPERAND_TOO_LARGE: true,

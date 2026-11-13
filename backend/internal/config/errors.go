@@ -50,4 +50,9 @@ var (
 	ErrDecimalPrecisionOutOfRange = fmt.Errorf(constants.ErrFmtRange,
 		constants.KeyCalculatorDecimalPrec,
 		constants.DecimalPrecisionMin, constants.DecimalPrecisionMax)
+
+	ErrRateLimitRateOutOfRange = fmt.Errorf(constants.ErrFmtRateLimitRate,
+		constants.KeyRateLimitRequestsPerSecond, constants.RateLimitRateMax)
+	ErrRateLimitBurstOutOfRange = fmt.Errorf(constants.ErrFmtRange,
+		constants.KeyRateLimitBurst, constants.RateLimitBurstMin, constants.RateLimitBurstMax)
 )

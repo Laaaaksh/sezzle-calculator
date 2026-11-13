@@ -112,7 +112,6 @@ The brief asked for a working calculator, clear code and tests. I added a few pr
 
 - Generate an OpenAPI spec from the code so `docs/API.md` stays in step with the handler.
 - Add Playwright end-to-end tests in Chromium, Firefox and WebKit.
-- Add rate limiting on `/api/v1/calculate`, keyed per client.
 - Add metrics and tracing, using the request ID already on every log line.
 - Format numbers by locale in the UI.
 - Parse full expressions with operator precedence, instead of one operation at a time.

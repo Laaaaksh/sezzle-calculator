@@ -127,6 +127,32 @@ describe('Calculator', () => {
     expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
   });
 
+  it('shows the rate limit message and no Retry when the server answers 429', async () => {
+    recordCalculate(() =>
+      HttpResponse.json(
+        {
+          error: {
+            code: 'RATE_LIMITED',
+            message: 'Too many requests. Please wait and try again.',
+            requestId: 'req-rl',
+            fields: { retryAfterSeconds: 2 },
+          },
+        },
+        { status: 429, headers: { 'Retry-After': '2' } },
+      ),
+    );
+    const user = renderCalculator();
+
+    await pressKeys(user, '1', 'Add', '2', 'Equals');
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Too many calculations too quickly. Wait a few seconds and try again.',
+      );
+    });
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
+  });
+
   it('shows a loading state and disables equals while a request is pending', async () => {
     server.use(
       http.post(CALCULATE_URL, async () => {
