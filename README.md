@@ -122,3 +122,24 @@ The brief asked for a working calculator, clear code and tests. I added a few pr
 AI wrote much of the code, mainly Claude Code, under my step-by-step direction. I set the rules, gave one prompt per step and reviewed each result before the next. Every prompt is in [docs/PROMPTS.md](docs/PROMPTS.md), in order, with a line on what each produced. An automated review pipeline and CI checked each pull request.
 
 `AGENTS.md` and `CLAUDE.md` hold the working rules I gave the AI tools. They are not part of the app.
+
+## How I directed this
+
+Decided before any code:
+
+- The frontend never does maths. The API is the only source of truth.
+- Numbers travel as strings and are computed with decimals, never floats. In payments, `0.1 + 0.2` must be `0.3`.
+- Division rounds half-even at 20 places.
+- I wrote the API contract and error codes before the handlers: `400` for malformed, `422` for valid but refused. I listed the edge cases up front: divide by zero, negative square root, fractional exponents and huge inputs.
+- Power takes integer exponents only, so nothing falls back to floats silently.
+
+Rejected or overruled:
+
+- Generating the app from one big prompt. I split the work into 26 steps. Each one stopped for proof and a commit.
+- Letting the builder review its own work. A fresh, separate review audited the code and I fixed every finding.
+- A later hiring-style review found real gaps. Fresh clones failed `go test`, only power had a result-size limit, the `%` key was ambiguous and the README was bloated. I fixed all four.
+- Deleting tests to look leaner. I kept them.
+
+Why this went past 2 to 4 hours: this is a payments role, so I wanted to show how I would ship to production. That means input limits, exact rounding, clear errors, CI and a container. AI made the breadth cheap to write. My time went into reviewing and deciding.
+
+In a strict 2 to 4 hours I would keep the decimal core, the parser, the API contract and the maths tests. I would cut the Docker hardening and nginx security policy, the custom healthcheck, the 100% frontend coverage gate, the CSS-parsing and constants tests, and the motion and design polish.
