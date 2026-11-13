@@ -93,3 +93,12 @@ One entry per decision. Each has the context, the decision and the trade-off.
 - Context: On shutdown the backend turns readiness to 503, keeps serving for `shutdown_drain_delay`, then waits up to `shutdown_grace_period` for open requests. Docker sends SIGKILL once `stop_grace_period` ends. A kill in the middle of a drain drops live requests.
 - Decision: `stop_grace_period` in `docker-compose.yml` must be longer than `shutdown_drain_delay + shutdown_grace_period`. Production uses 5s + 10s, so compose sets 20s for the backend. If you raise either config value, raise `stop_grace_period` with it.
 - Trade-off: A slow stop takes up to 20s in the worst case. A normal stop ends as soon as the last request finishes after the drain delay.
+
+## 16. Money versus calculator numbers
+
+- Context: This API does arithmetic on whatever a user types. A real buy now, pay later amount API is a different problem.
+- A money API would send integer minor units plus an ISO 4217 currency code, for example `{"amount": 1999, "currency": "USD"}`.
+- Rounding would follow the currency, since JPY has no minor unit and KWD has three, instead of one global 20 places.
+- It would also refuse floats and exponent notation, refuse sums across currencies, and say how the odd cent is shared when a total splits into instalments.
+- Decision: The calculator takes arbitrary-precision decimal strings with no currency, because the brief asks for a general calculator with division, roots and powers.
+- Trade-off: `1/3` as `0.33333333333333333333` suits a calculator and is wrong for a ledger. Do not reuse this contract to move money.
