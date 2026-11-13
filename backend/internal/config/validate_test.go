@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -267,6 +268,12 @@ func (s *ValidateTestSuite) TestValidateWhenRateLimitRateIsZeroReturnsError() {
 
 func (s *ValidateTestSuite) TestValidateWhenRateLimitRateAboveRangeReturnsError() {
 	s.cfg.RateLimit.RequestsPerSecond = invalidRateLimitRate
+
+	s.ErrorIs(s.cfg.Validate(), config.ErrRateLimitRateOutOfRange)
+}
+
+func (s *ValidateTestSuite) TestValidateWhenRateLimitRateIsNaNReturnsError() {
+	s.cfg.RateLimit.RequestsPerSecond = math.NaN()
 
 	s.ErrorIs(s.cfg.Validate(), config.ErrRateLimitRateOutOfRange)
 }

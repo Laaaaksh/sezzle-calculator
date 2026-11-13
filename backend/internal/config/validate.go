@@ -77,7 +77,7 @@ func (r RateLimitConfig) validate() []error {
 		return nil
 	}
 	var errs []error
-	if r.RequestsPerSecond <= 0 || r.RequestsPerSecond > constants.RateLimitRateMax {
+	if !(r.RequestsPerSecond > 0 && r.RequestsPerSecond <= constants.RateLimitRateMax) {
 		errs = append(errs, withValue(ErrRateLimitRateOutOfRange, r.RequestsPerSecond))
 	}
 	if r.Burst < constants.RateLimitBurstMin || r.Burst > constants.RateLimitBurstMax {
