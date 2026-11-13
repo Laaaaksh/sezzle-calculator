@@ -101,7 +101,7 @@ func (c Code) DefaultMessage() string {
 	return MsgInternal
 }
 
-// Codes lists every registered code in alphabetical order. docs/ERROR_CODES.md
+// Codes lists every registered code in alphabetical order. docs/API.md
 // is checked against it in a test, so a new code cannot ship undocumented. It
 // sees a feature's codes only once that feature's package has been imported.
 func Codes() []Code {

@@ -56,7 +56,8 @@ describe.skipIf(apiDoc === undefined)('API types match docs/API.md', () => {
   });
 
   it('lists every error code in the docs error table', () => {
-    const documented = firstColumnOfTableRows(/^\| `([A-Z_]+)` \| \d{3} \|/gm);
+    // The status table and the error code reference both list each code, so count a code once.
+    const documented = [...new Set(firstColumnOfTableRows(/^\| `([A-Z_]+)` \| \d{3} \|/gm))];
 
     expect(documented.length).toBeGreaterThan(0);
     expect([...documented].sort()).toEqual([...ERROR_CODES].sort());
