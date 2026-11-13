@@ -1,6 +1,6 @@
 # Prompt log
 
-Every prompt I sent to the AI assistant while building this project, in order and word for word. In entries 27 to 29 I trimmed personal asides: cuts are marked `[...]` and clarifications are in square brackets. No instruction was changed. Each entry ends with one line on what it produced.
+Every prompt I sent to the AI assistant while building this project, in order and word for word. Entries 27 and 29 were operational instructions about running the plan, not design prompts. I summarise them in square brackets instead of quoting them. Every other entry is verbatim. Each entry ends with one line on what it produced.
 
 ---
 
@@ -462,11 +462,7 @@ Produced: an independent review raised 12 findings. Fixed: the power result budg
 ## 27. Ship every phase through the pipeline
 
 ```
-Could you keep feeding the prompt to yourself commiting it and then running the [review pipeline] as well. [...] There would be issues in [the review pipeline] which you could take up as fix and keep commiting the fixes as well! [...]
-```
-
-```
-Can you keep merging the relevant prs as well please [...]
+[Operational instructions, summarised rather than quoted: run the remaining queued prompts in order, commit each step, run each phase through the review pipeline, fix what it finds, and merge each pull request once CI is green.]
 ```
 
 Produced: each phase shipped as its own pull request through an automated review pipeline (review, tests, docs, lint, push, CI), PRs #1 to #8. The pipeline's review found and fixed issues in every phase, listed in each PR description. Green PRs were merged in order.
@@ -486,7 +482,7 @@ Produced: a fresh, read-only review of every file against the Go and frontend co
 ## 29. Fix every audit finding
 
 ```
-[...] fix all please through [the review pipeline] [...] and render the app for me as well locally want to see and use myself.
+[Operational instruction, summarised rather than quoted: fix every audit finding through the review pipeline, then run the app locally so I can try it.]
 ```
 
 Produced: PR #9 through the same review pipeline. Docs now match the code, duplicate or wrong-case JSON keys are rejected, `/operations` publishes limits that the UI uses, calculator error codes live in the calculator module, entry points are tested, dead code and magic values are gone, and CI pins Node and images and runs format, `npm audit` and `govulncheck` checks. Backend coverage 98.2%, frontend 547 tests at 100%.
