@@ -28,6 +28,7 @@ var testHandlerLimits = entities.Limits{
 	MaxOperandLength: testHandlerMaxLen,
 	MaxExponent:      testHandlerMaxExponent,
 	DecimalPrecision: testHandlerPrecision,
+	MaxResultDigits:  testHandlerResultDigits,
 }
 
 type ServerTestSuite struct {

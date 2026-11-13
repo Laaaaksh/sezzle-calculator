@@ -22,8 +22,10 @@ export function Key({
   active = false,
   onPress,
 }: KeyProps) {
-  const { label, ariaLabel, action, kind, wide = false } = definition;
+  const { label, ariaLabel, action, kind, wide = false, hint } = definition;
   const reasonId = useId();
+  const hintId = useId();
+  const describedBy = unavailable ? reasonId : hint === undefined ? undefined : hintId;
   const className = [
     styles.key,
     styles[kind],
@@ -45,10 +47,10 @@ export function Key({
         // aria-disabled, not disabled: the key stays in the tab order, so a keyboard or screen
         // reader user can land on it and hear the reason from the title.
         aria-disabled={unavailable ? true : undefined}
-        // The title alone is not announced reliably, so the same reason is also a hidden element
-        // that describes the button. Both stay: the title serves pointer users.
-        aria-describedby={unavailable ? reasonId : undefined}
-        title={unavailable ? UNAVAILABLE_REASON : undefined}
+        // The title alone is not announced reliably, so the same reason (or the key's hint) is also
+        // a hidden element that describes the button. Both stay: the title serves pointer users.
+        aria-describedby={describedBy}
+        title={unavailable ? UNAVAILABLE_REASON : hint}
         // Keeps focus off the pad after a pointer press. Otherwise Enter would press this key again
         // instead of acting as equals. Keyboard users still reach every key with Tab.
         onMouseDown={(event) => {
@@ -65,6 +67,11 @@ export function Key({
       {unavailable ? (
         <span id={reasonId} className="visually-hidden">
           {UNAVAILABLE_REASON}
+        </span>
+      ) : null}
+      {!unavailable && hint !== undefined ? (
+        <span id={hintId} className="visually-hidden">
+          {hint}
         </span>
       ) : null}
     </>

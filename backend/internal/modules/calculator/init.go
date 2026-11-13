@@ -25,6 +25,7 @@ func limitsFrom(cfg config.CalculatorConfig) entities.Limits {
 		MaxOperandLength: cfg.MaxOperandLength,
 		MaxExponent:      cfg.MaxExponent,
 		DecimalPrecision: cfg.DecimalPrecision,
+		MaxResultDigits:  entities.ResultDigitBudget(cfg.MaxOperandLength),
 	}
 }
 

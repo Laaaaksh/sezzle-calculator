@@ -39,9 +39,13 @@ jobs:
           go-version-file: backend/go.mod
           cache-dependency-path: backend/go.sum
 
-      # Generate gomock mocks; test files import them, so this must run before the tidy check, lint and test.
-      - name: Generate mocks
-        run: make mock
+      # Mocks are committed so a plain `go test ./...` works on a fresh clone. Regenerate them and fail if
+      # the committed copies are stale, so an interface change cannot land without its mock.
+      - name: Verify mocks are current
+        run: |
+          make mock
+          git diff --exit-code -- .
+          test -z "$(git ls-files --others --exclude-standard -- .)" || { echo "untracked generated files"; git ls-files --others --exclude-standard -- .; exit 1; }
 
       # Fail if go.mod or go.sum are out of date with the code.
       - name: Verify modules are tidy

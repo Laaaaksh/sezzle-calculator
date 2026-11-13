@@ -100,20 +100,21 @@ const (
 	testSmallBodyLimit   = 1 << 10
 	problemTooLong       = "is too long"
 
-	testHandlerMaxLen      = 64
-	testHandlerMaxExponent = 1000
-	testHandlerPrecision   = 20
-	testOversizeLimit      = int64(10)
-	testTrailingLimit      = int64(60)
-	testPadding            = 200
+	testHandlerMaxLen       = 64
+	testHandlerMaxExponent  = 1000
+	testHandlerResultDigits = 640
+	testHandlerPrecision    = 20
+	testOversizeLimit       = int64(10)
+	testTrailingLimit       = int64(60)
+	testPadding             = 200
 
 	wantResultText   = "2.5"
 	wantSqrtText     = "12"
 	wantDivideResp   = `{"operation":"divide","operands":["10","4"],"result":"2.5"}`
 	wantSpacedResp   = `{"operation":"divide","operands":["10.0","4.00"],"result":"2.5"}`
 	wantSqrtResp     = `{"operation":"sqrt","operands":["144"],"result":"12"}`
-	wantOperationsJS = `{"operations":[{"name":"add","arity":2,"symbol":"+","description":"Adds the two operands."},{"name":"sqrt","arity":1,"symbol":"√","description":"Returns the square root of the operand."}],"limits":{"maxOperandLength":64,"maxExponent":1000,"decimalPrecision":20}}`
-	wantEmptyOpsJS   = `{"operations":[],"limits":{"maxOperandLength":64,"maxExponent":1000,"decimalPrecision":20}}`
+	wantOperationsJS = `{"operations":[{"name":"add","arity":2,"symbol":"+","description":"Adds the two operands."},{"name":"sqrt","arity":1,"symbol":"√","description":"Returns the square root of the operand."}],"limits":{"maxOperandLength":64,"maxExponent":1000,"decimalPrecision":20,"maxResultDigits":640}}`
+	wantEmptyOpsJS   = `{"operations":[],"limits":{"maxOperandLength":64,"maxExponent":1000,"decimalPrecision":20,"maxResultDigits":640}}`
 
 	fieldOperation = "operation"
 	fieldOperands  = "operands"
@@ -125,4 +126,37 @@ const (
 	wantAddEcho    = `{"operation":"add","operands":["1","2"],"result":"3"}`
 	wantAddText    = "3"
 	secretCause    = "pq: connection refused to db-7"
+)
+
+// Constants for the shared result-size guard in the core.
+const (
+	testResultDigits      = 640
+	testSmallResultDigits = 5
+	testMaxProductDigits  = 128
+	testBelowProductLimit = 127
+
+	sizeAtLimit        = "12345"
+	sizeOverLimit      = "123456"
+	sizeNegAtLimit     = "-12345"
+	sizeFractionAt     = "0.12345"
+	sizeFractionOver   = "0.123456"
+	sizeTrailingZeros  = "1.50000000"
+	sizeAddLeft        = "999"
+	sizeAddRight       = "1"
+	sizeSubtractLeft   = "0"
+	sizeSubtractRight  = "1000"
+	sizeMultiplyLeft   = "100"
+	sizeMultiplyRight  = "100"
+	sizeDivideLeft     = "1"
+	sizeDivideRight    = "3"
+	sizePercentLeft    = "50"
+	sizePercentRight   = "2000"
+	sizePowerBase      = "10"
+	sizePowerExponent  = "3"
+	sizeSqrtOperand    = "2"
+	sizeTinyBudget     = 3
+	sizeMaxOperandNine = "9"
+	sizeSquareEight    = "8"
+	sizeSquareZero     = "0"
+	sizeSquareOne      = "1"
 )

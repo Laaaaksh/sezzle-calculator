@@ -38,7 +38,7 @@ const (
 	wantLiveBody         = `{"status":"ok"}`
 	wantReadyBody        = `{"status":"ready"}`
 	wantAddResponse      = `{"operation":"add","operands":["1","2"],"result":"3"}`
-	wantNoOperationsBody = `{"operations":[],"limits":{"maxOperandLength":64,"maxExponent":0,"decimalPrecision":0}}`
+	wantNoOperationsBody = `{"operations":[],"limits":{"maxOperandLength":64,"maxExponent":0,"decimalPrecision":0,"maxResultDigits":0}}`
 	wantHeaderTemplate   = "X-Request-ID"
 )
 
@@ -106,7 +106,7 @@ const (
 	e2eBodyTooManyOperands      = `{"operation":"add","operands":["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17"]}`
 	e2eBodyThreeOperands        = `{"operation":"add","operands":["1","2","3"]}`
 	e2eBodyCaseVariantKey       = `{"operation":"add","operands":["1","2"],"OPERANDS":["9","9"]}`
-	e2eWantLimitsJSON           = `{"maxOperandLength":64,"maxExponent":1000,"decimalPrecision":20}`
+	e2eWantLimitsJSON           = `{"maxOperandLength":64,"maxExponent":1000,"decimalPrecision":20,"maxResultDigits":640}`
 	e2eDuplicateKeyField        = "key"
 	e2eLimitsKey                = "limits"
 )

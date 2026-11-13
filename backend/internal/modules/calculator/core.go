@@ -45,7 +45,9 @@ func NewCore(registry operations.IRegistry, limits entities.Limits) *Core {
 }
 
 // Calculate runs the pipeline: look up the operation, check the operand count,
-// check each operand against the limits, apply, then normalise. The checks run
+// check each operand against the limits, apply, check the result size, then
+// normalise. The size check is here, not in each operation, so every operation
+// shares one digit budget and a new operation cannot forget it. The checks run
 // before Apply so an operation never sees input it was not written for.
 //
 // ctx is honoured at three points: before any work, inside Apply (the loops in
@@ -68,6 +70,9 @@ func (c *Core) Calculate(ctx context.Context, op entities.OperationType, operand
 	}
 	value, aerr := operation.Apply(ctx, operands)
 	if aerr != nil {
+		return entities.Result{}, aerr
+	}
+	if aerr = operations.CheckResultSize(value, int64(c.limits.MaxResultDigits)); aerr != nil {
 		return entities.Result{}, aerr
 	}
 	if aerr = operations.CheckContext(ctx); aerr != nil {

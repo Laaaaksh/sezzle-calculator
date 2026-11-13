@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatExpression } from './expression';
+import { formatExpression, formatPendingExpression } from './expression';
 
 describe('formatExpression', () => {
   it('writes a binary operation with its symbol', () => {
@@ -17,5 +17,15 @@ describe('formatExpression', () => {
 
   it('writes percentage as "x% of y"', () => {
     expect(formatExpression({ operation: 'percentage', operands: ['20', '50'] })).toBe('20% of 50');
+  });
+});
+
+describe('formatPendingExpression', () => {
+  it('writes an operator after the first operand', () => {
+    expect(formatPendingExpression('12', 'multiply')).toBe('12 ×');
+  });
+
+  it('writes percentage as "x% of" so the screen says what the key will do', () => {
+    expect(formatPendingExpression('20', 'percentage')).toBe('20% of');
   });
 });

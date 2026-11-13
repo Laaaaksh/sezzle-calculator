@@ -13,9 +13,6 @@ coverage.html
 coverage.out
 *.lcov
 
-# Generated mocks (regenerated with make mock)
-**/mock/
-
 # Node
 node_modules/
 dist/

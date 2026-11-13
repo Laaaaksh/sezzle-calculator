@@ -34,6 +34,23 @@ describe('describeDisplay', () => {
     });
   });
 
+  it('shows "x% of" once the percent key is chosen', () => {
+    expect(
+      describeState({ status: 'operator_chosen', left: '20', operator: 'percentage' }),
+    ).toEqual({ expression: '20% of', value: '20' });
+  });
+
+  it('keeps "x% of" above the second operand', () => {
+    expect(
+      describeState({
+        status: 'entering_second',
+        left: '20',
+        operator: 'percentage',
+        operand: '5',
+      }),
+    ).toEqual({ expression: '20% of', value: '5' });
+  });
+
   it('shows the expression so far above the second operand', () => {
     expect(
       describeState({ status: 'entering_second', left: '12', operator: 'add', operand: '7' }),

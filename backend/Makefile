@@ -11,7 +11,7 @@ GOLANGCI_LINT := $(BIN_DIR)/golangci-lint
 API_BIN := $(BIN_DIR)/api
 COVERAGE_OUT := coverage.out
 COVERAGE_HTML := coverage.html
-# Generated mocks are excluded from the coverage total: they are not hand-written code.
+# Generated mocks (committed, checked by CI) are excluded from the coverage total: they are not hand-written code.
 COVERAGE_EXCLUDE := /mock/
 
 .PHONY: help
@@ -44,7 +44,7 @@ lint: mock lint-tool ## Run golangci-lint (generates mocks first)
 	$(GOLANGCI_LINT) run ./...
 
 .PHONY: test
-test: mock ## Run all tests with the race detector (needs mocks: they are gitignored and made by `make mock`, which this target runs first, so use `make test`, not bare `go test ./...`, on a fresh clone)
+test: mock ## Run all tests with the race detector (regenerates the committed mocks first; plain `go test ./...` also works)
 	go test -race ./...
 
 .PHONY: test-coverage
@@ -64,6 +64,5 @@ run: ## Run the API locally with APP_ENV=dev
 	APP_ENV=dev go run ./cmd/api
 
 .PHONY: clean
-clean: ## Remove binaries, coverage files and generated mocks
+clean: ## Remove binaries and coverage files (mocks are committed, so they stay)
 	rm -rf $(BIN_DIR) $(COVERAGE_OUT) $(COVERAGE_OUT).filtered $(COVERAGE_HTML)
-	find . -type d -name mock -prune -exec rm -rf {} +
